@@ -3,6 +3,7 @@ import 'package:mikomi/shared/widgets/section_header.dart';
 import 'package:mikomi/core/models/watch_history.dart';
 import 'package:mikomi/config/themes/app_colors.dart';
 import 'package:mikomi/shared/widgets/cached_image.dart';
+import 'package:mikomi/config/localization/app_localizations.dart';
 
 class HistorySection extends StatelessWidget {
   final List<WatchHistory> historyList;
@@ -15,8 +16,10 @@ class HistorySection extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         SectionHeader(
-          title: '播放记录',
-          moreText: historyList.isEmpty ? '暂无' : '更多',
+          title: AppLocalizations.of(context).watchHistory,
+          moreText: historyList.isEmpty
+              ? AppLocalizations.of(context).noHistory
+              : AppLocalizations.of(context).more,
           onMoreTap: historyList.isEmpty ? null : () {},
         ),
         if (historyList.isNotEmpty)

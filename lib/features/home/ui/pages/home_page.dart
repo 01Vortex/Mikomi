@@ -10,6 +10,7 @@ import 'package:mikomi/core/models/watch_history.dart';
 import 'package:mikomi/shared/widgets/skeleton_card.dart';
 import 'package:mikomi/shared/widgets/skeleton_grid_card.dart';
 import 'package:mikomi/config/themes/app_colors.dart';
+import 'package:mikomi/config/localization/app_localizations.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -104,11 +105,11 @@ class _HomePageState extends State<HomePage>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           child: Text(
-            '播放记录',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            AppLocalizations.of(context).watchHistory,
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
         ),
         SizedBox(
@@ -128,11 +129,11 @@ class _HomePageState extends State<HomePage>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Padding(
-          padding: EdgeInsets.fromLTRB(16, 0, 16, 0),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
           child: Text(
-            '推荐',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            AppLocalizations.of(context).recommend,
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
         ),
         const SizedBox(height: 7),

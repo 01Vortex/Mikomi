@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mikomi/config/themes/app_colors.dart';
 import 'package:mikomi/core/models/bangumi_item.dart';
+import 'package:mikomi/config/localization/app_localizations.dart';
 
 class PopularityRankingView extends StatelessWidget {
   final List<BangumiItem> rankings;
@@ -18,11 +19,11 @@ class PopularityRankingView extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        const Padding(
-          padding: EdgeInsets.fromLTRB(16, 8, 16, 8),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
           child: Text(
-            '热度排行',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            AppLocalizations.of(context).popularityRanking,
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
           ),
         ),
         ListView.builder(

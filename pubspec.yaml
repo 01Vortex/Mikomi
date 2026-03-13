@@ -46,6 +46,11 @@ dependencies:
   
   # 图片缓存
   cached_network_image: ^3.4.1
+  
+  # 国际化
+  flutter_localizations:
+    sdk: flutter
+  intl: 0.20.2
 
 dev_dependencies:
   flutter_test:

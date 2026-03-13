@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:mikomi/config/themes/app_colors.dart';
 import 'package:mikomi/core/models/bangumi_item.dart';
 import 'package:mikomi/shared/widgets/anime_grid_card.dart';
+import 'package:mikomi/config/localization/app_localizations.dart';
 
 class SearchResultsView extends StatelessWidget {
   final List<BangumiItem> results;
@@ -27,8 +28,11 @@ class SearchResultsView extends StatelessWidget {
             Icon(Icons.search_off, size: 64, color: AppColors.textHint),
             const SizedBox(height: 16),
             Text(
-              '未找到相关番剧',
-              style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
+              AppLocalizations.of(context).noResults,
+              style: const TextStyle(
+                fontSize: 14,
+                color: AppColors.textSecondary,
+              ),
             ),
           ],
         ),

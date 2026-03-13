@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:mikomi/config/themes/app_colors.dart';
 
 class AppBottomNavigation extends StatelessWidget {
   final int currentIndex;
@@ -41,14 +40,19 @@ class AppBottomNavigation extends StatelessWidget {
                 index: 1,
               ),
               _buildNavItem(
+                icon: Icons.map_outlined,
+                activeIcon: Icons.map,
+                index: 2,
+              ),
+              _buildNavItem(
                 icon: Icons.chat_bubble_outline,
                 activeIcon: Icons.chat_bubble,
-                index: 2,
+                index: 3,
               ),
               _buildNavItem(
                 icon: Icons.person_outline,
                 activeIcon: Icons.person,
-                index: 3,
+                index: 4,
               ),
             ],
           ),

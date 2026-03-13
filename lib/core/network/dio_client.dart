@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:mikomi/core/services/locale_service.dart';
 
 class DioClient {
   static final DioClient _instance = DioClient._internal();
@@ -14,6 +15,17 @@ class DioClient {
         headers: {
           'user-agent':
               'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+          'Accept-Language': LocaleService.getAcceptLanguage(),
+        },
+      ),
+    );
+
+    dio.interceptors.add(
+      InterceptorsWrapper(
+        onRequest: (options, handler) {
+          options.headers['Accept-Language'] =
+              LocaleService.getAcceptLanguage();
+          return handler.next(options);
         },
       ),
     );

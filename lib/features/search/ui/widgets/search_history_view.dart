@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mikomi/config/themes/app_colors.dart';
+import 'package:mikomi/config/localization/app_localizations.dart';
 
 class SearchHistoryView extends StatefulWidget {
   final List<String> history;
@@ -32,9 +33,12 @@ class _SearchHistoryViewState extends State<SearchHistoryView> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
-                '搜索历史',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              Text(
+                AppLocalizations.of(context).searchHistory,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               Row(
                 children: [
@@ -68,8 +72,11 @@ class _SearchHistoryViewState extends State<SearchHistoryView> {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 32),
             child: Center(
               child: Text(
-                '暂无搜索历史',
-                style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
+                AppLocalizations.of(context).noSearchHistory,
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: AppColors.textSecondary,
+                ),
               ),
             ),
           )

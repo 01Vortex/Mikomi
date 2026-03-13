@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mikomi/config/themes/app_colors.dart';
+import 'package:mikomi/config/localization/app_localizations.dart';
 
 class SearchAppBar extends StatefulWidget {
   final TextEditingController controller;
@@ -86,14 +87,14 @@ class _SearchAppBarState extends State<SearchAppBar> {
                     child: TextField(
                       controller: widget.controller,
                       focusNode: widget.focusNode,
-                      decoration: const InputDecoration(
-                        hintText: '搜索番剧',
-                        hintStyle: TextStyle(
+                      decoration: InputDecoration(
+                        hintText: AppLocalizations.of(context).searchBangumi,
+                        hintStyle: const TextStyle(
                           color: AppColors.textHint,
                           fontSize: 14,
                         ),
                         border: InputBorder.none,
-                        contentPadding: EdgeInsets.only(bottom: 12),
+                        contentPadding: const EdgeInsets.only(bottom: 12),
                       ),
                       onChanged: widget.onChanged,
                       onSubmitted: widget.onSubmitted,
@@ -122,7 +123,7 @@ class _SearchAppBarState extends State<SearchAppBar> {
                 minimumSize: const Size(48, 40),
                 tapTargetSize: MaterialTapTargetSize.shrinkWrap,
               ),
-              child: const Text('搜索'),
+              child: Text(AppLocalizations.of(context).search),
             ),
           ),
         ],
