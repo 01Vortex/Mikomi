@@ -40,6 +40,12 @@ dependencies:
   
   # 本地存储
   shared_preferences: ^2.3.3
+  
+  # 轮播图
+  card_swiper: ^3.0.1
+  
+  # 图片缓存
+  cached_network_image: ^3.4.1
 
 dev_dependencies:
   flutter_test:

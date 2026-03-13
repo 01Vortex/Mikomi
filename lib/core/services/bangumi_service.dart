@@ -1,6 +1,7 @@
 import 'package:mikomi/core/network/dio_client.dart';
 import 'package:mikomi/core/network/api_constants.dart';
 import 'package:mikomi/core/models/bangumi_item.dart';
+import 'package:mikomi/core/utils/recommendation_algorithm.dart';
 
 class BangumiService {
   final DioClient _dioClient = DioClient();
@@ -18,6 +19,36 @@ class BangumiService {
 
       final List<dynamic> data = response.data['data'] ?? [];
       return data.map((item) => BangumiItem.fromJson(item)).toList();
+    } catch (e) {
+      return [];
+    }
+  }
+
+  Future<List<BangumiItem>> getRecommendedList({
+    int limit = 12,
+    int offset = 0,
+  }) async {
+    try {
+      final fetchLimit = limit * 2;
+
+      final response = await _dioClient.get(
+        ApiConstants.bangumiApiNextDomain + ApiConstants.bangumiTrends,
+        queryParameters: {'type': 2, 'limit': fetchLimit, 'offset': offset},
+      );
+
+      final List<dynamic> data = response.data['data'] ?? [];
+      final items = data.map((item) => BangumiItem.fromJson(item)).toList();
+
+      final filteredItems = RecommendationAlgorithm.filterByUpdateTime(
+        items,
+        maxDaysAgo: 365,
+      );
+
+      final sortedItems = RecommendationAlgorithm.sortByRecommendation(
+        filteredItems,
+      );
+
+      return sortedItems.take(limit).toList();
     } catch (e) {
       return [];
     }

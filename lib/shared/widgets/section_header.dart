@@ -1,10 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:mikomi/config/themes/app_colors.dart';
 
 class SectionHeader extends StatelessWidget {
   final String title;
+  final String? moreText;
   final VoidCallback? onMoreTap;
 
-  const SectionHeader({super.key, required this.title, this.onMoreTap});
+  const SectionHeader({
+    super.key,
+    required this.title,
+    this.moreText,
+    this.onMoreTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -17,14 +24,18 @@ class SectionHeader extends StatelessWidget {
             title,
             style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
-          if (onMoreTap != null)
-            GestureDetector(
-              onTap: onMoreTap,
-              child: Text(
-                '更多',
-                style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+          GestureDetector(
+            onTap: onMoreTap,
+            child: Text(
+              moreText ?? '更多',
+              style: TextStyle(
+                fontSize: 14,
+                color: onMoreTap == null
+                    ? AppColors.textHint
+                    : AppColors.textSecondary,
               ),
             ),
+          ),
         ],
       ),
     );

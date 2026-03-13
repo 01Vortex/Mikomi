@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mikomi/shared/widgets/scrolling_text.dart';
+import 'package:mikomi/config/themes/app_colors.dart';
+import 'package:mikomi/shared/widgets/cached_image.dart';
 
 class AnimeCard extends StatelessWidget {
   final String title;
@@ -30,29 +32,14 @@ class AnimeCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              width: width,
-              height: height,
-              decoration: BoxDecoration(
-                color: Colors.grey[300],
-                borderRadius: BorderRadius.circular(8),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: CachedImage(
+                imageUrl: imageUrl ?? '',
+                width: width,
+                height: height,
+                fit: BoxFit.cover,
               ),
-              child: imageUrl != null && imageUrl!.isNotEmpty
-                  ? ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: Image.network(
-                        imageUrl!,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return const Center(
-                            child: Icon(Icons.image_not_supported, size: 40),
-                          );
-                        },
-                      ),
-                    )
-                  : const Center(
-                      child: Icon(Icons.image, size: 40, color: Colors.grey),
-                    ),
             ),
             const SizedBox(height: 6),
             ScrollingText(
@@ -65,7 +52,10 @@ class AnimeCard extends StatelessWidget {
                 subtitle!,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: TextStyle(fontSize: 11, color: Colors.grey[600]),
+                style: const TextStyle(
+                  fontSize: 11,
+                  color: AppColors.textSecondary,
+                ),
               ),
             ],
           ],

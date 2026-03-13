@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../features/main/presentation/pages/main_page.dart';
+import '../../features/main/ui/pages/main_page.dart';
 
 class AppRoutes {
   static const String main = '/';

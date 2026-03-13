@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mikomi/config/themes/app_colors.dart';
 
 class SkeletonCard extends StatefulWidget {
   final double width;
@@ -56,7 +57,7 @@ class _SkeletonCardState extends State<SkeletonCard>
                 width: widget.width,
                 height: widget.height,
                 decoration: BoxDecoration(
-                  color: Colors.grey[300],
+                  color: AppColors.skeletonBase,
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: ClipRRect(
@@ -69,10 +70,10 @@ class _SkeletonCardState extends State<SkeletonCard>
                             gradient: LinearGradient(
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
-                              colors: [
-                                Colors.grey[300]!,
-                                Colors.grey[200]!,
-                                Colors.grey[300]!,
+                              colors: const [
+                                AppColors.skeletonBase,
+                                AppColors.skeletonHighlight,
+                                AppColors.skeletonBase,
                               ],
                               stops: [
                                 _animation.value - 0.3,
@@ -95,7 +96,7 @@ class _SkeletonCardState extends State<SkeletonCard>
               width: widget.width * 0.8,
               height: 12,
               decoration: BoxDecoration(
-                color: Colors.grey[300],
+                color: AppColors.skeletonBase,
                 borderRadius: BorderRadius.circular(4),
               ),
             ),

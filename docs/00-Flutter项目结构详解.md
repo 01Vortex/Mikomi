@@ -114,7 +114,7 @@ lib/
 │   └── home/                   # 首页功能模块
 │       ├── data/               # 数据层(数据源、仓库实现)
 │       ├── domain/             # 领域层(实体、仓库接口、用例)
-│       └── presentation/       # 表现层(UI)
+│       └── ui/       # 表现层(UI)
 │           ├── pages/         # 页面
 │           │   └── home_page.dart
 │           └── widgets/       # 页面专用组件

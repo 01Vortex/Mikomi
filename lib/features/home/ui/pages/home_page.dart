@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:mikomi/features/home/presentation/widgets/home_app_bar.dart';
-import 'package:mikomi/features/home/presentation/widgets/banner_section.dart';
-import 'package:mikomi/features/home/presentation/widgets/history_section.dart';
-import 'package:mikomi/features/home/presentation/widgets/recommend_section.dart';
+import 'package:mikomi/features/home/ui/widgets/home_app_bar.dart';
+import 'package:mikomi/features/home/ui/widgets/banner_section.dart';
+import 'package:mikomi/features/home/ui/widgets/history_section.dart';
+import 'package:mikomi/features/home/ui/widgets/recommend_section.dart';
 import 'package:mikomi/core/services/bangumi_service.dart';
+import 'package:mikomi/core/services/watch_history_service.dart';
 import 'package:mikomi/core/models/bangumi_item.dart';
+import 'package:mikomi/core/models/watch_history.dart';
 import 'package:mikomi/shared/widgets/skeleton_card.dart';
 import 'package:mikomi/shared/widgets/skeleton_grid_card.dart';
+import 'package:mikomi/config/themes/app_colors.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -18,14 +21,16 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage>
     with AutomaticKeepAliveClientMixin {
   final BangumiService _bangumiService = BangumiService();
+  final WatchHistoryService _historyService = WatchHistoryService();
   final ScrollController _scrollController = ScrollController();
 
   List<BangumiItem> _trendsList = [];
-  List<BangumiItem> _historyList = [];
+  List<BangumiItem> _bannerList = [];
+  List<WatchHistory> _historyList = [];
   bool _isLoading = true;
   bool _isLoadingMore = false;
   int _currentOffset = 0;
-  final int _pageSize = 24;
+  final int _pageSize = 12;
 
   @override
   bool get wantKeepAlive => true;
@@ -46,7 +51,7 @@ class _HomePageState extends State<HomePage>
 
   void _onScroll() {
     if (_scrollController.position.pixels >=
-        _scrollController.position.maxScrollExtent - 100) {
+        _scrollController.position.maxScrollExtent - 200) {
       if (!_isLoadingMore) {
         _loadMoreData();
       }
@@ -57,15 +62,19 @@ class _HomePageState extends State<HomePage>
     setState(() => _isLoading = true);
 
     _currentOffset = 0;
-    final trends = await _bangumiService.getTrendsList(
+
+    final recommended = await _bangumiService.getRecommendedList(
       limit: _pageSize,
       offset: _currentOffset,
     );
 
+    final history = await _historyService.getHistory();
+
     if (mounted) {
       setState(() {
-        _trendsList = trends;
-        _historyList = trends.take(6).toList();
+        _trendsList = recommended;
+        _bannerList = recommended.take(5).toList();
+        _historyList = history.take(6).toList();
         _isLoading = false;
         _currentOffset = _pageSize;
       });
@@ -77,14 +86,14 @@ class _HomePageState extends State<HomePage>
 
     setState(() => _isLoadingMore = true);
 
-    final moreTrends = await _bangumiService.getTrendsList(
+    final moreRecommended = await _bangumiService.getRecommendedList(
       limit: _pageSize,
       offset: _currentOffset,
     );
 
     if (mounted) {
       setState(() {
-        _trendsList.addAll(moreTrends);
+        _trendsList.addAll(moreRecommended);
         _isLoadingMore = false;
         _currentOffset += _pageSize;
       });
@@ -151,20 +160,23 @@ class _HomePageState extends State<HomePage>
   Widget build(BuildContext context) {
     super.build(context);
     return Scaffold(
-      backgroundColor: Colors.grey[100],
+      backgroundColor: AppColors.background,
       body: RefreshIndicator(
         onRefresh: _loadData,
         child: CustomScrollView(
           controller: _scrollController,
           slivers: [
             SliverToBoxAdapter(
-              child: Container(color: Colors.white, child: const HomeAppBar()),
+              child: Container(
+                color: AppColors.surface,
+                child: const HomeAppBar(),
+              ),
             ),
-            const SliverToBoxAdapter(child: BannerSection()),
+            SliverToBoxAdapter(child: BannerSection(bannerList: _bannerList)),
             SliverToBoxAdapter(
               child: _isLoading
                   ? _buildHistorySkeleton()
-                  : HistorySection(bangumiList: _historyList),
+                  : HistorySection(historyList: _historyList),
             ),
             SliverToBoxAdapter(
               child: _isLoading

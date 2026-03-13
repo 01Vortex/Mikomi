@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:mikomi/features/home/presentation/pages/home_page.dart';
+import 'package:mikomi/features/home/ui/pages/home_page.dart';
 import 'package:mikomi/shared/widgets/bottom_navigation.dart';
 
 class MainPage extends StatefulWidget {
