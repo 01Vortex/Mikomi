@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mikomi/config/themes/app_colors.dart';
+import 'package:mikomi/features/search/ui/pages/search_page.dart';
 
 class HomeAppBar extends StatelessWidget {
   const HomeAppBar({super.key});
@@ -7,52 +8,48 @@ class HomeAppBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: Colors.white,
+      color: AppColors.surface,
       padding: EdgeInsets.fromLTRB(
         16,
         MediaQuery.of(context).padding.top + 8,
         16,
-        16,
+        12,
       ),
       child: Row(
         children: [
           CircleAvatar(
             radius: 20,
-            backgroundColor: Colors.grey[300],
-            child: Icon(Icons.person, color: Colors.grey[600]),
+            backgroundColor: AppColors.placeholder,
+            child: const Icon(Icons.person, color: AppColors.placeholderIcon),
           ),
           const SizedBox(width: 12),
           Expanded(
             child: GestureDetector(
               onTap: () {
-                // 跳转到搜索页面
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const SearchPage()),
+                );
               },
               child: Container(
                 height: 40,
                 decoration: BoxDecoration(
-                  color: Colors.grey[200],
+                  color: AppColors.skeletonHighlight,
                   borderRadius: BorderRadius.circular(20),
                 ),
-                child: Row(
+                child: const Row(
                   children: [
-                    const SizedBox(width: 16),
-                    Icon(Icons.search, color: Colors.grey[600], size: 20),
-                    const SizedBox(width: 8),
+                    SizedBox(width: 16),
+                    Icon(Icons.search, color: AppColors.textHint, size: 20),
+                    SizedBox(width: 8),
                     Text(
                       '搜索',
-                      style: TextStyle(color: Colors.grey[600], fontSize: 14),
+                      style: TextStyle(color: AppColors.textHint, fontSize: 14),
                     ),
                   ],
                 ),
               ),
             ),
-          ),
-          const SizedBox(width: 12),
-          IconButton(
-            icon: const Icon(Icons.mail_outline),
-            onPressed: () {
-              // 消息功能
-            },
           ),
         ],
       ),
