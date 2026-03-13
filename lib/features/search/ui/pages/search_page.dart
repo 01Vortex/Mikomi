@@ -3,9 +3,11 @@ import 'package:mikomi/config/themes/app_colors.dart';
 import 'package:mikomi/core/services/bangumi_service.dart';
 import 'package:mikomi/core/services/search_history_service.dart';
 import 'package:mikomi/core/models/bangumi_item.dart';
+import 'package:mikomi/core/utils/popularity_algorithm.dart';
 import 'package:mikomi/features/search/ui/widgets/search_app_bar.dart';
 import 'package:mikomi/features/search/ui/widgets/search_history_view.dart';
 import 'package:mikomi/features/search/ui/widgets/search_suggestions_view.dart';
+import 'package:mikomi/features/search/ui/widgets/popularity_ranking_view.dart';
 import 'package:mikomi/features/search/ui/pages/search_results_page.dart';
 
 class SearchPage extends StatefulWidget {
@@ -23,13 +25,16 @@ class _SearchPageState extends State<SearchPage> {
 
   List<String> _searchHistory = [];
   List<BangumiItem> _suggestions = [];
+  List<BangumiItem> _popularityRankings = [];
   bool _showHistory = true;
   bool _isLoadingSuggestions = false;
+  bool _isLoadingRankings = true;
 
   @override
   void initState() {
     super.initState();
     _loadHistory();
+    _loadPopularityRankings();
     _focusNode.requestFocus();
   }
 
@@ -45,6 +50,23 @@ class _SearchPageState extends State<SearchPage> {
     setState(() {
       _searchHistory = history;
     });
+  }
+
+  Future<void> _loadPopularityRankings() async {
+    setState(() => _isLoadingRankings = true);
+
+    final allItems = await _bangumiService.getRecommendedList(limit: 50);
+    final rankings = PopularityAlgorithm.getPopularityRanking(
+      allItems,
+      limit: 10,
+    );
+
+    if (mounted) {
+      setState(() {
+        _popularityRankings = rankings;
+        _isLoadingRankings = false;
+      });
+    }
   }
 
   Future<void> _performSearch(String keyword) async {
@@ -116,6 +138,11 @@ class _SearchPageState extends State<SearchPage> {
     _performSearch(keyword);
   }
 
+  void _handleRankingTap(BangumiItem item) {
+    _searchController.text = item.displayName;
+    _performSearch(item.displayName);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -145,10 +172,27 @@ class _SearchPageState extends State<SearchPage> {
 
   Widget _buildBody() {
     if (_showHistory) {
-      return SearchHistoryView(
-        history: _searchHistory,
-        onTap: _handleHistoryTap,
-        onClear: _clearHistory,
+      return SingleChildScrollView(
+        child: Column(
+          children: [
+            SearchHistoryView(
+              history: _searchHistory,
+              onTap: _handleHistoryTap,
+              onClear: _clearHistory,
+            ),
+            if (_isLoadingRankings)
+              const Padding(
+                padding: EdgeInsets.all(32),
+                child: CircularProgressIndicator(),
+              )
+            else if (_popularityRankings.isNotEmpty)
+              PopularityRankingView(
+                rankings: _popularityRankings,
+                onTap: _handleRankingTap,
+              ),
+            const SizedBox(height: 16),
+          ],
+        ),
       );
     }
 
