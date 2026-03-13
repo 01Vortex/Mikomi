@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import '../../features/home/presentation/pages/home_page.dart';
+import '../../features/main/presentation/pages/main_page.dart';
 
 class AppRoutes {
-  static const String home = '/';
+  static const String main = '/';
 
   static Map<String, WidgetBuilder> get routes {
-    return {home: (context) => const HomePage()};
+    return {main: (context) => const MainPage()};
   }
 }
