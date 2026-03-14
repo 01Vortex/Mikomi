@@ -138,7 +138,9 @@ class _BangumiDetailPageState extends State<BangumiDetailPage>
             _commentsLoaded
                 ? AnimeTucaoTab(bangumiItem: _bangumiItem)
                 : const Center(child: Text('切换到此标签页加载评论')),
-            const AnimeCommentsTab(),
+            _tabController.index == 3
+                ? AnimeCommentsTab(bangumiItem: _bangumiItem)
+                : const Center(child: Text('切换到此标签页加载评论')),
           ],
         ),
       ),

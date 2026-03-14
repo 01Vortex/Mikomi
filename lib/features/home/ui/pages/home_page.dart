@@ -7,8 +7,7 @@ import 'package:mikomi/core/services/bangumi_service.dart';
 import 'package:mikomi/core/services/watch_history_service.dart';
 import 'package:mikomi/core/models/bangumi_item.dart';
 import 'package:mikomi/core/models/watch_history.dart';
-import 'package:mikomi/shared/widgets/skeleton_card.dart';
-import 'package:mikomi/shared/widgets/skeleton_grid_card.dart';
+import 'package:mikomi/shared/widgets/skeleton.dart';
 import 'package:mikomi/config/themes/app_colors.dart';
 import 'package:mikomi/config/localization/app_localizations.dart';
 

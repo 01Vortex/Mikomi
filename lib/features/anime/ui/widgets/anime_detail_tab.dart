@@ -10,6 +10,7 @@ import 'package:mikomi/features/anime/ui/pages/character_detail_page.dart';
 import 'package:mikomi/features/anime/ui/pages/person_detail_page.dart';
 import 'package:mikomi/shared/widgets/cached_image.dart';
 import 'package:mikomi/shared/widgets/scrolling_text.dart';
+import 'package:mikomi/shared/widgets/skeleton.dart';
 
 class AnimeDetailTab extends StatefulWidget {
   final BangumiItem bangumiItem;
@@ -32,7 +33,7 @@ class _AnimeDetailTabState extends State<AnimeDetailTab> {
     super.initState();
     final dataSource = DetailRemoteDataSourceImpl(DioClient());
     _repository = DetailRepositoryImpl(dataSource);
-    _loadData();
+    // 不在initState中加载数据，改为懒加载
   }
 
   Future<void> _loadData() async {
@@ -88,6 +89,18 @@ class _AnimeDetailTabState extends State<AnimeDetailTab> {
 
   @override
   Widget build(BuildContext context) {
+    // 懒加载：首次构建时加载数据
+    if (!_isLoadingCharacters &&
+        !_isLoadingStaff &&
+        _characters.isEmpty &&
+        _staff.isEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _loadData();
+        }
+      });
+    }
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -99,12 +112,7 @@ class _AnimeDetailTabState extends State<AnimeDetailTab> {
           ),
           const SizedBox(height: 12),
           if (_isLoadingCharacters)
-            const Center(
-              child: Padding(
-                padding: EdgeInsets.all(32),
-                child: CircularProgressIndicator(),
-              ),
-            )
+            _buildSkeletonGrid()
           else if (_characters.isEmpty)
             const Padding(
               padding: EdgeInsets.all(32),
@@ -124,12 +132,7 @@ class _AnimeDetailTabState extends State<AnimeDetailTab> {
           ),
           const SizedBox(height: 12),
           if (_isLoadingStaff)
-            const Center(
-              child: Padding(
-                padding: EdgeInsets.all(32),
-                child: CircularProgressIndicator(),
-              ),
-            )
+            _buildSkeletonGrid()
           else if (_staff.isEmpty)
             const Padding(
               padding: EdgeInsets.all(32),
@@ -186,6 +189,57 @@ class _AnimeDetailTabState extends State<AnimeDetailTab> {
           ),
         ],
       ],
+    );
+  }
+
+  Widget _buildSkeletonGrid() {
+    return Column(
+      children: [
+        SizedBox(
+          height: 80,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            padding: EdgeInsets.zero,
+            itemCount: 4,
+            separatorBuilder: (context, index) => const SizedBox(width: 12),
+            itemBuilder: (context, index) => _buildSkeletonCard(),
+          ),
+        ),
+        const SizedBox(height: 8),
+        SizedBox(
+          height: 80,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            padding: EdgeInsets.zero,
+            itemCount: 4,
+            separatorBuilder: (context, index) => const SizedBox(width: 12),
+            itemBuilder: (context, index) => _buildSkeletonCard(),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSkeletonCard() {
+    return SizedBox(
+      width: 160,
+      child: Row(
+        children: [
+          const SkeletonCircle(size: 60),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                SkeletonText(width: double.infinity, height: 14),
+                const SizedBox(height: 6),
+                SkeletonText(width: 80, height: 12),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 

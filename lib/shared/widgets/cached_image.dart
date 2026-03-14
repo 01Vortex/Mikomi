@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:mikomi/config/themes/app_colors.dart';
+import 'package:mikomi/shared/widgets/skeleton.dart';
 
 class CachedImage extends StatelessWidget {
   final String imageUrl;
@@ -42,11 +43,10 @@ class CachedImage extends StatelessWidget {
       fit: fit,
       placeholder: (context, url) =>
           placeholder ??
-          Container(
-            color: AppColors.placeholder,
-            child: const Center(
-              child: CircularProgressIndicator(strokeWidth: 2),
-            ),
+          SkeletonLoader(
+            width: width,
+            height: height,
+            borderRadius: borderRadius,
           ),
       errorWidget: (context, url, error) => errorWidget ?? _buildErrorWidget(),
       fadeInDuration: const Duration(milliseconds: 300),
