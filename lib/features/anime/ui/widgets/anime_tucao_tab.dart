@@ -6,6 +6,7 @@ import 'package:mikomi/core/network/dio_client.dart';
 import 'package:mikomi/features/anime/data/datasources/comment_remote_datasource.dart';
 import 'package:mikomi/features/anime/data/repositories/comment_repository_impl.dart';
 import 'package:mikomi/shared/widgets/comment_card.dart';
+import 'package:mikomi/shared/widgets/skeleton.dart';
 
 class AnimeTucaoTab extends StatefulWidget {
   final BangumiItem bangumiItem;
@@ -98,7 +99,7 @@ class _AnimeTucaoTabState extends State<AnimeTucaoTab> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading && _comments.isEmpty) {
-      return const Center(child: CircularProgressIndicator());
+      return _buildSkeletonList();
     }
 
     if (_comments.isEmpty) {
@@ -124,18 +125,54 @@ class _AnimeTucaoTabState extends State<AnimeTucaoTab> {
     return ListView.separated(
       controller: _scrollController,
       padding: const EdgeInsets.symmetric(vertical: 8),
-      itemCount: _comments.length + (_isLoading && _hasMore ? 1 : 0),
+      itemCount: _comments.length + (_isLoading && _hasMore ? 3 : 0),
       separatorBuilder: (context, index) =>
           const Divider(height: 1, indent: 68, endIndent: 16),
       itemBuilder: (context, index) {
-        if (index == _comments.length) {
-          return const Padding(
-            padding: EdgeInsets.all(16),
-            child: Center(child: CircularProgressIndicator()),
-          );
+        if (index >= _comments.length) {
+          return _buildSkeletonComment();
         }
         return CommentCard(commentItem: _comments[index]);
       },
+    );
+  }
+
+  Widget _buildSkeletonList() {
+    return ListView.separated(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      itemCount: 5,
+      separatorBuilder: (context, index) =>
+          const Divider(height: 1, indent: 68, endIndent: 16),
+      itemBuilder: (context, index) => _buildSkeletonComment(),
+    );
+  }
+
+  Widget _buildSkeletonComment() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SkeletonCircle(size: 40),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SkeletonText(width: 100, height: 14),
+                const SizedBox(height: 8),
+                SkeletonText(width: double.infinity, height: 14),
+                const SizedBox(height: 4),
+                SkeletonText(width: double.infinity, height: 14),
+                const SizedBox(height: 4),
+                SkeletonText(width: 200, height: 14),
+                const SizedBox(height: 8),
+                SkeletonText(width: 80, height: 12),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

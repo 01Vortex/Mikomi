@@ -6,8 +6,7 @@ import 'package:mikomi/core/models/staff_item.dart';
 import 'package:mikomi/core/network/dio_client.dart';
 import 'package:mikomi/features/anime/data/datasources/detail_remote_datasource.dart';
 import 'package:mikomi/features/anime/data/repositories/detail_repository_impl.dart';
-import 'package:mikomi/features/anime/ui/pages/character_detail_page.dart';
-import 'package:mikomi/features/anime/ui/pages/person_detail_page.dart';
+import 'package:mikomi/features/anime/ui/pages/anime_more_info.dart';
 import 'package:mikomi/shared/widgets/cached_image.dart';
 import 'package:mikomi/shared/widgets/scrolling_text.dart';
 import 'package:mikomi/shared/widgets/skeleton.dart';
@@ -413,7 +412,7 @@ void _showCharacterDetail(BuildContext context, int characterId) {
     backgroundColor: Colors.transparent,
     builder: (context) => SizedBox(
       height: MediaQuery.of(context).size.height * 0.75,
-      child: CharacterDetailPage(characterId: characterId),
+      child: AnimeMoreInfo(id: characterId, type: InfoType.character),
     ),
   );
 }
@@ -425,7 +424,7 @@ void _showPersonDetail(BuildContext context, int personId) {
     backgroundColor: Colors.transparent,
     builder: (context) => SizedBox(
       height: MediaQuery.of(context).size.height * 0.75,
-      child: PersonDetailPage(personId: personId),
+      child: AnimeMoreInfo(id: personId, type: InfoType.person),
     ),
   );
 }
