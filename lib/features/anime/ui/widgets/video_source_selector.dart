@@ -34,12 +34,19 @@ class _VideoSourceSelectorState extends State<VideoSourceSelector>
   @override
   void initState() {
     super.initState();
-    // 按名称排序
-    widget.sources.sort(
-      (a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()),
-    );
-    _tabController = TabController(length: widget.sources.length, vsync: this);
+    // 去重并按名称排序
+    final uniqueSources = <String, VideoSource>{};
+    for (var source in widget.sources) {
+      uniqueSources[source.name] = source;
+    }
+    final sortedSources = uniqueSources.values.toList()
+      ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+
+    _tabController = TabController(length: sortedSources.length, vsync: this);
+    _sources = sortedSources;
   }
+
+  late final List<VideoSource> _sources;
 
   @override
   void dispose() {
@@ -91,7 +98,7 @@ class _VideoSourceSelectorState extends State<VideoSourceSelector>
               fontSize: 15,
               fontWeight: FontWeight.normal,
             ),
-            tabs: widget.sources.map((source) {
+            tabs: _sources.map((source) {
               return Tab(
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -118,7 +125,7 @@ class _VideoSourceSelectorState extends State<VideoSourceSelector>
             height: MediaQuery.of(context).size.height * 0.5,
             child: TabBarView(
               controller: _tabController,
-              children: widget.sources.map((source) {
+              children: _sources.map((source) {
                 return _buildSourceContent(source);
               }).toList(),
             ),
@@ -175,7 +182,6 @@ class _VideoSourceSelectorState extends State<VideoSourceSelector>
               onPressed: source.isAvailable
                   ? () {
                       widget.onSourceSelected(source);
-                      Navigator.pop(context);
                     }
                   : null,
               style: ElevatedButton.styleFrom(
@@ -188,54 +194,8 @@ class _VideoSourceSelectorState extends State<VideoSourceSelector>
             ),
           ),
           const SizedBox(height: 16),
-          const Text(
-            '剧集列表',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 12),
-          // 这里可以添加剧集列表
-          _buildEpisodeGrid(),
         ],
       ),
-    );
-  }
-
-  Widget _buildEpisodeGrid() {
-    // 模拟剧集数据
-    final episodes = List.generate(12, (index) => index + 1);
-
-    return GridView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 4,
-        childAspectRatio: 2,
-        crossAxisSpacing: 8,
-        mainAxisSpacing: 8,
-      ),
-      itemCount: episodes.length,
-      itemBuilder: (context, index) {
-        return InkWell(
-          onTap: () {
-            // 处理剧集点击
-          },
-          child: Container(
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: AppColors.background,
-              borderRadius: BorderRadius.circular(6),
-              border: Border.all(color: AppColors.divider, width: 1),
-            ),
-            child: Text(
-              '第${episodes[index]}集',
-              style: const TextStyle(
-                fontSize: 13,
-                color: AppColors.textPrimary,
-              ),
-            ),
-          ),
-        );
-      },
     );
   }
 }

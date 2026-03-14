@@ -38,6 +38,10 @@ dependencies:
   # 网络请求
   dio: ^5.7.0
   
+  # HTML解析
+  html: ^0.15.4
+  xpath_selector_html_parser: ^3.0.0
+  
   # 本地存储
   shared_preferences: ^2.3.3
   
@@ -76,6 +80,11 @@ flutter:
   # included with your application, so that you can use the icons in
   # the material Icons class.
   uses-material-design: true
+
+  # 资源文件
+  assets:
+    - assets/plugins/
+    - assets/icons/
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

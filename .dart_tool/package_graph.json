@@ -13,8 +13,10 @@
         "dio",
         "flutter",
         "flutter_localizations",
+        "html",
         "intl",
-        "shared_preferences"
+        "shared_preferences",
+        "xpath_selector_html_parser"
       ],
       "devDependencies": [
         "flutter_launcher_icons",
@@ -107,6 +109,22 @@
         "shared_preferences_platform_interface",
         "shared_preferences_web",
         "shared_preferences_windows"
+      ]
+    },
+    {
+      "name": "xpath_selector_html_parser",
+      "version": "3.0.1",
+      "dependencies": [
+        "html",
+        "xpath_selector"
+      ]
+    },
+    {
+      "name": "html",
+      "version": "0.15.6",
+      "dependencies": [
+        "csslib",
+        "source_span"
       ]
     },
     {
@@ -375,6 +393,29 @@
       ]
     },
     {
+      "name": "xpath_selector",
+      "version": "3.0.2",
+      "dependencies": [
+        "expressions"
+      ]
+    },
+    {
+      "name": "source_span",
+      "version": "1.10.2",
+      "dependencies": [
+        "collection",
+        "path",
+        "term_glyph"
+      ]
+    },
+    {
+      "name": "csslib",
+      "version": "1.0.2",
+      "dependencies": [
+        "source_span"
+      ]
+    },
+    {
       "name": "dio_web_adapter",
       "version": "2.1.2",
       "dependencies": [
@@ -429,15 +470,6 @@
       "version": "1.4.1",
       "dependencies": [
         "source_span"
-      ]
-    },
-    {
-      "name": "source_span",
-      "version": "1.10.2",
-      "dependencies": [
-        "collection",
-        "path",
-        "term_glyph"
       ]
     },
     {
@@ -595,6 +627,16 @@
       ]
     },
     {
+      "name": "expressions",
+      "version": "0.2.5+3",
+      "dependencies": [
+        "meta",
+        "petitparser",
+        "quiver",
+        "rxdart"
+      ]
+    },
+    {
       "name": "typed_data",
       "version": "1.4.0",
       "dependencies": [
@@ -710,6 +752,13 @@
       "dependencies": [
         "meta",
         "path"
+      ]
+    },
+    {
+      "name": "quiver",
+      "version": "3.2.2",
+      "dependencies": [
+        "matcher"
       ]
     },
     {

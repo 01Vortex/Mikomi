@@ -25,17 +25,17 @@ class _BangumiDetailPageState extends State<BangumiDetailPage>
   late TabController _tabController;
   final ScrollController _scrollController = ScrollController();
   final BangumiDetailService _detailService = BangumiDetailService();
+
   bool _showTitle = false;
   late BangumiItem _bangumiItem;
   bool _commentsLoaded = false;
   CollectionStatus _collectionStatus = CollectionStatus.wish;
 
-  // 模拟视频源数据
+  // 固定的视频源列表
   final List<VideoSource> _videoSources = [
-    VideoSource(name: '7sefun', latency: 85, isAvailable: true),
-    VideoSource(name: 'AGE', latency: 120, isAvailable: true),
-    VideoSource(name: 'DM84', latency: 95, isAvailable: true),
-    VideoSource(name: 'Bilibili', latency: 350, isAvailable: false),
+    VideoSource(name: '7sefun', latency: 0, isAvailable: true),
+    VideoSource(name: 'AGE', latency: 0, isAvailable: true),
+    VideoSource(name: 'DM84', latency: 0, isAvailable: true),
   ];
 
   @override
@@ -170,8 +170,10 @@ class _BangumiDetailPageState extends State<BangumiDetailPage>
           const SizedBox(height: 12),
           PlayButton(
             videoSources: _videoSources,
+            animeTitle: _bangumiItem.displayName,
+            bangumiId: _bangumiItem.id,
             onPlay: () {
-              print('开始播放');
+              // 播放回调
             },
           ),
         ],
