@@ -31,11 +31,11 @@ class _BangumiDetailPageState extends State<BangumiDetailPage>
   bool _commentsLoaded = false;
   CollectionStatus _collectionStatus = CollectionStatus.wish;
 
-  // 固定的视频源列表
+  // 视频源列表（从插件动态加载）
   final List<VideoSource> _videoSources = [
-    VideoSource(name: '7sefun', latency: 0, isAvailable: true),
-    VideoSource(name: 'AGE', latency: 0, isAvailable: true),
-    VideoSource(name: 'DM84', latency: 0, isAvailable: true),
+    VideoSource(name: 'DM84'),
+    VideoSource(name: '7sefun'),
+    VideoSource(name: 'AGE'),
   ];
 
   @override

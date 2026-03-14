@@ -35,8 +35,8 @@ class AppBottomNavigation extends StatelessWidget {
                 index: 0,
               ),
               _buildNavItem(
-                icon: Icons.add_circle_outline,
-                activeIcon: Icons.add_circle,
+                icon: Icons.bug_report_outlined,
+                activeIcon: Icons.bug_report,
                 index: 1,
               ),
               _buildNavItem(

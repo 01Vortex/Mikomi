@@ -33,8 +33,7 @@ class _EpisodeListWidgetState extends State<EpisodeListWidget> {
   @override
   void initState() {
     super.initState();
-    _currentSource =
-        widget.videoSources?.first ?? VideoSource(name: '默认源', latency: 0);
+    _currentSource = widget.videoSources?.first ?? VideoSource(name: '默认源');
   }
 
   List<Episode> get _sortedEpisodes {
@@ -76,30 +75,14 @@ class _EpisodeListWidgetState extends State<EpisodeListWidget> {
             ...widget.videoSources!.map((source) {
               final isSelected = source.name == _currentSource.name;
               return ListTile(
-                leading: Container(
-                  width: 8,
-                  height: 8,
-                  decoration: BoxDecoration(
-                    color: source.isAvailable
-                        ? (source.latency < 100
-                              ? Colors.green
-                              : source.latency < 300
-                              ? Colors.orange
-                              : Colors.red)
-                        : AppColors.textHint,
-                    shape: BoxShape.circle,
-                  ),
+                leading: const Icon(
+                  Icons.play_circle_outline,
+                  color: AppColors.primary,
                 ),
                 title: Text(source.name),
                 trailing: isSelected
                     ? const Icon(Icons.check, color: AppColors.primary)
-                    : Text(
-                        '${source.latency}ms',
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
+                    : null,
                 onTap: () {
                   setState(() {
                     _currentSource = source;

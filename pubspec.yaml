@@ -55,6 +55,14 @@ dependencies:
   flutter_localizations:
     sdk: flutter
   intl: 0.20.2
+  
+  # 视频播放器
+  media_kit: ^1.1.11
+  media_kit_video: ^1.2.5
+  media_kit_libs_video: ^1.0.5
+  
+  # Android视频解码库
+  media_kit_libs_android_video: ^1.3.6
 
 dev_dependencies:
   flutter_test:

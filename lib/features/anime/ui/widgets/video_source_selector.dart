@@ -1,26 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:mikomi/config/themes/app_colors.dart';
+import 'package:mikomi/features/video/data/repositories/video_source_repository.dart';
 
 class VideoSource {
   final String name;
-  final int latency;
-  final bool isAvailable;
 
-  VideoSource({
-    required this.name,
-    required this.latency,
-    this.isAvailable = true,
-  });
+  VideoSource({required this.name});
 }
 
 class VideoSourceSelector extends StatefulWidget {
   final List<VideoSource> sources;
   final Function(VideoSource) onSourceSelected;
+  final String? animeTitle;
 
   const VideoSourceSelector({
     super.key,
     required this.sources,
     required this.onSourceSelected,
+    this.animeTitle,
   });
 
   @override
@@ -28,25 +25,29 @@ class VideoSourceSelector extends StatefulWidget {
 }
 
 class _VideoSourceSelectorState extends State<VideoSourceSelector>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   late TabController _tabController;
+  late List<VideoSource> _sources;
+  final VideoSourceRepository _videoSourceRepo = VideoSourceRepository();
+  final Map<String, bool> _sourceAvailability = {};
+  final Map<String, int> _sourceEpisodeCount = {};
+  bool _isChecking = false;
 
   @override
   void initState() {
     super.initState();
-    // 去重并按名称排序
     final uniqueSources = <String, VideoSource>{};
     for (var source in widget.sources) {
       uniqueSources[source.name] = source;
     }
-    final sortedSources = uniqueSources.values.toList()
-      ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+    _sources = uniqueSources.values.toList();
 
-    _tabController = TabController(length: sortedSources.length, vsync: this);
-    _sources = sortedSources;
+    _tabController = TabController(length: _sources.length, vsync: this);
+
+    if (widget.animeTitle != null && widget.animeTitle!.isNotEmpty) {
+      _checkSourcesAvailability();
+    }
   }
-
-  late final List<VideoSource> _sources;
 
   @override
   void dispose() {
@@ -54,13 +55,64 @@ class _VideoSourceSelectorState extends State<VideoSourceSelector>
     super.dispose();
   }
 
-  Color _getLatencyColor(int latency) {
-    if (latency < 100) {
-      return Colors.green;
-    } else if (latency < 300) {
-      return Colors.orange;
-    } else {
-      return Colors.red;
+  Future<void> _checkSourcesAvailability() async {
+    if (_isChecking) return;
+
+    setState(() => _isChecking = true);
+
+    await Future.wait(
+      _sources.map((source) async {
+        try {
+          final episodes = await _videoSourceRepo
+              .searchAndGetEpisodes(widget.animeTitle!, source.name)
+              .timeout(const Duration(seconds: 10), onTimeout: () => []);
+
+          if (mounted) {
+            setState(() {
+              _sourceAvailability[source.name] = episodes.isNotEmpty;
+              _sourceEpisodeCount[source.name] = episodes.length;
+            });
+          }
+        } catch (e) {
+          if (mounted) {
+            setState(() {
+              _sourceAvailability[source.name] = false;
+              _sourceEpisodeCount[source.name] = 0;
+            });
+          }
+        }
+      }),
+    );
+
+    if (mounted) {
+      // 保存当前选中的tab索引
+      final currentIndex = _tabController.index;
+      final currentSourceName = _sources[currentIndex].name;
+
+      setState(() {
+        _isChecking = false;
+        // 按资源可用性排序
+        _sources.sort((a, b) {
+          final aHasResource = _sourceAvailability[a.name] ?? false;
+          final bHasResource = _sourceAvailability[b.name] ?? false;
+          if (aHasResource && !bHasResource) return -1;
+          if (!aHasResource && bHasResource) return 1;
+          return a.name.compareTo(b.name);
+        });
+
+        // 找到之前选中的源在新列表中的位置
+        final newIndex = _sources.indexWhere(
+          (s) => s.name == currentSourceName,
+        );
+
+        // 重新创建TabController
+        _tabController.dispose();
+        _tabController = TabController(
+          length: _sources.length,
+          vsync: this,
+          initialIndex: newIndex >= 0 ? newIndex : 0,
+        );
+      });
     }
   }
 
@@ -99,6 +151,7 @@ class _VideoSourceSelectorState extends State<VideoSourceSelector>
               fontWeight: FontWeight.normal,
             ),
             tabs: _sources.map((source) {
+              final hasResource = _sourceAvailability[source.name];
               return Tab(
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -109,8 +162,10 @@ class _VideoSourceSelectorState extends State<VideoSourceSelector>
                       width: 8,
                       height: 8,
                       decoration: BoxDecoration(
-                        color: source.isAvailable
-                            ? _getLatencyColor(source.latency)
+                        color: hasResource == true
+                            ? Colors.green
+                            : hasResource == false
+                            ? Colors.red
                             : AppColors.textHint,
                         shape: BoxShape.circle,
                       ),
@@ -136,50 +191,58 @@ class _VideoSourceSelectorState extends State<VideoSourceSelector>
   }
 
   Widget _buildSourceContent(VideoSource source) {
+    final hasResource = _sourceAvailability[source.name];
+    final episodeCount = _sourceEpisodeCount[source.name] ?? 0;
+    final isChecking =
+        _isChecking && !_sourceAvailability.containsKey(source.name);
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              const Text(
-                '延迟:',
-                style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
-              ),
-              const SizedBox(width: 8),
-              Text(
-                '${source.latency}ms',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                  color: _getLatencyColor(source.latency),
+          if (isChecking)
+            const Row(
+              children: [
+                SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2),
                 ),
-              ),
-              const Spacer(),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: source.isAvailable
-                      ? Colors.green.withValues(alpha: 0.1)
-                      : Colors.red.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: Text(
-                  source.isAvailable ? '可用' : '不可用',
+                SizedBox(width: 12),
+                Text(
+                  '正在检查资源...',
                   style: TextStyle(
-                    fontSize: 12,
-                    color: source.isAvailable ? Colors.green : Colors.red,
+                    fontSize: 14,
+                    color: AppColors.textSecondary,
                   ),
                 ),
-              ),
-            ],
-          ),
+              ],
+            )
+          else if (hasResource != null)
+            Row(
+              children: [
+                Icon(
+                  hasResource ? Icons.check_circle : Icons.cancel,
+                  color: hasResource ? Colors.green : Colors.red,
+                  size: 20,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  hasResource ? '找到 $episodeCount 集' : '未找到资源',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: hasResource ? Colors.green : Colors.red,
+                  ),
+                ),
+              ],
+            ),
           const SizedBox(height: 24),
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
-              onPressed: source.isAvailable
+              onPressed: (hasResource ?? false) && !isChecking
                   ? () {
                       widget.onSourceSelected(source);
                     }

@@ -145,7 +145,7 @@ class _PlayButtonState extends State<PlayButton> {
 
   void _showVideoSourceSelector(BuildContext context) {
     if (widget.videoSources == null || widget.videoSources!.isEmpty) {
-      _loadAndNavigate(context, null);
+      _loadAndNavigate(null);
       return;
     }
 
@@ -155,20 +155,22 @@ class _PlayButtonState extends State<PlayButton> {
       backgroundColor: Colors.transparent,
       builder: (context) => VideoSourceSelector(
         sources: widget.videoSources!,
+        animeTitle: widget.animeTitle,
         onSourceSelected: (source) {
           Navigator.pop(context);
-          _loadAndNavigate(context, source.name);
+          _loadAndNavigate(source.name);
         },
       ),
     );
   }
 
-  Future<void> _loadAndNavigate(
-    BuildContext context,
-    String? pluginName,
-  ) async {
-    if (!mounted) return;
+  Future<void> _loadAndNavigate(String? pluginName) async {
+    if (!mounted) {
+      debugPrint('组件未挂载，退出');
+      return;
+    }
 
+    debugPrint('开始加载剧集，插件: $pluginName');
     setState(() => _isLoading = true);
 
     try {
@@ -178,25 +180,32 @@ class _PlayButtonState extends State<PlayButton> {
         await _loadBangumiEpisodes();
       }
 
-      if (!mounted) return;
+      if (!mounted) {
+        debugPrint('加载后组件未挂载，退出');
+        return;
+      }
 
       setState(() => _isLoading = false);
 
+      debugPrint('加载完成，集数: ${_episodes?.length}');
+
       if (_episodes == null || _episodes!.isEmpty) {
-        if (mounted && context.mounted) {
+        debugPrint('未找到剧集数据');
+        if (mounted) {
           MessageDialog.warning(context, '未找到剧集数据');
         }
         return;
       }
 
-      if (!mounted || !context.mounted) return;
+      if (!mounted) return;
 
+      debugPrint('准备跳转到视频页面');
       Navigator.push(
         context,
         MaterialPageRoute(
           builder: (context) => VideoPage(
             title: widget.animeTitle ?? '视频播放',
-            videoUrl: '',
+            videoUrl: _episodes!.first.url ?? '',
             currentEpisode: 1,
             episodes: _episodes!,
             videoSources: widget.videoSources ?? const [],
@@ -204,9 +213,10 @@ class _PlayButtonState extends State<PlayButton> {
         ),
       );
       widget.onPlay?.call();
-    } catch (e) {
+    } catch (e, stackTrace) {
       debugPrint('加载失败: $e');
-      if (mounted && context.mounted) {
+      debugPrint('堆栈: $stackTrace');
+      if (mounted) {
         setState(() => _isLoading = false);
         MessageDialog.error(context, '加载失败，请重试');
       }
