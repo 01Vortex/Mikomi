@@ -6,6 +6,8 @@ import 'package:mikomi/core/models/staff_item.dart';
 import 'package:mikomi/core/network/dio_client.dart';
 import 'package:mikomi/features/anime/data/datasources/detail_remote_datasource.dart';
 import 'package:mikomi/features/anime/data/repositories/detail_repository_impl.dart';
+import 'package:mikomi/features/anime/ui/pages/character_detail_page.dart';
+import 'package:mikomi/features/anime/ui/pages/person_detail_page.dart';
 import 'package:mikomi/shared/widgets/cached_image.dart';
 import 'package:mikomi/shared/widgets/scrolling_text.dart';
 
@@ -39,6 +41,8 @@ class _AnimeDetailTabState extends State<AnimeDetailTab> {
       _isLoadingStaff = true;
     });
 
+    print('开始加载角色和制作人员数据，番剧ID: ${widget.bangumiItem.id}');
+
     final results = await Future.wait([
       _repository.getCharacters(widget.bangumiItem.id),
       _repository.getStaff(widget.bangumiItem.id),
@@ -47,6 +51,8 @@ class _AnimeDetailTabState extends State<AnimeDetailTab> {
     if (mounted) {
       final characters = results[0] as List<CharacterItem>;
       final staff = results[1] as List<StaffItem>;
+
+      print('加载完成 - 角色数量: ${characters.length}, 制作人员数量: ${staff.length}');
 
       // 角色排序：主角 > 配角 > 客串 > 其他
       characters.sort((a, b) {
@@ -87,20 +93,9 @@ class _AnimeDetailTabState extends State<AnimeDetailTab> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                '角色',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-              if (_characters.isNotEmpty)
-                Icon(
-                  Icons.arrow_forward_ios,
-                  size: 16,
-                  color: AppColors.textSecondary,
-                ),
-            ],
+          const Text(
+            '角色',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 12),
           if (_isLoadingCharacters)
@@ -123,20 +118,9 @@ class _AnimeDetailTabState extends State<AnimeDetailTab> {
           else
             _buildHorizontalGrid(_characters, _buildCharacterCard),
           const SizedBox(height: 32),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                '制作人员',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-              if (_staff.isNotEmpty)
-                Icon(
-                  Icons.arrow_forward_ios,
-                  size: 16,
-                  color: AppColors.textSecondary,
-                ),
-            ],
+          const Text(
+            '制作人员',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 12),
           if (_isLoadingStaff)
@@ -206,111 +190,41 @@ class _AnimeDetailTabState extends State<AnimeDetailTab> {
   }
 
   Widget _buildCharacterCard(CharacterItem character) {
-    return SizedBox(
-      width: 160,
-      child: Row(
-        children: [
-          ClipOval(
-            child: CachedImage(
-              imageUrl: character.images.medium,
-              width: 60,
-              height: 60,
-              fit: BoxFit.cover,
+    return InkWell(
+      onTap: () {
+        print('点击角色卡片: ${character.name}');
+        _showCharacterDetail(context, character.id);
+      },
+      child: SizedBox(
+        width: 160,
+        child: Row(
+          children: [
+            ClipOval(
+              child: CachedImage(
+                imageUrl: character.images.medium,
+                width: 60,
+                height: 60,
+                fit: BoxFit.cover,
+              ),
             ),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: ScrollingText(
-                        text: character.name,
-                        style: const TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w500,
-                        ),
-                        height: 18,
-                      ),
-                    ),
-                    const SizedBox(width: 4),
-                    Flexible(
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppColors.divider,
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Text(
-                          character.relation,
+            const SizedBox(width: 8),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: ScrollingText(
+                          text: character.name,
                           style: const TextStyle(
-                            fontSize: 10,
-                            color: AppColors.textSecondary,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
                           ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                          height: 18,
                         ),
                       ),
-                    ),
-                  ],
-                ),
-                if (character.actors.isNotEmpty) ...[
-                  const SizedBox(height: 4),
-                  ScrollingText(
-                    text: character.actors.first.name,
-                    style: const TextStyle(
-                      fontSize: 11,
-                      color: AppColors.textSecondary,
-                    ),
-                    height: 15,
-                  ),
-                ],
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStaffCard(StaffItem staffItem) {
-    return SizedBox(
-      width: 160,
-      child: Row(
-        children: [
-          ClipOval(
-            child: CachedImage(
-              imageUrl: staffItem.staff.images?.medium ?? '',
-              width: 60,
-              height: 60,
-              fit: BoxFit.cover,
-            ),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: ScrollingText(
-                        text: staffItem.staff.name,
-                        style: const TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w500,
-                        ),
-                        height: 18,
-                      ),
-                    ),
-                    if (staffItem.positionText.isNotEmpty) ...[
                       const SizedBox(width: 4),
                       Flexible(
                         child: Container(
@@ -323,7 +237,7 @@ class _AnimeDetailTabState extends State<AnimeDetailTab> {
                             borderRadius: BorderRadius.circular(4),
                           ),
                           child: Text(
-                            staffItem.positionText,
+                            character.relation,
                             style: const TextStyle(
                               fontSize: 10,
                               color: AppColors.textSecondary,
@@ -334,24 +248,130 @@ class _AnimeDetailTabState extends State<AnimeDetailTab> {
                         ),
                       ),
                     ],
-                  ],
-                ),
-                if (staffItem.staff.nameCN.isNotEmpty) ...[
-                  const SizedBox(height: 4),
-                  ScrollingText(
-                    text: staffItem.staff.nameCN,
-                    style: const TextStyle(
-                      fontSize: 11,
-                      color: AppColors.textSecondary,
-                    ),
-                    height: 15,
                   ),
+                  if (character.actors.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    ScrollingText(
+                      text: character.actors.first.name,
+                      style: const TextStyle(
+                        fontSize: 11,
+                        color: AppColors.textSecondary,
+                      ),
+                      height: 15,
+                    ),
+                  ],
                 ],
-              ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
+
+  Widget _buildStaffCard(StaffItem staffItem) {
+    return InkWell(
+      onTap: () {
+        print('点击制作人员卡片: ${staffItem.staff.name}');
+        _showPersonDetail(context, staffItem.staff.id);
+      },
+      child: SizedBox(
+        width: 160,
+        child: Row(
+          children: [
+            ClipOval(
+              child: CachedImage(
+                imageUrl: staffItem.staff.images?.medium ?? '',
+                width: 60,
+                height: 60,
+                fit: BoxFit.cover,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: ScrollingText(
+                          text: staffItem.staff.name,
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                          ),
+                          height: 18,
+                        ),
+                      ),
+                      if (staffItem.positionText.isNotEmpty) ...[
+                        const SizedBox(width: 4),
+                        Flexible(
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppColors.divider,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(
+                              staffItem.positionText,
+                              style: const TextStyle(
+                                fontSize: 10,
+                                color: AppColors.textSecondary,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                  if (staffItem.staff.nameCN.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    ScrollingText(
+                      text: staffItem.staff.nameCN,
+                      style: const TextStyle(
+                        fontSize: 11,
+                        color: AppColors.textSecondary,
+                      ),
+                      height: 15,
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+void _showCharacterDetail(BuildContext context, int characterId) {
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+    builder: (context) => SizedBox(
+      height: MediaQuery.of(context).size.height * 0.75,
+      child: CharacterDetailPage(characterId: characterId),
+    ),
+  );
+}
+
+void _showPersonDetail(BuildContext context, int personId) {
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+    builder: (context) => SizedBox(
+      height: MediaQuery.of(context).size.height * 0.75,
+      child: PersonDetailPage(personId: personId),
+    ),
+  );
 }
