@@ -180,16 +180,11 @@ class _SearchPageState extends State<SearchPage> {
               onTap: _handleHistoryTap,
               onClear: _clearHistory,
             ),
-            if (_isLoadingRankings)
-              const Padding(
-                padding: EdgeInsets.all(32),
-                child: CircularProgressIndicator(),
-              )
-            else if (_popularityRankings.isNotEmpty)
-              PopularityRankingView(
-                rankings: _popularityRankings,
-                onTap: _handleRankingTap,
-              ),
+            PopularityRankingView(
+              rankings: _popularityRankings,
+              onTap: _handleRankingTap,
+              isLoading: _isLoadingRankings,
+            ),
             const SizedBox(height: 16),
           ],
         ),

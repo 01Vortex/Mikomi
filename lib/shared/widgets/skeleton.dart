@@ -22,13 +22,12 @@ class _SkeletonLoaderState extends State<SkeletonLoader>
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1500),
+      duration: const Duration(milliseconds: 1200),
     )..repeat();
 
-    _animation = Tween<double>(
-      begin: -1.0,
-      end: 2.0,
-    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
+    _animation = Tween<double>(begin: -2.0, end: 2.0).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOutSine),
+    );
   }
 
   @override
@@ -51,15 +50,15 @@ class _SkeletonLoaderState extends State<SkeletonLoader>
               begin: Alignment.centerLeft,
               end: Alignment.centerRight,
               colors: const [
-                AppColors.divider,
-                Color(0xFFE0E0E0),
-                AppColors.divider,
+                Color(0xFFE8E8E8),
+                Color(0xFFF5F5F5),
+                Color(0xFFE8E8E8),
               ],
               stops: [
-                _animation.value - 0.3,
-                _animation.value,
-                _animation.value + 0.3,
-              ].map((e) => e.clamp(0.0, 1.0)).toList(),
+                (_animation.value - 0.5).clamp(0.0, 1.0),
+                _animation.value.clamp(0.0, 1.0),
+                (_animation.value + 0.5).clamp(0.0, 1.0),
+              ],
             ),
           ),
         );

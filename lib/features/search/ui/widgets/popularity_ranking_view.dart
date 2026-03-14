@@ -2,15 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:mikomi/config/themes/app_colors.dart';
 import 'package:mikomi/core/models/bangumi_item.dart';
 import 'package:mikomi/config/localization/app_localizations.dart';
+import 'package:mikomi/shared/widgets/skeleton.dart';
 
 class PopularityRankingView extends StatelessWidget {
   final List<BangumiItem> rankings;
   final ValueChanged<BangumiItem> onTap;
+  final bool isLoading;
 
   const PopularityRankingView({
     super.key,
     required this.rankings,
     required this.onTap,
+    this.isLoading = false,
   });
 
   @override
@@ -26,17 +29,60 @@ class PopularityRankingView extends StatelessWidget {
             style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
           ),
         ),
-        ListView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          itemCount: rankings.length,
-          itemBuilder: (context, index) {
-            final item = rankings[index];
-            return _buildRankingItem(item, index + 1);
-          },
-        ),
+        if (isLoading)
+          _buildSkeleton()
+        else
+          ListView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            itemCount: rankings.length,
+            itemBuilder: (context, index) {
+              final item = rankings[index];
+              return _buildRankingItem(item, index + 1);
+            },
+          ),
       ],
+    );
+  }
+
+  Widget _buildSkeleton() {
+    return ListView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      itemCount: 10,
+      itemBuilder: (context, index) {
+        return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Row(
+            children: [
+              SkeletonLoader(
+                width: 24,
+                height: 24,
+                borderRadius: BorderRadius.circular(4),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SkeletonText(width: double.infinity, height: 14),
+                    const SizedBox(height: 4),
+                    SkeletonText(width: 80, height: 12),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+              SkeletonLoader(
+                width: 20,
+                height: 20,
+                borderRadius: BorderRadius.circular(4),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 

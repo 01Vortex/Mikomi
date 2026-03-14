@@ -7,6 +7,9 @@ import 'package:mikomi/features/anime/ui/widgets/anime_overview_tab.dart';
 import 'package:mikomi/features/anime/ui/widgets/anime_detail_tab.dart';
 import 'package:mikomi/features/anime/ui/widgets/anime_tucao_tab.dart';
 import 'package:mikomi/features/anime/ui/widgets/anime_comments_tab.dart';
+import 'package:mikomi/features/anime/ui/widgets/collection_status_selector.dart';
+import 'package:mikomi/features/anime/ui/widgets/play_button.dart';
+import 'package:mikomi/features/anime/ui/widgets/video_source_selector.dart';
 
 class BangumiDetailPage extends StatefulWidget {
   final BangumiItem bangumiItem;
@@ -25,6 +28,15 @@ class _BangumiDetailPageState extends State<BangumiDetailPage>
   bool _showTitle = false;
   late BangumiItem _bangumiItem;
   bool _commentsLoaded = false;
+  CollectionStatus _collectionStatus = CollectionStatus.wish;
+
+  // 模拟视频源数据
+  final List<VideoSource> _videoSources = [
+    VideoSource(name: '7sefun', latency: 85, isAvailable: true),
+    VideoSource(name: 'AGE', latency: 120, isAvailable: true),
+    VideoSource(name: 'DM84', latency: 95, isAvailable: true),
+    VideoSource(name: 'Bilibili', latency: 350, isAvailable: false),
+  ];
 
   @override
   void initState() {
@@ -144,10 +156,25 @@ class _BangumiDetailPageState extends State<BangumiDetailPage>
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        icon: const Icon(Icons.play_arrow_rounded),
-        label: const Text('开始观看'),
-        onPressed: () {},
+      floatingActionButton: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          CollectionStatusSelector(
+            currentStatus: _collectionStatus,
+            onStatusChanged: (status) {
+              setState(() {
+                _collectionStatus = status;
+              });
+            },
+          ),
+          const SizedBox(height: 12),
+          PlayButton(
+            videoSources: _videoSources,
+            onPlay: () {
+              print('开始播放');
+            },
+          ),
+        ],
       ),
     );
   }
