@@ -3,6 +3,7 @@ import 'package:mikomi/config/themes/app_colors.dart';
 import 'package:mikomi/core/models/bangumi_item.dart';
 import 'package:mikomi/shared/widgets/anime_grid_card.dart';
 import 'package:mikomi/config/localization/app_localizations.dart';
+import 'package:mikomi/config/routes/app_routes.dart';
 
 class SearchResultsView extends StatelessWidget {
   final List<BangumiItem> results;
@@ -53,7 +54,13 @@ class SearchResultsView extends StatelessWidget {
         return AnimeGridCard(
           title: item.displayName,
           imageUrl: item.coverUrl,
-          onTap: () {},
+          onTap: () {
+            Navigator.pushNamed(
+              context,
+              AppRoutes.bangumiDetail,
+              arguments: item,
+            );
+          },
         );
       },
     );
