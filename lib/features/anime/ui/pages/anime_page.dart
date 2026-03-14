@@ -24,6 +24,7 @@ class _BangumiDetailPageState extends State<BangumiDetailPage>
   final BangumiDetailService _detailService = BangumiDetailService();
   bool _showTitle = false;
   late BangumiItem _bangumiItem;
+  bool _commentsLoaded = false;
 
   @override
   void initState() {
@@ -31,7 +32,17 @@ class _BangumiDetailPageState extends State<BangumiDetailPage>
     _bangumiItem = widget.bangumiItem;
     _tabController = TabController(length: 4, vsync: this);
     _scrollController.addListener(_onScroll);
+    _tabController.addListener(_onTabChanged);
     _loadDetailInfo();
+  }
+
+  void _onTabChanged() {
+    // 当切换到吐槽tab时标记为已加载
+    if (_tabController.index == 2) {
+      setState(() {
+        _commentsLoaded = true;
+      });
+    }
   }
 
   Future<void> _loadDetailInfo() async {
@@ -124,7 +135,9 @@ class _BangumiDetailPageState extends State<BangumiDetailPage>
           children: [
             AnimeOverviewTab(bangumiItem: _bangumiItem),
             AnimeDetailTab(bangumiItem: _bangumiItem),
-            const AnimeTucaoTab(),
+            _commentsLoaded
+                ? AnimeTucaoTab(bangumiItem: _bangumiItem)
+                : const Center(child: Text('切换到此标签页加载评论')),
             const AnimeCommentsTab(),
           ],
         ),
