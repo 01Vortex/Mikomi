@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:mikomi/config/themes/app_colors.dart';
 import 'package:mikomi/features/video/ui/widgets/media_kit_player_widget.dart';
 
 class VideoPlayerWidget extends StatefulWidget {
