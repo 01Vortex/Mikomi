@@ -17,34 +17,47 @@ class VideoSourceRepository {
     try {
       final plugin = _pluginService.getPluginByName(pluginName);
       if (plugin == null) {
-        debugPrint('插件 $pluginName 不存在');
+        debugPrint('[$pluginName] 插件不存在');
         return [];
+      }
+
+      // 对于useWebview的插件，暂时跳过搜索检查
+      // TODO: 实现WebView搜索支持
+      if (plugin.useWebview) {
+        debugPrint('[$pluginName] 插件需要WebView，暂时跳过搜索检查');
+        // 返回一个虚拟的Episode表示资源可能存在
+        return [Episode.fromRoadData(index: 0, identifier: '待确认', url: '')];
       }
 
       // 搜索动漫
-      debugPrint('开始搜索: $keyword');
+      debugPrint('[$pluginName] 开始搜索: $keyword');
       final searchResults = await _datasource.search(keyword, plugin);
+
       if (searchResults.isEmpty) {
-        debugPrint('未找到搜索结果');
+        debugPrint('[$pluginName] 未找到搜索结果');
         return [];
       }
 
-      debugPrint('找到 ${searchResults.length} 个搜索结果');
+      debugPrint('[$pluginName] 找到 ${searchResults.length} 个搜索结果');
 
       // 获取第一个结果的剧集列表
       final firstResult = searchResults.first;
-      debugPrint('获取剧集列表: ${firstResult.name}');
+      debugPrint('[$pluginName] 获取剧集列表: ${firstResult.name}');
+      debugPrint('[$pluginName] 剧集URL: ${firstResult.url}');
+
       final roads = await _datasource.getRoads(firstResult.url, plugin);
 
       if (roads.isEmpty) {
-        debugPrint('未找到剧集列表');
+        debugPrint('[$pluginName] 未找到剧集列表');
         return [];
       }
 
-      debugPrint('成功获取 ${roads.length} 个播放列表');
+      debugPrint('[$pluginName] 成功获取 ${roads.length} 个播放列表');
 
       // 转换为Episode列表（不解析视频地址，只返回原始URL）
       final firstRoad = roads.first;
+      debugPrint('[$pluginName] 第一个播放列表有 ${firstRoad.data.length} 集');
+
       final episodes = <Episode>[];
 
       for (int i = 0; i < firstRoad.data.length; i++) {
@@ -59,10 +72,11 @@ class VideoSourceRepository {
         );
       }
 
-      debugPrint('转换为 ${episodes.length} 集');
+      debugPrint('[$pluginName] 转换为 ${episodes.length} 集');
       return episodes;
-    } catch (e) {
-      debugPrint('搜索并获取剧集失败: $e');
+    } catch (e, stackTrace) {
+      debugPrint('[$pluginName] 搜索并获取剧集失败: $e');
+      debugPrint('[$pluginName] 堆栈: $stackTrace');
       return [];
     }
   }

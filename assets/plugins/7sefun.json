@@ -2,7 +2,7 @@
     "api": "4",
     "type": "anime",
     "name": "7sefun",
-    "version": "1.2",
+    "version": "1.3",
     "muliSources": true,
     "useWebview": true,
     "useNativePlayer": true,
@@ -10,9 +10,9 @@
     "userAgent": "",
     "baseURL": "https://www.7sefun.top/",
     "searchURL": "https://www.7sefun.top/vodsearch/-------------.html?wd=@keyword",
-    "searchList": "//div[2]/div[2]/div[2]/div[2]/div",
-    "searchName": "//div[2]/text()",
-    "searchResult": "//a",
-    "chapterRoads": "//div[2]/div[2]/div[2]/div/div[2]/div[1]/div[2]",
+    "searchList": "//div[@class='videos']/div",
+    "searchName": ".//text()",
+    "searchResult": ".//a",
+    "chapterRoads": "//div[@class='message-container vod-play-list-container']",
     "chapterResult": "//a"
 }

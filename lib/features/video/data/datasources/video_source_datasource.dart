@@ -20,8 +20,9 @@ class SearchResult {
 class VideoSourceDatasourceImpl implements VideoSourceDatasource {
   final Dio _dio = Dio(
     BaseOptions(
-      connectTimeout: const Duration(seconds: 30),
-      receiveTimeout: const Duration(seconds: 30),
+      connectTimeout: const Duration(seconds: 15),
+      receiveTimeout: const Duration(seconds: 15),
+      sendTimeout: const Duration(seconds: 15),
     ),
   );
 
@@ -77,6 +78,60 @@ class VideoSourceDatasourceImpl implements VideoSourceDatasource {
           final searchNodes = htmlElement.queryXPath(plugin.searchList).nodes;
           debugPrint('找到 ${searchNodes.length} 个搜索结果节点');
 
+          if (searchNodes.isEmpty) {
+            debugPrint('警告: 未找到搜索结果节点,可能XPath不正确');
+
+            // 查找videos容器的子元素
+            try {
+              final videosNodes = htmlElement
+                  .queryXPath("//div[@class='videos']")
+                  .nodes;
+              if (videosNodes.isNotEmpty) {
+                debugPrint('找到videos容器');
+                final videosNode = videosNodes.first.node;
+                final children = videosNode.children;
+                debugPrint('videos有 ${children.length} 个子元素');
+                for (
+                  int i = 0;
+                  i < (children.length > 5 ? 5 : children.length);
+                  i++
+                ) {
+                  final child = children[i];
+                  final childClass = child.attributes['class'] ?? '无class';
+                  final childTag = child.localName ?? '无标签';
+                  debugPrint('  子元素$i: <$childTag> class="$childClass"');
+
+                  // 输出孙元素
+                  if (child.children.isNotEmpty) {
+                    debugPrint('    有 ${child.children.length} 个孙元素');
+                    for (
+                      int j = 0;
+                      j <
+                          (child.children.length > 3
+                              ? 3
+                              : child.children.length);
+                      j++
+                    ) {
+                      final grandChild = child.children[j];
+                      final gcClass =
+                          grandChild.attributes['class'] ?? '无class';
+                      final gcTag = grandChild.localName ?? '无标签';
+                      final gcText = grandChild.text?.trim() ?? '';
+                      final gcTextPreview = gcText.length > 30
+                          ? gcText.substring(0, 30)
+                          : gcText;
+                      debugPrint(
+                        '      孙元素$j: <$gcTag> class="$gcClass", text="$gcTextPreview"',
+                      );
+                    }
+                  }
+                }
+              }
+            } catch (e) {
+              debugPrint('查询videos容器失败: $e');
+            }
+          }
+
           for (var node in searchNodes) {
             try {
               final nameNode = node.queryXPath(plugin.searchName).node;
@@ -126,6 +181,12 @@ class VideoSourceDatasourceImpl implements VideoSourceDatasource {
       String fullUrl;
       if (url.startsWith('http')) {
         fullUrl = url;
+        // 确保使用HTTPS
+        if (fullUrl.startsWith('http://') &&
+            plugin.baseURL.startsWith('https://')) {
+          fullUrl = fullUrl.replaceFirst('http://', 'https://');
+          debugPrint('URL协议转换为HTTPS: $fullUrl');
+        }
       } else if (url.startsWith('/')) {
         fullUrl = plugin.baseURL + url;
       } else {
@@ -168,6 +229,13 @@ class VideoSourceDatasourceImpl implements VideoSourceDatasource {
           debugPrint('使用XPath: ${plugin.chapterRoads}');
           final roadNodes = htmlElement.queryXPath(plugin.chapterRoads).nodes;
           debugPrint('找到 ${roadNodes.length} 个播放列表节点');
+
+          if (roadNodes.isEmpty) {
+            debugPrint('警告: 未找到播放列表节点,可能XPath不正确');
+            debugPrint(
+              'HTML前500字符: ${htmlString.substring(0, htmlString.length > 500 ? 500 : htmlString.length)}',
+            );
+          }
 
           int count = 1;
           for (var roadNode in roadNodes) {
@@ -224,8 +292,9 @@ class VideoSourceDatasourceImpl implements VideoSourceDatasource {
         return roadList;
       }
       return [];
-    } catch (e) {
+    } catch (e, stackTrace) {
       debugPrint('获取剧集列表失败: $e');
+      debugPrint('堆栈: $stackTrace');
       return [];
     }
   }

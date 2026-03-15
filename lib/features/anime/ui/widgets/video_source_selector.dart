@@ -29,18 +29,20 @@ class _VideoSourceSelectorState extends State<VideoSourceSelector>
   late TabController _tabController;
   late List<VideoSource> _sources;
   final VideoSourceRepository _videoSourceRepo = VideoSourceRepository();
-  final Map<String, bool> _sourceAvailability = {};
+  final Map<String, bool?> _sourceAvailability = {};
   final Map<String, int> _sourceEpisodeCount = {};
   bool _isChecking = false;
 
   @override
   void initState() {
     super.initState();
+    // 去重并按名称排序
     final uniqueSources = <String, VideoSource>{};
     for (var source in widget.sources) {
       uniqueSources[source.name] = source;
     }
-    _sources = uniqueSources.values.toList();
+    _sources = uniqueSources.values.toList()
+      ..sort((a, b) => a.name.compareTo(b.name));
 
     _tabController = TabController(length: _sources.length, vsync: this);
 
@@ -60,64 +62,55 @@ class _VideoSourceSelectorState extends State<VideoSourceSelector>
 
     setState(() => _isChecking = true);
 
-    await Future.wait(
-      _sources.map((source) async {
-        try {
-          debugPrint('开始检查视频源: ${source.name}');
-          final episodes = await _videoSourceRepo
-              .searchAndGetEpisodes(widget.animeTitle!, source.name)
-              .timeout(
-                const Duration(seconds: 30),
-                onTimeout: () {
-                  debugPrint('视频源 ${source.name} 检查超时');
-                  return [];
-                },
-              );
+    // 初始化所有视频源状态为pending
+    for (var source in _sources) {
+      _sourceAvailability[source.name] = null;
+      _sourceEpisodeCount[source.name] = 0;
+    }
 
-          debugPrint('视频源 ${source.name} 检查完成: ${episodes.length} 集');
+    // 并发检查所有视频源
+    final futures = _sources.map((source) async {
+      try {
+        debugPrint('[${source.name}] 开始检查视频源');
+        final episodes = await _videoSourceRepo
+            .searchAndGetEpisodes(widget.animeTitle!, source.name)
+            .timeout(
+              const Duration(seconds: 45),
+              onTimeout: () {
+                debugPrint('[${source.name}] 检查超时');
+                return [];
+              },
+            );
 
-          if (mounted) {
-            setState(() {
-              _sourceAvailability[source.name] = episodes.isNotEmpty;
-              _sourceEpisodeCount[source.name] = episodes.length;
-            });
-          }
-        } catch (e) {
-          debugPrint('视频源 ${source.name} 检查失败: $e');
-          if (mounted) {
-            setState(() {
-              _sourceAvailability[source.name] = false;
-              _sourceEpisodeCount[source.name] = 0;
-            });
-          }
+        debugPrint('[${source.name}] 检查完成: ${episodes.length} 集');
+
+        if (mounted) {
+          setState(() {
+            _sourceAvailability[source.name] = episodes.isNotEmpty;
+            _sourceEpisodeCount[source.name] = episodes.length;
+            debugPrint(
+              '[${source.name}] 状态已更新: hasResource=${episodes.isNotEmpty}, count=${episodes.length}',
+            );
+          });
         }
-      }),
-    );
+      } catch (e, stackTrace) {
+        debugPrint('[${source.name}] 检查失败: $e');
+        debugPrint('[${source.name}] 堆栈: $stackTrace');
+        if (mounted) {
+          setState(() {
+            _sourceAvailability[source.name] = false;
+            _sourceEpisodeCount[source.name] = 0;
+          });
+        }
+      }
+    });
+
+    // 等待所有检查完成
+    await Future.wait(futures);
 
     if (mounted) {
-      final currentIndex = _tabController.index;
-      final currentSourceName = _sources[currentIndex].name;
-
       setState(() {
         _isChecking = false;
-        _sources.sort((a, b) {
-          final aHasResource = _sourceAvailability[a.name] ?? false;
-          final bHasResource = _sourceAvailability[b.name] ?? false;
-          if (aHasResource && !bHasResource) return -1;
-          if (!aHasResource && bHasResource) return 1;
-          return a.name.compareTo(b.name);
-        });
-
-        final newIndex = _sources.indexWhere(
-          (s) => s.name == currentSourceName,
-        );
-
-        _tabController.dispose();
-        _tabController = TabController(
-          length: _sources.length,
-          vsync: this,
-          initialIndex: newIndex >= 0 ? newIndex : 0,
-        );
       });
     }
   }
@@ -199,8 +192,8 @@ class _VideoSourceSelectorState extends State<VideoSourceSelector>
   Widget _buildSourceContent(VideoSource source) {
     final hasResource = _sourceAvailability[source.name];
     final episodeCount = _sourceEpisodeCount[source.name] ?? 0;
-    final isChecking =
-        _isChecking && !_sourceAvailability.containsKey(source.name);
+    // 如果hasResource为null,说明正在检查中
+    final isChecking = hasResource == null;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
@@ -225,7 +218,7 @@ class _VideoSourceSelectorState extends State<VideoSourceSelector>
                 ),
               ],
             )
-          else if (hasResource != null)
+          else
             Row(
               children: [
                 Icon(
