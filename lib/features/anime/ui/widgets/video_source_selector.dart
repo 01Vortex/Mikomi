@@ -36,18 +36,20 @@ class _VideoSourceSelectorState extends State<VideoSourceSelector>
   @override
   void initState() {
     super.initState();
-    // 去重并按名称排序
+    // 去重
     final uniqueSources = <String, VideoSource>{};
     for (var source in widget.sources) {
       uniqueSources[source.name] = source;
     }
-    _sources = uniqueSources.values.toList()
-      ..sort((a, b) => a.name.compareTo(b.name));
+    _sources = uniqueSources.values.toList();
 
     _tabController = TabController(length: _sources.length, vsync: this);
 
     if (widget.animeTitle != null && widget.animeTitle!.isNotEmpty) {
       _checkSourcesAvailability();
+    } else {
+      // 如果没有标题，只按名称排序
+      _sources.sort((a, b) => a.name.compareTo(b.name));
     }
   }
 
@@ -111,6 +113,19 @@ class _VideoSourceSelectorState extends State<VideoSourceSelector>
     if (mounted) {
       setState(() {
         _isChecking = false;
+        // 按资源可用性和名称排序
+        _sources.sort((a, b) {
+          final aHasResource = _sourceAvailability[a.name] ?? false;
+          final bHasResource = _sourceAvailability[b.name] ?? false;
+
+          // 有资源的排在前面
+          if (aHasResource != bHasResource) {
+            return bHasResource ? 1 : -1;
+          }
+
+          // 资源状态相同时按名称排序
+          return a.name.compareTo(b.name);
+        });
       });
     }
   }
@@ -137,6 +152,8 @@ class _VideoSourceSelectorState extends State<VideoSourceSelector>
           TabBar(
             controller: _tabController,
             isScrollable: true,
+            padding: const EdgeInsets.only(left: 8),
+            tabAlignment: TabAlignment.start,
             labelColor: AppColors.textPrimary,
             unselectedLabelColor: AppColors.textSecondary,
             indicatorColor: AppColors.primary,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mikomi/features/home/ui/pages/home_page.dart';
 import 'package:mikomi/features/pilgrimage/ui/pages/pilgrimage_page.dart';
+import 'package:mikomi/features/my/ui/pages/my_page.dart';
 import 'package:mikomi/shared/widgets/bottom_navigation.dart';
 import 'package:mikomi/config/localization/app_localizations.dart';
 
@@ -19,7 +20,7 @@ class _MainPageState extends State<MainPage> {
       const HomePage(),
       const PilgrimagePage(),
       PlaceholderPage(title: AppLocalizations.of(context).message),
-      PlaceholderPage(title: AppLocalizations.of(context).profile),
+      const MyPage(),
     ];
   }
 
