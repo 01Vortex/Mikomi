@@ -42,6 +42,7 @@ class _VideoPageState extends State<VideoPage>
   List<Episode> _episodes = [];
   String _videoUrl = '';
   bool _isLoadingEpisodes = false;
+  String? _currentPluginName;
   final BangumiEpisodesService _episodesService = BangumiEpisodesService();
   final VideoSourceRepository _videoSourceRepo = VideoSourceRepository();
 
@@ -57,6 +58,7 @@ class _VideoPageState extends State<VideoPage>
     _currentEpisode = widget.currentEpisode;
     _episodes = widget.episodes;
     _videoUrl = widget.videoUrl;
+    _currentPluginName = widget.pluginName;
     _tabController = TabController(length: 2, vsync: this);
 
     // 创建新的播放器控制器实例
@@ -65,7 +67,7 @@ class _VideoPageState extends State<VideoPage>
     // 初始化视频URL
     _updateCurrentVideoUrl();
 
-    if (_episodes.isEmpty && widget.pluginName != null) {
+    if (_episodes.isEmpty && _currentPluginName != null) {
       _loadEpisodesInBackground();
     }
   }
@@ -81,8 +83,8 @@ class _VideoPageState extends State<VideoPage>
     setState(() => _isLoadingEpisodes = true);
 
     try {
-      if (widget.animeTitle != null && widget.pluginName != null) {
-        await _loadEpisodesWithVideoSource(widget.pluginName!);
+      if (widget.animeTitle != null && _currentPluginName != null) {
+        await _loadEpisodesWithVideoSource(_currentPluginName!);
       } else if (widget.bangumiId != null) {
         await _loadBangumiEpisodes();
       }
@@ -148,7 +150,10 @@ class _VideoPageState extends State<VideoPage>
       if (mounted && mergedEpisodes.isNotEmpty) {
         setState(() {
           _episodes = mergedEpisodes;
-          _videoUrl = mergedEpisodes.first.url ?? '';
+          // 保持当前集数,如果超出范围则使用第一集
+          if (_currentEpisode > mergedEpisodes.length) {
+            _currentEpisode = 1;
+          }
           // 更新视频URL
           _updateCurrentVideoUrl();
         });
@@ -197,10 +202,10 @@ class _VideoPageState extends State<VideoPage>
         debugPrint('==================================');
 
         // 即使剧集列表为空,也尝试解析初始URL
-        if (widget.pluginName != null && _videoUrl.isNotEmpty) {
+        if (_currentPluginName != null && _videoUrl.isNotEmpty) {
           final parsedUrl = await _videoSourceRepo.parseVideoUrl(
             _videoUrl,
-            widget.pluginName!,
+            _currentPluginName!,
           );
           return parsedUrl;
         }
@@ -213,13 +218,13 @@ class _VideoPageState extends State<VideoPage>
           _videoUrl;
       debugPrint('========== 视频播放调试 ==========');
       debugPrint('原始播放URL: $url');
-      debugPrint('插件名称: ${widget.pluginName}');
+      debugPrint('插件名称: $_currentPluginName');
 
       // 如果有插件名称,尝试解析视频地址
-      if (widget.pluginName != null) {
+      if (_currentPluginName != null) {
         final parsedUrl = await _videoSourceRepo.parseVideoUrl(
           url,
-          widget.pluginName!,
+          _currentPluginName!,
         );
         debugPrint('最终播放URL: $parsedUrl');
         debugPrint('==================================');
@@ -233,6 +238,26 @@ class _VideoPageState extends State<VideoPage>
       debugPrint('获取当前视频URL失败: $e');
       debugPrint('==================================');
       return _videoUrl;
+    }
+  }
+
+  /// 切换视频源
+  Future<void> _switchVideoSource(VideoSource source) async {
+    debugPrint('========== 切换视频源 ==========');
+    debugPrint('新视频源: ${source.name}');
+    debugPrint('==================================');
+
+    setState(() {
+      _currentPluginName = source.name;
+      _isLoadingEpisodes = true;
+    });
+
+    try {
+      await _loadEpisodesWithVideoSource(source.name);
+    } finally {
+      if (mounted) {
+        setState(() => _isLoadingEpisodes = false);
+      }
     }
   }
 
@@ -342,6 +367,7 @@ class _VideoPageState extends State<VideoPage>
                                       currentEpisode: _currentEpisode,
                                       episodes: _episodes,
                                       videoSources: widget.videoSources,
+                                      currentPluginName: _currentPluginName,
                                       onEpisodeChanged: (episode) {
                                         setState(() {
                                           _currentEpisode = episode;
@@ -349,7 +375,7 @@ class _VideoPageState extends State<VideoPage>
                                         });
                                       },
                                       onSourceChanged: (source) {
-                                        // 视频源切换逻辑
+                                        _switchVideoSource(source);
                                       },
                                     ),
                               const CommentTabWidget(),

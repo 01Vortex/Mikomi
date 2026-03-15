@@ -9,6 +9,7 @@ class EpisodeListWidget extends StatefulWidget {
   final int currentEpisode;
   final List<Episode> episodes;
   final List<VideoSource>? videoSources;
+  final String? currentPluginName;
   final Function(int) onEpisodeChanged;
   final Function(VideoSource)? onSourceChanged;
 
@@ -19,6 +20,7 @@ class EpisodeListWidget extends StatefulWidget {
     required this.episodes,
     required this.onEpisodeChanged,
     this.videoSources,
+    this.currentPluginName,
     this.onSourceChanged,
   });
 
@@ -33,7 +35,28 @@ class _EpisodeListWidgetState extends State<EpisodeListWidget> {
   @override
   void initState() {
     super.initState();
-    _currentSource = widget.videoSources?.first ?? VideoSource(name: '默认源');
+    _initCurrentSource();
+  }
+
+  @override
+  void didUpdateWidget(EpisodeListWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // 当currentPluginName变化时,更新当前视频源
+    if (oldWidget.currentPluginName != widget.currentPluginName) {
+      _initCurrentSource();
+    }
+  }
+
+  void _initCurrentSource() {
+    if (widget.currentPluginName != null && widget.videoSources != null) {
+      final source = widget.videoSources!.firstWhere(
+        (s) => s.name == widget.currentPluginName,
+        orElse: () => widget.videoSources!.first,
+      );
+      _currentSource = source;
+    } else {
+      _currentSource = widget.videoSources?.first ?? VideoSource(name: '默认源');
+    }
   }
 
   List<Episode> get _sortedEpisodes {
