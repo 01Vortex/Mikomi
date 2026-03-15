@@ -158,10 +158,36 @@ class _PlayButtonState extends State<PlayButton> {
         animeTitle: widget.animeTitle,
         onSourceSelected: (source) {
           Navigator.pop(context);
-          _loadAndNavigate(source.name);
+          _navigateAndLoadInBackground(source.name);
         },
       ),
     );
+  }
+
+  void _navigateAndLoadInBackground(String? pluginName) {
+    if (!mounted) {
+      debugPrint('组件未挂载，退出');
+      return;
+    }
+
+    debugPrint('立即跳转到视频页面，插件: $pluginName');
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => VideoPage(
+          title: widget.animeTitle ?? '视频播放',
+          videoUrl: '',
+          currentEpisode: 1,
+          episodes: const [],
+          videoSources: widget.videoSources ?? const [],
+          pluginName: pluginName,
+          animeTitle: widget.animeTitle,
+          bangumiId: widget.bangumiId,
+        ),
+      ),
+    );
+    widget.onPlay?.call();
   }
 
   Future<void> _loadAndNavigate(String? pluginName) async {

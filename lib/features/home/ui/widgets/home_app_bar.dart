@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mikomi/config/themes/app_colors.dart';
 import 'package:mikomi/features/search/ui/pages/search_page.dart';
-import 'package:mikomi/features/video/ui/pages/video_test_page.dart';
 
 class HomeAppBar extends StatelessWidget {
   const HomeAppBar({super.key});
@@ -51,17 +50,6 @@ class HomeAppBar extends StatelessWidget {
                 ),
               ),
             ),
-          ),
-          const SizedBox(width: 12),
-          IconButton(
-            icon: const Icon(Icons.bug_report, color: AppColors.textSecondary),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const VideoTestPage()),
-              );
-            },
-            tooltip: '视频源测试',
           ),
         ],
       ),

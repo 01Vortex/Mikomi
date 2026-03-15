@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mikomi/features/home/ui/pages/home_page.dart';
 import 'package:mikomi/features/pilgrimage/ui/pages/pilgrimage_page.dart';
-import 'package:mikomi/features/video/ui/pages/video_test_page.dart';
 import 'package:mikomi/shared/widgets/bottom_navigation.dart';
 import 'package:mikomi/config/localization/app_localizations.dart';
 
@@ -18,7 +17,6 @@ class _MainPageState extends State<MainPage> {
   List<Widget> _buildPages(BuildContext context) {
     return [
       const HomePage(),
-      const VideoTestPage(),
       const PilgrimagePage(),
       PlaceholderPage(title: AppLocalizations.of(context).message),
       PlaceholderPage(title: AppLocalizations.of(context).profile),

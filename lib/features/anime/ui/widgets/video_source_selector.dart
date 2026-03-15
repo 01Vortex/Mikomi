@@ -253,7 +253,7 @@ class _VideoSourceSelectorState extends State<VideoSourceSelector>
                   borderRadius: BorderRadius.circular(8),
                 ),
               ),
-              child: const Text('开始播放', style: TextStyle(fontSize: 16)),
+              child: const Text('立即观看', style: TextStyle(fontSize: 16)),
             ),
           ),
           const SizedBox(height: 16),
