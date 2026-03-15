@@ -21,12 +21,11 @@ class VideoSourceRepository {
         return [];
       }
 
-      // 对于useWebview的插件，暂时跳过搜索检查
-      // TODO: 实现WebView搜索支持
-      if (plugin.useWebview) {
-        debugPrint('[$pluginName] 插件需要WebView，暂时跳过搜索检查');
-        // 返回一个虚拟的Episode表示资源可能存在
-        return [Episode.fromRoadData(index: 0, identifier: '待确认', url: '')];
+      // 7sefun的搜索结果需要JavaScript渲染，无法通过HTTP请求获取
+      // 暂时跳过检查，但用户仍可点击尝试播放
+      if (pluginName == '7sefun') {
+        debugPrint('[$pluginName] 搜索需要JavaScript，跳过检查');
+        return [];
       }
 
       // 搜索动漫
