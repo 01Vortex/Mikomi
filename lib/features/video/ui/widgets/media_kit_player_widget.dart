@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
+import 'package:mikomi/features/video/controllers/video_player_controller.dart';
 
 class MediaKitPlayerWidget extends StatefulWidget {
   final String videoUrl;
   final String title;
   final int currentEpisode;
   final int totalEpisodes;
+  final VideoPlayerController playerController;
 
   const MediaKitPlayerWidget({
     super.key,
@@ -14,6 +15,7 @@ class MediaKitPlayerWidget extends StatefulWidget {
     required this.title,
     required this.currentEpisode,
     required this.totalEpisodes,
+    required this.playerController,
   });
 
   @override
@@ -21,101 +23,84 @@ class MediaKitPlayerWidget extends StatefulWidget {
 }
 
 class _MediaKitPlayerWidgetState extends State<MediaKitPlayerWidget> {
-  Player? _player;
-  VideoController? _controller;
-  bool _isInitialized = false;
-  bool _isDisposed = false;
+  bool _isLoading = true;
+  String? _errorMessage;
 
   @override
   void initState() {
     super.initState();
-    _initializePlayer();
+    _initPlayer();
   }
 
-  Future<void> _initializePlayer() async {
-    if (_isDisposed) return;
+  Future<void> _initPlayer() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
 
     try {
-      debugPrint('创建播放器实例');
-      _player = Player(
-        configuration: const PlayerConfiguration(
-          bufferSize: 50 * 1024 * 1024,
-          logLevel: MPVLogLevel.error,
-        ),
-      );
+      await widget.playerController.initialize();
 
-      _controller = VideoController(_player!);
-
-      if (mounted && !_isDisposed) {
-        setState(() {
-          _isInitialized = true;
-        });
-      }
-
-      if (widget.videoUrl.isNotEmpty && mounted && !_isDisposed) {
-        debugPrint('开始播放: ${widget.videoUrl}');
-        await _player!.open(Media(widget.videoUrl));
+      if (mounted && widget.videoUrl.isNotEmpty) {
+        await widget.playerController.play(widget.videoUrl);
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+          });
+        }
       }
     } catch (e) {
-      debugPrint('初始化播放器失败: $e');
-    }
-  }
-
-  @override
-  void dispose() {
-    debugPrint('开始释放播放器');
-    _isDisposed = true;
-    _disposePlayer();
-    super.dispose();
-  }
-
-  void _disposePlayer() {
-    final player = _player;
-    final controller = _controller;
-
-    _player = null;
-    _controller = null;
-    _isInitialized = false;
-
-    if (player != null) {
-      // 同步停止
-      try {
-        player.stop();
-        debugPrint('播放器已停止');
-      } catch (e) {
-        debugPrint('停止播放失败: $e');
+      debugPrint('播放器初始化失败: $e');
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _errorMessage = '视频加载失败: $e';
+        });
       }
-
-      // 异步释放，延迟200ms确保停止完成
-      Future.delayed(const Duration(milliseconds: 200), () async {
-        try {
-          await player.dispose();
-          debugPrint('播放器已释放');
-        } catch (e) {
-          debugPrint('释放播放器失败: $e');
-        }
-      });
     }
   }
 
   @override
   void didUpdateWidget(MediaKitPlayerWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.videoUrl != widget.videoUrl &&
-        widget.videoUrl.isNotEmpty &&
-        !_isDisposed &&
-        _player != null) {
-      debugPrint('切换视频: ${widget.videoUrl}');
-      _player!.open(Media(widget.videoUrl));
+
+    if (oldWidget.videoUrl != widget.videoUrl && widget.videoUrl.isNotEmpty) {
+      _initPlayer();
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    if (!_isInitialized ||
-        _player == null ||
-        _controller == null ||
-        _isDisposed) {
+    if (_errorMessage != null) {
+      return Container(
+        color: Colors.black,
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.error_outline, color: Colors.white70, size: 48),
+              const SizedBox(height: 16),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 32),
+                child: Text(
+                  _errorMessage!,
+                  style: const TextStyle(color: Colors.white70),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextButton(onPressed: _initPlayer, child: const Text('重试')),
+            ],
+          ),
+        ),
+      );
+    }
+
+    final controller = widget.playerController.videoController;
+
+    if (_isLoading ||
+        !widget.playerController.isInitialized ||
+        controller == null) {
       return Container(
         color: Colors.black,
         child: const Center(
@@ -124,6 +109,6 @@ class _MediaKitPlayerWidgetState extends State<MediaKitPlayerWidget> {
       );
     }
 
-    return Video(controller: _controller!, controls: MaterialVideoControls);
+    return Video(controller: controller, controls: MaterialVideoControls);
   }
 }

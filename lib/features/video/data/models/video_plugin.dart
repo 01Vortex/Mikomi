@@ -6,6 +6,7 @@ class VideoPlugin {
   final bool multiSources;
   final bool useWebview;
   final bool useNativePlayer;
+  final bool useLegacyParser;
   final String userAgent;
   final bool adBlocker;
   final String baseURL;
@@ -24,6 +25,7 @@ class VideoPlugin {
     required this.multiSources,
     required this.useWebview,
     required this.useNativePlayer,
+    required this.useLegacyParser,
     required this.userAgent,
     this.adBlocker = false,
     required this.baseURL,
@@ -44,6 +46,7 @@ class VideoPlugin {
       multiSources: json['muliSources'] ?? json['multiSources'] ?? false,
       useWebview: json['useWebview'] ?? false,
       useNativePlayer: json['useNativePlayer'] ?? false,
+      useLegacyParser: json['useLegacyParser'] ?? false,
       userAgent: json['userAgent'] ?? '',
       adBlocker: json['adBlocker'] ?? false,
       baseURL: json['baseURL'] as String,
@@ -65,6 +68,7 @@ class VideoPlugin {
       'muliSources': multiSources,
       'useWebview': useWebview,
       'useNativePlayer': useNativePlayer,
+      'useLegacyParser': useLegacyParser,
       'userAgent': userAgent,
       'adBlocker': adBlocker,
       'baseURL': baseURL,

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:mikomi/features/video/data/models/video_plugin.dart';
 
@@ -28,14 +29,14 @@ class VideoPluginService {
           final plugin = VideoPlugin.fromJson(jsonData);
           _plugins.add(plugin);
         } catch (e) {
-          print('加载插件 $name 失败: $e');
+          debugPrint('加载插件 $name 失败: $e');
         }
       }
 
       _initialized = true;
-      print('视频插件加载完成，共 ${_plugins.length} 个');
+      debugPrint('视频插件加载完成，共 ${_plugins.length} 个');
     } catch (e) {
-      print('初始化视频插件失败: $e');
+      debugPrint('初始化视频插件失败: $e');
     }
   }
 

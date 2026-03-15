@@ -1,15 +1,15 @@
 import 'package:mikomi/core/models/episode.dart';
 import 'package:mikomi/features/video/data/datasources/video_source_datasource.dart';
 import 'package:mikomi/features/video/data/services/video_plugin_service.dart';
-import 'package:mikomi/features/video/data/services/video_url_parser.dart';
+import 'package:mikomi/features/video/data/services/webview_video_parser.dart';
 import 'package:flutter/foundation.dart';
 
 class VideoSourceRepository {
   final VideoSourceDatasource _datasource = VideoSourceDatasourceImpl();
   final VideoPluginService _pluginService = VideoPluginService();
-  final VideoUrlParser _urlParser = VideoUrlParser();
+  final WebViewVideoParser _webViewParser = WebViewVideoParser();
 
-  /// 搜索动漫并获取第一个结果的剧集列表
+  /// 搜索动漫并获取第一个结果的剧集列表（用于检测资源可用性）
   Future<List<Episode>> searchAndGetEpisodes(
     String keyword,
     String pluginName,
@@ -43,32 +43,18 @@ class VideoSourceRepository {
 
       debugPrint('成功获取 ${roads.length} 个播放列表');
 
-      // 转换为Episode列表
+      // 转换为Episode列表（不解析视频地址，只返回原始URL）
       final firstRoad = roads.first;
       final episodes = <Episode>[];
 
       for (int i = 0; i < firstRoad.data.length; i++) {
-        String episodeUrl = firstRoad.data[i];
-
-        // 如果插件需要使用WebView，尝试解析真实视频地址
-        if (plugin.useWebview) {
-          debugPrint('尝试解析第${i + 1}集的视频地址...');
-          final parsedUrl = await _urlParser.parseVideoUrl(episodeUrl);
-          if (parsedUrl != null && parsedUrl.isNotEmpty) {
-            episodeUrl = parsedUrl;
-            debugPrint('第${i + 1}集解析成功: $episodeUrl');
-          } else {
-            debugPrint('第${i + 1}集解析失败，使用原始URL');
-          }
-        }
-
         episodes.add(
           Episode.fromRoadData(
             index: i,
             identifier: i < firstRoad.identifier.length
                 ? firstRoad.identifier[i]
                 : '第${i + 1}集',
-            url: episodeUrl,
+            url: firstRoad.data[i],
           ),
         );
       }
@@ -117,6 +103,50 @@ class VideoSourceRepository {
     } catch (e) {
       debugPrint('获取剧集失败: $e');
       return [];
+    }
+  }
+
+  /// 解析视频播放地址（用于实际播放）
+  Future<String> parseVideoUrl(String pageUrl, String pluginName) async {
+    try {
+      final plugin = _pluginService.getPluginByName(pluginName);
+      if (plugin == null) {
+        debugPrint('插件 $pluginName 不存在');
+        return pageUrl;
+      }
+
+      // 如果插件需要使用WebView，使用 WebView 解析
+      if (plugin.useWebview) {
+        debugPrint('========== 开始 WebView 解析 ==========');
+        debugPrint('页面URL: $pageUrl');
+        debugPrint('插件: $pluginName');
+        debugPrint('使用Legacy模式: ${plugin.useLegacyParser}');
+
+        // 使用插件配置的解析模式,支持多层解析
+        final parsedUrl = await _webViewParser.parseVideoUrl(
+          pageUrl,
+          useLegacyParser: plugin.useLegacyParser,
+          timeout: const Duration(seconds: 45),
+          maxDepth: 3,
+        );
+
+        if (parsedUrl != null && parsedUrl.isNotEmpty) {
+          debugPrint('========== 最终解析结果 ==========');
+          debugPrint('视频流URL: $parsedUrl');
+          debugPrint('==================================');
+          return parsedUrl;
+        } else {
+          debugPrint('WebView 解析失败，使用原始URL');
+          debugPrint('==================================');
+          return pageUrl;
+        }
+      }
+
+      // 不需要解析，直接返回原始URL
+      return pageUrl;
+    } catch (e) {
+      debugPrint('解析视频地址失败: $e');
+      return pageUrl;
     }
   }
 }

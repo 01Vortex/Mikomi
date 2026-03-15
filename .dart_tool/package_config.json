@@ -164,6 +164,54 @@
       "languageVersion": "3.0"
     },
     {
+      "name": "flutter_inappwebview",
+      "rootUri": "file:///D:/CodeApp/Data/Android/Flutter_Cache/hosted/pub.flutter-io.cn/flutter_inappwebview-6.1.5",
+      "packageUri": "lib/",
+      "languageVersion": "3.5"
+    },
+    {
+      "name": "flutter_inappwebview_android",
+      "rootUri": "file:///D:/CodeApp/Data/Android/Flutter_Cache/hosted/pub.flutter-io.cn/flutter_inappwebview_android-1.1.3",
+      "packageUri": "lib/",
+      "languageVersion": "3.5"
+    },
+    {
+      "name": "flutter_inappwebview_internal_annotations",
+      "rootUri": "file:///D:/CodeApp/Data/Android/Flutter_Cache/hosted/pub.flutter-io.cn/flutter_inappwebview_internal_annotations-1.3.0",
+      "packageUri": "lib/",
+      "languageVersion": "3.7"
+    },
+    {
+      "name": "flutter_inappwebview_ios",
+      "rootUri": "file:///D:/CodeApp/Data/Android/Flutter_Cache/hosted/pub.flutter-io.cn/flutter_inappwebview_ios-1.1.2",
+      "packageUri": "lib/",
+      "languageVersion": "3.5"
+    },
+    {
+      "name": "flutter_inappwebview_macos",
+      "rootUri": "file:///D:/CodeApp/Data/Android/Flutter_Cache/hosted/pub.flutter-io.cn/flutter_inappwebview_macos-1.1.2",
+      "packageUri": "lib/",
+      "languageVersion": "3.5"
+    },
+    {
+      "name": "flutter_inappwebview_platform_interface",
+      "rootUri": "file:///D:/CodeApp/Data/Android/Flutter_Cache/hosted/pub.flutter-io.cn/flutter_inappwebview_platform_interface-1.3.0+1",
+      "packageUri": "lib/",
+      "languageVersion": "3.5"
+    },
+    {
+      "name": "flutter_inappwebview_web",
+      "rootUri": "file:///D:/CodeApp/Data/Android/Flutter_Cache/hosted/pub.flutter-io.cn/flutter_inappwebview_web-1.1.2",
+      "packageUri": "lib/",
+      "languageVersion": "3.5"
+    },
+    {
+      "name": "flutter_inappwebview_windows",
+      "rootUri": "file:///D:/CodeApp/Data/Android/Flutter_Cache/hosted/pub.flutter-io.cn/flutter_inappwebview_windows-0.6.0",
+      "packageUri": "lib/",
+      "languageVersion": "3.5"
+    },
+    {
       "name": "flutter_launcher_icons",
       "rootUri": "file:///D:/CodeApp/Data/Android/Flutter_Cache/hosted/pub.flutter-io.cn/flutter_launcher_icons-0.13.1",
       "packageUri": "lib/",

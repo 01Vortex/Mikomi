@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mikomi/features/video/ui/widgets/media_kit_player_widget.dart';
+import 'package:mikomi/features/video/controllers/video_player_controller.dart';
 
 class VideoPlayerWidget extends StatefulWidget {
   final String videoUrl;
@@ -7,6 +8,7 @@ class VideoPlayerWidget extends StatefulWidget {
   final int currentEpisode;
   final int totalEpisodes;
   final String? episodeTitle;
+  final VideoPlayerController playerController;
 
   const VideoPlayerWidget({
     super.key,
@@ -14,6 +16,7 @@ class VideoPlayerWidget extends StatefulWidget {
     required this.title,
     required this.currentEpisode,
     required this.totalEpisodes,
+    required this.playerController,
     this.episodeTitle,
   });
 
@@ -39,6 +42,7 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
               title: widget.title,
               currentEpisode: widget.currentEpisode,
               totalEpisodes: widget.totalEpisodes,
+              playerController: widget.playerController,
             )
           else
             Center(

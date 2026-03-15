@@ -63,9 +63,18 @@ class _VideoSourceSelectorState extends State<VideoSourceSelector>
     await Future.wait(
       _sources.map((source) async {
         try {
+          debugPrint('开始检查视频源: ${source.name}');
           final episodes = await _videoSourceRepo
               .searchAndGetEpisodes(widget.animeTitle!, source.name)
-              .timeout(const Duration(seconds: 10), onTimeout: () => []);
+              .timeout(
+                const Duration(seconds: 30),
+                onTimeout: () {
+                  debugPrint('视频源 ${source.name} 检查超时');
+                  return [];
+                },
+              );
+
+          debugPrint('视频源 ${source.name} 检查完成: ${episodes.length} 集');
 
           if (mounted) {
             setState(() {
@@ -74,6 +83,7 @@ class _VideoSourceSelectorState extends State<VideoSourceSelector>
             });
           }
         } catch (e) {
+          debugPrint('视频源 ${source.name} 检查失败: $e');
           if (mounted) {
             setState(() {
               _sourceAvailability[source.name] = false;
@@ -85,13 +95,11 @@ class _VideoSourceSelectorState extends State<VideoSourceSelector>
     );
 
     if (mounted) {
-      // 保存当前选中的tab索引
       final currentIndex = _tabController.index;
       final currentSourceName = _sources[currentIndex].name;
 
       setState(() {
         _isChecking = false;
-        // 按资源可用性排序
         _sources.sort((a, b) {
           final aHasResource = _sourceAvailability[a.name] ?? false;
           final bHasResource = _sourceAvailability[b.name] ?? false;
@@ -100,12 +108,10 @@ class _VideoSourceSelectorState extends State<VideoSourceSelector>
           return a.name.compareTo(b.name);
         });
 
-        // 找到之前选中的源在新列表中的位置
         final newIndex = _sources.indexWhere(
           (s) => s.name == currentSourceName,
         );
 
-        // 重新创建TabController
         _tabController.dispose();
         _tabController = TabController(
           length: _sources.length,

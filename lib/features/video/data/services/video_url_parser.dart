@@ -33,19 +33,13 @@ class VideoUrlParser {
         // 尝试多种正则表达式提取视频地址
         final patterns = [
           // m3u8格式
-          RegExp(r'https?://[^\s"' + "'" + r'<>]+\.m3u8[^\s"' + "'" + r'<>]*'),
+          RegExp(r'https?://[^\s"<>]+\.m3u8[^\s"<>]*'),
           // mp4格式
-          RegExp(r'https?://[^\s"' + "'" + r'<>]+\.mp4[^\s"' + "'" + r'<>]*'),
+          RegExp(r'https?://[^\s"<>]+\.mp4[^\s"<>]*'),
           // 通用视频URL模式
-          RegExp(
-            r'https?://[^\s"' +
-                "'" +
-                r'<>]+/[^\s"' +
-                "'" +
-                r'<>]*\.(m3u8|mp4|flv|avi|mkv)',
-          ),
+          RegExp(r'https?://[^\s"<>]+/[^\s"<>]*\.(m3u8|mp4|flv|avi|mkv)'),
           // URL编码的视频地址
-          RegExp(r'url=([^&\s"' + "'" + r'<>]+\.(?:m3u8|mp4))'),
+          RegExp(r'url=([^&\s"<>]+\.(?:m3u8|mp4))'),
         ];
 
         for (final pattern in patterns) {
@@ -65,7 +59,7 @@ class VideoUrlParser {
 
         // 尝试查找iframe中的视频源
         final iframePattern = RegExp(
-          r'<iframe[^>]+src=["' + "'" + r']([^"' + "'" + r']+)["' + "'" + r']',
+          r'<iframe[^>]+src=["' + r"']([^" + r'"' + r"']+)[" + r'"' + r"']",
         );
         final iframeMatch = iframePattern.firstMatch(htmlString);
         if (iframeMatch != null) {

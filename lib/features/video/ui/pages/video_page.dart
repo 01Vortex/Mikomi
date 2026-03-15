@@ -7,6 +7,7 @@ import 'package:mikomi/features/anime/ui/widgets/video_source_selector.dart';
 import 'package:mikomi/core/models/episode.dart';
 import 'package:mikomi/core/services/bangumi_episodes_service.dart';
 import 'package:mikomi/features/video/data/repositories/video_source_repository.dart';
+import 'package:mikomi/features/video/controllers/video_player_controller.dart';
 
 class VideoPage extends StatefulWidget {
   final String title;
@@ -44,8 +45,11 @@ class _VideoPageState extends State<VideoPage>
   final BangumiEpisodesService _episodesService = BangumiEpisodesService();
   final VideoSourceRepository _videoSourceRepo = VideoSourceRepository();
 
-  // 使用Key来控制播放器重建
-  Key _playerKey = UniqueKey();
+  // 为每个页面创建独立的播放器控制器
+  late final VideoPlayerController _playerController;
+
+  // 缓存当前视频URL的Future,避免重复解析
+  Future<String>? _currentVideoUrlFuture;
 
   @override
   void initState() {
@@ -55,9 +59,20 @@ class _VideoPageState extends State<VideoPage>
     _videoUrl = widget.videoUrl;
     _tabController = TabController(length: 2, vsync: this);
 
+    // 创建新的播放器控制器实例
+    _playerController = VideoPlayerController();
+
+    // 初始化视频URL
+    _updateCurrentVideoUrl();
+
     if (_episodes.isEmpty && widget.pluginName != null) {
       _loadEpisodesInBackground();
     }
+  }
+
+  /// 更新当前视频URL(切换集数时调用)
+  void _updateCurrentVideoUrl() {
+    _currentVideoUrlFuture = _getCurrentVideoUrl();
   }
 
   Future<void> _loadEpisodesInBackground() async {
@@ -134,6 +149,8 @@ class _VideoPageState extends State<VideoPage>
         setState(() {
           _episodes = mergedEpisodes;
           _videoUrl = mergedEpisodes.first.url ?? '';
+          // 更新视频URL
+          _updateCurrentVideoUrl();
         });
         debugPrint('成功加载 ${mergedEpisodes.length} 集');
         debugPrint('第一集URL: ${mergedEpisodes.first.url}');
@@ -171,21 +188,58 @@ class _VideoPageState extends State<VideoPage>
     }
   }
 
-  String get _currentVideoUrl {
+  Future<String> _getCurrentVideoUrl() async {
     try {
+      // 如果剧集列表为空,返回初始URL
+      if (_episodes.isEmpty) {
+        debugPrint('========== 视频播放调试 ==========');
+        debugPrint('剧集列表为空,使用初始URL: $_videoUrl');
+        debugPrint('==================================');
+
+        // 即使剧集列表为空,也尝试解析初始URL
+        if (widget.pluginName != null && _videoUrl.isNotEmpty) {
+          final parsedUrl = await _videoSourceRepo.parseVideoUrl(
+            _videoUrl,
+            widget.pluginName!,
+          );
+          return parsedUrl;
+        }
+
+        return _videoUrl;
+      }
+
       final url =
           _episodes.firstWhere((ep) => ep.number == _currentEpisode).url ??
           _videoUrl;
-      debugPrint('当前播放URL: $url');
+      debugPrint('========== 视频播放调试 ==========');
+      debugPrint('原始播放URL: $url');
+      debugPrint('插件名称: ${widget.pluginName}');
+
+      // 如果有插件名称,尝试解析视频地址
+      if (widget.pluginName != null) {
+        final parsedUrl = await _videoSourceRepo.parseVideoUrl(
+          url,
+          widget.pluginName!,
+        );
+        debugPrint('最终播放URL: $parsedUrl');
+        debugPrint('==================================');
+        return parsedUrl;
+      }
+
+      debugPrint('无需解析,直接使用原始URL');
+      debugPrint('==================================');
       return url;
     } catch (e) {
       debugPrint('获取当前视频URL失败: $e');
+      debugPrint('==================================');
       return _videoUrl;
     }
   }
 
   @override
   void dispose() {
+    // 释放播放器资源
+    _playerController.dispose();
     _tabController.dispose();
     super.dispose();
   }
@@ -194,105 +248,121 @@ class _VideoPageState extends State<VideoPage>
   Widget build(BuildContext context) {
     return PopScope(
       canPop: true,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) {
+          // 页面退出时确保释放播放器
+          await _playerController.dispose();
+        }
+      },
       child: Scaffold(
         backgroundColor: Colors.black,
-        body: Column(
-          children: [
-            VideoPlayerWidget(
-              key: _playerKey,
-              videoUrl: _currentVideoUrl,
-              title: widget.title,
-              currentEpisode: _currentEpisode,
-              totalEpisodes: _totalEpisodes,
-              episodeTitle: _currentEpisodeTitle,
-            ),
-            Expanded(
-              child: Container(
-                decoration: const BoxDecoration(
-                  color: AppColors.surface,
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+        body: FutureBuilder<String>(
+          key: ValueKey(_currentEpisode), // 添加key,确保切换集数时重建
+          future: _currentVideoUrlFuture,
+          builder: (context, snapshot) {
+            final videoUrl = snapshot.data ?? _videoUrl;
+
+            return Column(
+              children: [
+                VideoPlayerWidget(
+                  videoUrl: videoUrl,
+                  title: widget.title,
+                  currentEpisode: _currentEpisode,
+                  totalEpisodes: _totalEpisodes,
+                  episodeTitle: _currentEpisodeTitle,
+                  playerController: _playerController,
                 ),
-                child: Column(
-                  children: [
-                    Container(
-                      margin: const EdgeInsets.symmetric(vertical: 8),
-                      width: 40,
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: AppColors.divider,
-                        borderRadius: BorderRadius.circular(2),
+                Expanded(
+                  child: Container(
+                    decoration: const BoxDecoration(
+                      color: AppColors.surface,
+                      borderRadius: BorderRadius.vertical(
+                        top: Radius.circular(16),
                       ),
                     ),
-                    Container(
-                      decoration: const BoxDecoration(
-                        border: Border(
-                          bottom: BorderSide(
+                    child: Column(
+                      children: [
+                        Container(
+                          margin: const EdgeInsets.symmetric(vertical: 8),
+                          width: 40,
+                          height: 4,
+                          decoration: BoxDecoration(
                             color: AppColors.divider,
-                            width: 0.5,
+                            borderRadius: BorderRadius.circular(2),
                           ),
                         ),
-                      ),
-                      child: TabBar(
-                        controller: _tabController,
-                        labelColor: AppColors.primary,
-                        unselectedLabelColor: AppColors.textSecondary,
-                        indicatorColor: AppColors.primary,
-                        indicatorWeight: 3,
-                        labelStyle: const TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
+                        Container(
+                          decoration: const BoxDecoration(
+                            border: Border(
+                              bottom: BorderSide(
+                                color: AppColors.divider,
+                                width: 0.5,
+                              ),
+                            ),
+                          ),
+                          child: TabBar(
+                            controller: _tabController,
+                            labelColor: AppColors.primary,
+                            unselectedLabelColor: AppColors.textSecondary,
+                            indicatorColor: AppColors.primary,
+                            indicatorWeight: 3,
+                            labelStyle: const TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                            ),
+                            tabs: const [
+                              Tab(text: '选集'),
+                              Tab(text: '评论'),
+                            ],
+                          ),
                         ),
-                        tabs: const [
-                          Tab(text: '选集'),
-                          Tab(text: '评论'),
-                        ],
-                      ),
-                    ),
-                    Expanded(
-                      child: TabBarView(
-                        controller: _tabController,
-                        children: [
-                          _isLoadingEpisodes && _episodes.isEmpty
-                              ? const Center(
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      CircularProgressIndicator(),
-                                      SizedBox(height: 16),
-                                      Text(
-                                        '正在加载剧集...',
-                                        style: TextStyle(
-                                          color: AppColors.textSecondary,
-                                        ),
+                        Expanded(
+                          child: TabBarView(
+                            controller: _tabController,
+                            children: [
+                              _isLoadingEpisodes && _episodes.isEmpty
+                                  ? const Center(
+                                      child: Column(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: [
+                                          CircularProgressIndicator(),
+                                          SizedBox(height: 16),
+                                          Text(
+                                            '正在加载剧集...',
+                                            style: TextStyle(
+                                              color: AppColors.textSecondary,
+                                            ),
+                                          ),
+                                        ],
                                       ),
-                                    ],
-                                  ),
-                                )
-                              : EpisodeListWidget(
-                                  title: widget.title,
-                                  currentEpisode: _currentEpisode,
-                                  episodes: _episodes,
-                                  videoSources: widget.videoSources,
-                                  onEpisodeChanged: (episode) {
-                                    setState(() {
-                                      _currentEpisode = episode;
-                                      // 切换剧集时重新创建播放器
-                                      _playerKey = UniqueKey();
-                                    });
-                                  },
-                                  onSourceChanged: (source) {
-                                    // 视频源切换逻辑
-                                  },
-                                ),
-                          const CommentTabWidget(),
-                        ],
-                      ),
+                                    )
+                                  : EpisodeListWidget(
+                                      title: widget.title,
+                                      currentEpisode: _currentEpisode,
+                                      episodes: _episodes,
+                                      videoSources: widget.videoSources,
+                                      onEpisodeChanged: (episode) {
+                                        setState(() {
+                                          _currentEpisode = episode;
+                                          _updateCurrentVideoUrl();
+                                        });
+                                      },
+                                      onSourceChanged: (source) {
+                                        // 视频源切换逻辑
+                                      },
+                                    ),
+                              const CommentTabWidget(),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
-              ),
-            ),
-          ],
+              ],
+            );
+          },
         ),
       ),
     );
