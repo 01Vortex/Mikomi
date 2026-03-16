@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:mikomi/config/themes/app_colors.dart';
-import 'package:mikomi/config/localization/app_localizations.dart';
+import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 
 class PilgrimagePage extends StatelessWidget {
   const PilgrimagePage({super.key});
@@ -8,26 +7,27 @@ class PilgrimagePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(AppLocalizations.of(context).pilgrimageMap),
-        backgroundColor: AppColors.surface,
-      ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.map, size: 64, color: AppColors.textHint),
-            const SizedBox(height: 16),
-            Text(
-              AppLocalizations.of(context).pilgrimageDeveloping,
-              style: TextStyle(fontSize: 16, color: AppColors.textSecondary),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              AppLocalizations.of(context).comingSoon,
-              style: TextStyle(fontSize: 14, color: AppColors.textHint),
-            ),
-          ],
+      body: SafeArea(
+        child: InAppWebView(
+          initialUrlRequest: URLRequest(
+            url: WebUri('https://www.anitabi.cn/map?c=140.3673,36.1288&z=5'),
+          ),
+          initialSettings: InAppWebViewSettings(
+            javaScriptEnabled: true,
+            domStorageEnabled: true,
+            useHybridComposition: true,
+            hardwareAcceleration: true,
+            cacheEnabled: true,
+            supportZoom: true,
+            disableContextMenu: true,
+            useShouldInterceptAjaxRequest: false,
+            useShouldInterceptFetchRequest: false,
+            useOnLoadResource: false,
+            useOnDownloadStart: false,
+            disableDefaultErrorPage: true,
+            preferredContentMode: UserPreferredContentMode.MOBILE,
+            mixedContentMode: MixedContentMode.MIXED_CONTENT_ALWAYS_ALLOW,
+          ),
         ),
       ),
     );

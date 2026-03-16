@@ -37,6 +37,7 @@ dependencies:
   
   # 网络请求
   dio: ^5.7.0
+  http: ^1.2.0
   
   # HTML解析
   html: ^0.15.4
