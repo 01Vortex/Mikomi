@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:mikomi/config/themes/app_colors.dart';
 import 'package:mikomi/features/video/ui/widgets/video_player_widget.dart';
-import 'package:mikomi/features/video/ui/widgets/episode_list_widget.dart';
 import 'package:mikomi/features/video/ui/widgets/comment_tab_widget.dart';
+import 'package:mikomi/features/video/ui/widgets/video_tab_bar.dart';
+import 'package:mikomi/features/video/ui/widgets/episode_card.dart';
+import 'package:mikomi/features/video/ui/widgets/danmaku_input_bar.dart';
 import 'package:mikomi/features/anime/ui/widgets/video_source_selector.dart';
 import 'package:mikomi/core/models/episode.dart';
 import 'package:mikomi/core/services/bangumi_episodes_service.dart';
@@ -43,13 +45,15 @@ class _VideoPageState extends State<VideoPage>
   String _videoUrl = '';
   bool _isLoadingEpisodes = false;
   String? _currentPluginName;
+  bool _isDescending = false;
+  bool _isDanmakuEnabled = false;
+  bool _isDanmakuInputExpanded = false;
+  bool _isEpisodesExpanded = true; // 剧集列表是否展开
+  final TextEditingController _danmakuController = TextEditingController();
   final BangumiEpisodesService _episodesService = BangumiEpisodesService();
   final VideoSourceRepository _videoSourceRepo = VideoSourceRepository();
 
-  // 为每个页面创建独立的播放器控制器
   late final VideoPlayerController _playerController;
-
-  // 缓存当前视频URL的Future,避免重复解析
   Future<String>? _currentVideoUrlFuture;
 
   @override
@@ -61,15 +65,28 @@ class _VideoPageState extends State<VideoPage>
     _currentPluginName = widget.pluginName;
     _tabController = TabController(length: 2, vsync: this);
 
-    // 创建新的播放器控制器实例
-    _playerController = VideoPlayerController();
-
-    // 初始化视频URL
-    _updateCurrentVideoUrl();
+    _initializePlayer();
 
     if (_episodes.isEmpty && _currentPluginName != null) {
       _loadEpisodesInBackground();
     }
+  }
+
+  Future<void> _initializePlayer() async {
+    try {
+      _playerController = VideoPlayerController();
+      _updateCurrentVideoUrl();
+    } catch (e) {
+      debugPrint('初始化播放器失败: $e');
+    }
+  }
+
+  @override
+  void reassemble() {
+    super.reassemble();
+    // 热重启时重新初始化播放器
+    debugPrint('VideoPage: 热重启检测到，重新初始化');
+    _initializePlayer();
   }
 
   /// 更新当前视频URL(切换集数时调用)
@@ -241,7 +258,6 @@ class _VideoPageState extends State<VideoPage>
     }
   }
 
-  /// 切换视频源
   Future<void> _switchVideoSource(VideoSource source) async {
     debugPrint('========== 切换视频源 ==========');
     debugPrint('新视频源: ${source.name}');
@@ -261,11 +277,39 @@ class _VideoPageState extends State<VideoPage>
     }
   }
 
+  List<Episode> get _sortedEpisodes {
+    return _isDescending ? _episodes.reversed.toList() : _episodes;
+  }
+
+  void _showVideoSourceSelector() {
+    if (widget.videoSources == null || widget.videoSources!.isEmpty) {
+      return;
+    }
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) => VideoSourceSelector(
+        sources: widget.videoSources!,
+        animeTitle: widget.animeTitle,
+        onSourceSelected: (source) {
+          Navigator.pop(context);
+          _switchVideoSource(source);
+        },
+      ),
+    );
+  }
+
   @override
   void dispose() {
-    // 释放播放器资源
-    _playerController.dispose();
+    try {
+      _playerController.dispose();
+    } catch (e) {
+      debugPrint('释放播放器失败: $e');
+    }
     _tabController.dispose();
+    _danmakuController.dispose();
     super.dispose();
   }
 
@@ -275,14 +319,18 @@ class _VideoPageState extends State<VideoPage>
       canPop: true,
       onPopInvokedWithResult: (didPop, result) async {
         if (didPop) {
-          // 页面退出时确保释放播放器
-          await _playerController.dispose();
+          try {
+            await _playerController.dispose();
+          } catch (e) {
+            debugPrint('释放播放器失败: $e');
+          }
         }
       },
       child: Scaffold(
         backgroundColor: Colors.black,
+        resizeToAvoidBottomInset: true,
         body: FutureBuilder<String>(
-          key: ValueKey(_currentEpisode), // 添加key,确保切换集数时重建
+          key: ValueKey(_currentEpisode),
           future: _currentVideoUrlFuture,
           builder: (context, snapshot) {
             final videoUrl = snapshot.data ?? _videoUrl;
@@ -299,89 +347,58 @@ class _VideoPageState extends State<VideoPage>
                 ),
                 Expanded(
                   child: Container(
-                    decoration: const BoxDecoration(
-                      color: AppColors.surface,
-                      borderRadius: BorderRadius.vertical(
-                        top: Radius.circular(16),
-                      ),
-                    ),
+                    decoration: const BoxDecoration(color: AppColors.surface),
                     child: Column(
                       children: [
-                        Container(
-                          margin: const EdgeInsets.symmetric(vertical: 8),
-                          width: 40,
-                          height: 4,
-                          decoration: BoxDecoration(
-                            color: AppColors.divider,
-                            borderRadius: BorderRadius.circular(2),
-                          ),
-                        ),
-                        Container(
-                          decoration: const BoxDecoration(
-                            border: Border(
-                              bottom: BorderSide(
-                                color: AppColors.divider,
-                                width: 0.5,
-                              ),
-                            ),
-                          ),
-                          child: TabBar(
-                            controller: _tabController,
-                            labelColor: AppColors.primary,
-                            unselectedLabelColor: AppColors.textSecondary,
-                            indicatorColor: AppColors.primary,
-                            indicatorWeight: 3,
-                            labelStyle: const TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w600,
-                            ),
-                            tabs: const [
-                              Tab(text: '选集'),
-                              Tab(text: '评论'),
-                            ],
-                          ),
+                        VideoTabBar(
+                          tabController: _tabController,
+                          isDanmakuEnabled: _isDanmakuEnabled,
+                          isDanmakuInputExpanded: _isDanmakuInputExpanded,
+                          onDanmakuToggle: () {
+                            setState(() {
+                              _isDanmakuEnabled = !_isDanmakuEnabled;
+                              if (!_isDanmakuEnabled) {
+                                _isDanmakuInputExpanded = false;
+                                _danmakuController.clear();
+                              }
+                            });
+                          },
+                          onDanmakuInputTap: () {
+                            setState(() {
+                              _isDanmakuInputExpanded = true;
+                            });
+                          },
+                          onVideoSourceTap: _showVideoSourceSelector,
+                          currentPluginName: _currentPluginName,
                         ),
                         Expanded(
                           child: TabBarView(
                             controller: _tabController,
+                            physics: _isDanmakuEnabled
+                                ? const NeverScrollableScrollPhysics()
+                                : null,
                             children: [
-                              _isLoadingEpisodes && _episodes.isEmpty
-                                  ? const Center(
-                                      child: Column(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.center,
-                                        children: [
-                                          CircularProgressIndicator(),
-                                          SizedBox(height: 16),
-                                          Text(
-                                            '正在加载剧集...',
-                                            style: TextStyle(
-                                              color: AppColors.textSecondary,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    )
-                                  : EpisodeListWidget(
-                                      title: widget.title,
-                                      currentEpisode: _currentEpisode,
-                                      episodes: _episodes,
-                                      videoSources: widget.videoSources,
-                                      currentPluginName: _currentPluginName,
-                                      onEpisodeChanged: (episode) {
-                                        setState(() {
-                                          _currentEpisode = episode;
-                                          _updateCurrentVideoUrl();
-                                        });
-                                      },
-                                      onSourceChanged: (source) {
-                                        _switchVideoSource(source);
-                                      },
-                                    ),
+                              _buildEpisodeTab(),
                               const CommentTabWidget(),
                             ],
                           ),
                         ),
+                        if (_isDanmakuInputExpanded)
+                          DanmakuInputBar(
+                            controller: _danmakuController,
+                            onSend: () {
+                              if (_danmakuController.text.isNotEmpty) {
+                                debugPrint('发送弹幕: ${_danmakuController.text}');
+                                _danmakuController.clear();
+                              }
+                            },
+                            onClose: () {
+                              setState(() {
+                                _isDanmakuInputExpanded = false;
+                                _danmakuController.clear();
+                              });
+                            },
+                          ),
                       ],
                     ),
                   ),
@@ -391,6 +408,143 @@ class _VideoPageState extends State<VideoPage>
           },
         ),
       ),
+    );
+  }
+
+  Widget _buildEpisodeTab() {
+    if (_isLoadingEpisodes && _episodes.isEmpty) {
+      return const Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            CircularProgressIndicator(),
+            SizedBox(height: 16),
+            Text('正在加载剧集...', style: TextStyle(color: AppColors.textSecondary)),
+          ],
+        ),
+      );
+    }
+
+    return Column(
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              // 收起/展开按钮（集数超过12集时显示）
+              if (_episodes.length > 12)
+                InkWell(
+                  onTap: () {
+                    setState(() {
+                      _isEpisodesExpanded = !_isEpisodesExpanded;
+                    });
+                  },
+                  borderRadius: BorderRadius.circular(20),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.background,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          _isEpisodesExpanded
+                              ? Icons.expand_less
+                              : Icons.expand_more,
+                          size: 16,
+                          color: AppColors.textPrimary,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          _isEpisodesExpanded ? '收起' : '展开',
+                          style: const TextStyle(
+                            fontSize: 14,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+              else
+                const SizedBox.shrink(),
+              // 排序按钮
+              InkWell(
+                onTap: () {
+                  setState(() {
+                    _isDescending = !_isDescending;
+                  });
+                },
+                borderRadius: BorderRadius.circular(20),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.background,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        _isDescending
+                            ? Icons.arrow_downward
+                            : Icons.arrow_upward,
+                        size: 16,
+                        color: AppColors.textPrimary,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        _isDescending ? '倒序' : '正序',
+                        style: const TextStyle(
+                          fontSize: 14,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        Expanded(
+          child: GridView.builder(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 3,
+              childAspectRatio: 2.2,
+              crossAxisSpacing: 12,
+              mainAxisSpacing: 12,
+            ),
+            itemCount: _isEpisodesExpanded || _episodes.length <= 12
+                ? _episodes.length
+                : 12,
+            itemBuilder: (context, index) {
+              final episode = _sortedEpisodes[index];
+              final isCurrent = episode.number == _currentEpisode;
+              return EpisodeCard(
+                episode: episode,
+                isCurrent: isCurrent,
+                onTap: () {
+                  setState(() {
+                    _currentEpisode = episode.number;
+                    _updateCurrentVideoUrl();
+                  });
+                },
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 }

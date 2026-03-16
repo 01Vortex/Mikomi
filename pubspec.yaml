@@ -52,6 +52,9 @@ dependencies:
   # 图片缓存
   cached_network_image: ^3.4.1
   
+  # SVG支持
+  flutter_svg: ^2.0.10+1
+  
   # 国际化
   flutter_localizations:
     sdk: flutter
