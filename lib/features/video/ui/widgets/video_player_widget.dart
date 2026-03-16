@@ -28,105 +28,29 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
+    // 播放器高度 = 16:9比例
     final playerHeight = screenWidth * 9 / 16;
 
     return Container(
       width: screenWidth,
       height: playerHeight,
       color: Colors.black,
-      child: Stack(
-        children: [
-          if (widget.videoUrl.isNotEmpty)
-            MediaKitPlayerWidget(
+      child: widget.videoUrl.isNotEmpty
+          ? MediaKitPlayerWidget(
               videoUrl: widget.videoUrl,
               title: widget.title,
               currentEpisode: widget.currentEpisode,
               totalEpisodes: widget.totalEpisodes,
               playerController: widget.playerController,
+              episodeTitle: widget.episodeTitle,
             )
-          else
-            Center(
+          : Center(
               child: Icon(
                 Icons.play_circle_outline,
                 size: 80,
                 color: Colors.white.withValues(alpha: 0.8),
               ),
             ),
-
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            child: Container(
-              padding: EdgeInsets.fromLTRB(
-                16,
-                MediaQuery.of(context).padding.top + 8,
-                16,
-                12,
-              ),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Colors.black.withValues(alpha: 0.7),
-                    Colors.transparent,
-                  ],
-                ),
-              ),
-              child: Row(
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.arrow_back, color: Colors.white),
-                    onPressed: () => Navigator.of(context).pop(),
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          widget.title,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        if (widget.episodeTitle != null &&
-                            widget.episodeTitle!.isNotEmpty) ...[
-                          const SizedBox(height: 4),
-                          Text(
-                            '第${widget.currentEpisode}集 ${widget.episodeTitle}',
-                            style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.9),
-                              fontSize: 13,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ] else
-                          Text(
-                            '第${widget.currentEpisode}集',
-                            style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.9),
-                              fontSize: 13,
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
     );
   }
 }

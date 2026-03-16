@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:mikomi/config/themes/app_colors.dart';
 import 'package:mikomi/features/video/ui/widgets/video_player_widget.dart';
 import 'package:mikomi/features/video/ui/widgets/comment_tab_widget.dart';
@@ -64,6 +65,18 @@ class _VideoPageState extends State<VideoPage>
     _videoUrl = widget.videoUrl;
     _currentPluginName = widget.pluginName;
     _tabController = TabController(length: 2, vsync: this);
+
+    // 显示状态栏 - 使用edgeToEdge模式
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+
+    // 设置状态栏样式 - 白色背景，黑色图标
+    SystemChrome.setSystemUIOverlayStyle(
+      const SystemUiOverlayStyle(
+        statusBarColor: Colors.white,
+        statusBarIconBrightness: Brightness.dark,
+        statusBarBrightness: Brightness.light,
+      ),
+    );
 
     _initializePlayer();
 
@@ -308,6 +321,16 @@ class _VideoPageState extends State<VideoPage>
     } catch (e) {
       debugPrint('释放播放器失败: $e');
     }
+
+    // 恢复默认状态栏
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    SystemChrome.setSystemUIOverlayStyle(
+      const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.dark,
+      ),
+    );
+
     _tabController.dispose();
     _danmakuController.dispose();
     super.dispose();
@@ -315,97 +338,117 @@ class _VideoPageState extends State<VideoPage>
 
   @override
   Widget build(BuildContext context) {
-    return PopScope(
-      canPop: true,
-      onPopInvokedWithResult: (didPop, result) async {
-        if (didPop) {
-          try {
-            await _playerController.dispose();
-          } catch (e) {
-            debugPrint('释放播放器失败: $e');
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: const SystemUiOverlayStyle(
+        statusBarColor: Colors.white, // 白色背景
+        statusBarIconBrightness: Brightness.dark, // 黑色图标
+        statusBarBrightness: Brightness.light,
+      ),
+      child: PopScope(
+        canPop: true,
+        onPopInvokedWithResult: (didPop, result) async {
+          if (didPop) {
+            try {
+              await _playerController.dispose();
+            } catch (e) {
+              debugPrint('释放播放器失败: $e');
+            }
           }
-        }
-      },
-      child: Scaffold(
-        backgroundColor: Colors.black,
-        resizeToAvoidBottomInset: true,
-        body: FutureBuilder<String>(
-          key: ValueKey(_currentEpisode),
-          future: _currentVideoUrlFuture,
-          builder: (context, snapshot) {
-            final videoUrl = snapshot.data ?? _videoUrl;
+        },
+        child: Scaffold(
+          backgroundColor: Colors.black,
+          resizeToAvoidBottomInset: true,
+          extendBodyBehindAppBar: true,
+          body: Column(
+            children: [
+              SizedBox(height: MediaQuery.of(context).padding.top),
+              Expanded(
+                child: FutureBuilder<String>(
+                  key: ValueKey(_currentEpisode),
+                  future: _currentVideoUrlFuture,
+                  builder: (context, snapshot) {
+                    final videoUrl = snapshot.data ?? _videoUrl;
 
-            return Column(
-              children: [
-                VideoPlayerWidget(
-                  videoUrl: videoUrl,
-                  title: widget.title,
-                  currentEpisode: _currentEpisode,
-                  totalEpisodes: _totalEpisodes,
-                  episodeTitle: _currentEpisodeTitle,
-                  playerController: _playerController,
-                ),
-                Expanded(
-                  child: Container(
-                    decoration: const BoxDecoration(color: AppColors.surface),
-                    child: Column(
+                    return Column(
                       children: [
-                        VideoTabBar(
-                          tabController: _tabController,
-                          isDanmakuEnabled: _isDanmakuEnabled,
-                          isDanmakuInputExpanded: _isDanmakuInputExpanded,
-                          onDanmakuToggle: () {
-                            setState(() {
-                              _isDanmakuEnabled = !_isDanmakuEnabled;
-                              if (!_isDanmakuEnabled) {
-                                _isDanmakuInputExpanded = false;
-                                _danmakuController.clear();
-                              }
-                            });
-                          },
-                          onDanmakuInputTap: () {
-                            setState(() {
-                              _isDanmakuInputExpanded = true;
-                            });
-                          },
-                          onVideoSourceTap: _showVideoSourceSelector,
-                          currentPluginName: _currentPluginName,
+                        VideoPlayerWidget(
+                          videoUrl: videoUrl,
+                          title: widget.title,
+                          currentEpisode: _currentEpisode,
+                          totalEpisodes: _totalEpisodes,
+                          episodeTitle: _currentEpisodeTitle,
+                          playerController: _playerController,
                         ),
                         Expanded(
-                          child: TabBarView(
-                            controller: _tabController,
-                            physics: _isDanmakuEnabled
-                                ? const NeverScrollableScrollPhysics()
-                                : null,
-                            children: [
-                              _buildEpisodeTab(),
-                              const CommentTabWidget(),
-                            ],
+                          child: Container(
+                            decoration: const BoxDecoration(
+                              color: AppColors.surface,
+                            ),
+                            child: Column(
+                              children: [
+                                VideoTabBar(
+                                  tabController: _tabController,
+                                  isDanmakuEnabled: _isDanmakuEnabled,
+                                  isDanmakuInputExpanded:
+                                      _isDanmakuInputExpanded,
+                                  onDanmakuToggle: () {
+                                    setState(() {
+                                      _isDanmakuEnabled = !_isDanmakuEnabled;
+                                      if (!_isDanmakuEnabled) {
+                                        _isDanmakuInputExpanded = false;
+                                        _danmakuController.clear();
+                                      }
+                                    });
+                                  },
+                                  onDanmakuInputTap: () {
+                                    setState(() {
+                                      _isDanmakuInputExpanded = true;
+                                    });
+                                  },
+                                  onVideoSourceTap: _showVideoSourceSelector,
+                                  currentPluginName: _currentPluginName,
+                                ),
+                                Expanded(
+                                  child: TabBarView(
+                                    controller: _tabController,
+                                    physics: _isDanmakuEnabled
+                                        ? const NeverScrollableScrollPhysics()
+                                        : null,
+                                    children: [
+                                      _buildEpisodeTab(),
+                                      const CommentTabWidget(),
+                                    ],
+                                  ),
+                                ),
+                                if (_isDanmakuInputExpanded)
+                                  DanmakuInputBar(
+                                    controller: _danmakuController,
+                                    onSend: () {
+                                      if (_danmakuController.text.isNotEmpty) {
+                                        debugPrint(
+                                          '发送弹幕: ${_danmakuController.text}',
+                                        );
+                                        _danmakuController.clear();
+                                      }
+                                    },
+                                    onClose: () {
+                                      setState(() {
+                                        _isDanmakuInputExpanded = false;
+                                        _danmakuController.clear();
+                                      });
+                                    },
+                                  ),
+                              ],
+                            ),
                           ),
                         ),
-                        if (_isDanmakuInputExpanded)
-                          DanmakuInputBar(
-                            controller: _danmakuController,
-                            onSend: () {
-                              if (_danmakuController.text.isNotEmpty) {
-                                debugPrint('发送弹幕: ${_danmakuController.text}');
-                                _danmakuController.clear();
-                              }
-                            },
-                            onClose: () {
-                              setState(() {
-                                _isDanmakuInputExpanded = false;
-                                _danmakuController.clear();
-                              });
-                            },
-                          ),
                       ],
-                    ),
-                  ),
+                    );
+                  },
                 ),
-              ],
-            );
-          },
+              ),
+            ],
+          ),
         ),
       ),
     );
