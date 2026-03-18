@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:mikomi/config/themes/app_colors.dart';
 import 'package:mikomi/features/video/controllers/video_player_controller.dart';
 
@@ -42,6 +43,9 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
   bool _isLocked = false;
   Timer? _hideTimer;
   double _playbackSpeed = 1.0;
+  bool _isDanmakuEnabled = false;
+  bool _showDanmakuInput = false;
+  final TextEditingController _danmakuController = TextEditingController();
 
   @override
   void initState() {
@@ -53,6 +57,7 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
   @override
   void dispose() {
     _hideTimer?.cancel();
+    _danmakuController.dispose();
     super.dispose();
   }
 
@@ -421,18 +426,59 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
               const SizedBox(height: 8),
               // 底部按钮
               Row(
-                mainAxisAlignment: MainAxisAlignment.end,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  _buildBottomButton(
-                    icon: Icons.speed,
-                    label: '${_playbackSpeed}x',
-                    onTap: _showSpeedSelector,
+                  // 左侧按钮组
+                  Row(
+                    children: [
+                      if (widget.hasPreviousEpisode)
+                        _buildBottomButton(
+                          icon: Icons.skip_previous,
+                          label: '上一集',
+                          onTap: widget.onPreviousEpisode ?? () {},
+                          iconOnly: true,
+                        ),
+                      if (widget.hasPreviousEpisode) const SizedBox(width: 12),
+                      _buildBottomButton(
+                        icon: _isPlaying ? Icons.pause : Icons.play_arrow,
+                        label: _isPlaying ? '暂停' : '播放',
+                        onTap: _togglePlayPause,
+                        iconOnly: true,
+                      ),
+                      if (widget.hasNextEpisode) ...[
+                        const SizedBox(width: 12),
+                        _buildBottomButton(
+                          icon: Icons.skip_next,
+                          label: '下一集',
+                          onTap: widget.onNextEpisode ?? () {},
+                          iconOnly: true,
+                        ),
+                      ],
+                      const SizedBox(width: 12),
+                      _buildDanmakuButton(),
+                      const SizedBox(width: 12),
+                      _buildDanmakuSettingButton(),
+                      if (_showDanmakuInput) ...[
+                        const SizedBox(width: 12),
+                        _buildDanmakuInputInline(),
+                      ],
+                    ],
                   ),
-                  const SizedBox(width: 12),
-                  _buildBottomButton(
-                    icon: Icons.fullscreen_exit,
-                    label: '退出全屏',
-                    onTap: widget.onExitFullscreen,
+                  // 右侧按钮组
+                  Row(
+                    children: [
+                      _buildBottomButton(
+                        icon: Icons.speed,
+                        label: '${_playbackSpeed}x',
+                        onTap: _showSpeedSelector,
+                      ),
+                      const SizedBox(width: 12),
+                      _buildBottomButton(
+                        icon: Icons.fullscreen_exit,
+                        label: '退出全屏',
+                        onTap: widget.onExitFullscreen,
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -447,27 +493,141 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
     required IconData icon,
     required String label,
     required VoidCallback onTap,
+    bool iconOnly = false,
   }) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        padding: iconOnly
+            ? const EdgeInsets.all(8)
+            : const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
           color: Colors.white.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(iconOnly ? 8 : 16),
         ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, color: Colors.white, size: 18),
-            const SizedBox(width: 4),
-            Text(
-              label,
-              style: const TextStyle(color: Colors.white, fontSize: 13),
-            ),
-          ],
+        child: iconOnly
+            ? Icon(icon, color: Colors.white, size: 20)
+            : Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(icon, color: Colors.white, size: 18),
+                  const SizedBox(width: 4),
+                  Text(
+                    label,
+                    style: const TextStyle(color: Colors.white, fontSize: 13),
+                  ),
+                ],
+              ),
+      ),
+    );
+  }
+
+  Widget _buildDanmakuButton() {
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _isDanmakuEnabled = !_isDanmakuEnabled;
+          if (_isDanmakuEnabled) {
+            _showDanmakuInput = true;
+          } else {
+            _showDanmakuInput = false;
+            _danmakuController.clear();
+          }
+        });
+      },
+      child: Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: SvgPicture.asset(
+          _isDanmakuEnabled
+              ? 'assets/icons/danmaku_on.svg'
+              : 'assets/icons/danmaku_off.svg',
+          width: 20,
+          height: 20,
+          colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
         ),
       ),
+    );
+  }
+
+  Widget _buildDanmakuSettingButton() {
+    return GestureDetector(
+      onTap: () {
+        // TODO: 打开弹幕设置面板
+      },
+      child: Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: SvgPicture.asset(
+          'assets/icons/danmaku_setting.svg',
+          width: 20,
+          height: 20,
+          colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDanmakuInputInline() {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 280,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.15),
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: TextField(
+            controller: _danmakuController,
+            style: const TextStyle(color: Colors.white, fontSize: 13),
+            decoration: const InputDecoration(
+              hintText: '发个友善的弹幕见证当下',
+              hintStyle: TextStyle(color: Colors.white60, fontSize: 13),
+              border: InputBorder.none,
+              isDense: true,
+              contentPadding: EdgeInsets.symmetric(vertical: 8),
+            ),
+            onSubmitted: (value) {
+              if (value.trim().isNotEmpty) {
+                // TODO: 发送弹幕
+                _danmakuController.clear();
+              }
+            },
+          ),
+        ),
+        const SizedBox(width: 8),
+        GestureDetector(
+          onTap: () {
+            if (_danmakuController.text.trim().isNotEmpty) {
+              // TODO: 发送弹幕
+              _danmakuController.clear();
+            }
+          },
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+            decoration: BoxDecoration(
+              color: AppColors.primary,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: const Text(
+              '发送',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 
