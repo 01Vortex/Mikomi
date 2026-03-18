@@ -83,15 +83,6 @@ class _VideoPageState extends State<VideoPage>
       overlays: [SystemUiOverlay.top, SystemUiOverlay.bottom],
     );
 
-    // 设置状态栏样式
-    SystemChrome.setSystemUIOverlayStyle(
-      SystemUiOverlayStyle(
-        statusBarColor: AppColors.surface,
-        statusBarIconBrightness: Brightness.dark,
-        statusBarBrightness: Brightness.light,
-      ),
-    );
-
     // 初始化播放器
     _playerController = VideoPlayerController();
 
@@ -116,6 +107,22 @@ class _VideoPageState extends State<VideoPage>
     _saveHistoryTimer = Timer.periodic(const Duration(seconds: 2), (timer) {
       _saveWatchHistory();
     });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    // 在这里设置状态栏样式,因为需要访问Theme
+    SystemChrome.setSystemUIOverlayStyle(
+      SystemUiOverlayStyle(
+        statusBarColor: Theme.of(context).scaffoldBackgroundColor,
+        statusBarIconBrightness: Theme.of(context).brightness == Brightness.dark
+            ? Brightness.light
+            : Brightness.dark,
+        statusBarBrightness: Theme.of(context).brightness,
+      ),
+    );
   }
 
   @override
@@ -488,9 +495,11 @@ class _VideoPageState extends State<VideoPage>
   Widget build(BuildContext context) {
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle(
-        statusBarColor: AppColors.surface,
-        statusBarIconBrightness: Brightness.dark,
-        statusBarBrightness: Brightness.light,
+        statusBarColor: Theme.of(context).scaffoldBackgroundColor,
+        statusBarIconBrightness: Theme.of(context).brightness == Brightness.dark
+            ? Brightness.light
+            : Brightness.dark,
+        statusBarBrightness: Theme.of(context).brightness,
       ),
       child: PopScope(
         canPop: true,
@@ -504,13 +513,13 @@ class _VideoPageState extends State<VideoPage>
           }
         },
         child: Scaffold(
-          backgroundColor: AppColors.background,
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
           resizeToAvoidBottomInset: true,
           body: Column(
             children: [
               Container(
                 height: MediaQuery.of(context).padding.top,
-                color: AppColors.surface,
+                color: Theme.of(context).scaffoldBackgroundColor,
               ),
               Expanded(
                 child: FutureBuilder<String>(
@@ -728,8 +737,8 @@ class _VideoPageState extends State<VideoPage>
                         ),
                         Expanded(
                           child: Container(
-                            decoration: const BoxDecoration(
-                              color: AppColors.surface,
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).cardColor,
                             ),
                             child: Column(
                               children: [

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mikomi/config/themes/app_colors.dart';
 import 'package:mikomi/core/models/bangumi_item.dart';
-import 'package:mikomi/core/services/bangumi_service.dart';
+import 'package:mikomi/features/search/data/services/multi_source_search_service.dart';
 import 'package:mikomi/features/search/ui/widgets/search_app_bar.dart';
 import 'package:mikomi/features/search/ui/widgets/search_results_view.dart';
 import 'package:mikomi/features/search/ui/widgets/search_suggestions_view.dart';
@@ -18,7 +18,7 @@ class SearchResultsPage extends StatefulWidget {
 class _SearchResultsPageState extends State<SearchResultsPage> {
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _focusNode = FocusNode();
-  final BangumiService _bangumiService = BangumiService();
+  final MultiSourceSearchService _searchService = MultiSourceSearchService();
 
   List<BangumiItem> _searchResults = [];
   List<BangumiItem> _suggestions = [];
@@ -43,7 +43,7 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
   Future<void> _performSearch() async {
     setState(() => _isSearching = true);
 
-    final results = await _bangumiService.searchBangumi(widget.keyword);
+    final results = await _searchService.search(widget.keyword);
 
     if (mounted) {
       setState(() {
@@ -67,7 +67,7 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
       _showSuggestions = true;
     });
 
-    final results = await _bangumiService.searchBangumi(keyword.trim());
+    final results = await _searchService.search(keyword.trim());
 
     if (mounted) {
       setState(() {
@@ -83,9 +83,7 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
         _isSearching = true;
         _showSuggestions = false;
       });
-      _bangumiService.searchBangumi(_searchController.text.trim()).then((
-        results,
-      ) {
+      _searchService.search(_searchController.text.trim()).then((results) {
         if (mounted) {
           setState(() {
             _searchResults = results;

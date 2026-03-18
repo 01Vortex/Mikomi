@@ -14,7 +14,9 @@ class AppBottomNavigation extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFFB8E6B8),
+        color:
+            Theme.of(context).bottomNavigationBarTheme.backgroundColor ??
+            Theme.of(context).cardColor,
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.1),
@@ -30,26 +32,31 @@ class AppBottomNavigation extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
               _buildNavItem(
+                context: context,
                 icon: Icons.home_outlined,
                 activeIcon: Icons.home,
                 index: 0,
               ),
               _buildNavItem(
+                context: context,
                 icon: Icons.calendar_today_outlined,
                 activeIcon: Icons.calendar_today,
                 index: 1,
               ),
               _buildNavItem(
+                context: context,
                 icon: Icons.map_outlined,
                 activeIcon: Icons.map,
                 index: 2,
               ),
               _buildNavItem(
+                context: context,
                 icon: Icons.chat_bubble_outline,
                 activeIcon: Icons.chat_bubble,
                 index: 3,
               ),
               _buildNavItem(
+                context: context,
                 icon: Icons.person_outline,
                 activeIcon: Icons.person,
                 index: 4,
@@ -62,6 +69,7 @@ class AppBottomNavigation extends StatelessWidget {
   }
 
   Widget _buildNavItem({
+    required BuildContext context,
     required IconData icon,
     required IconData activeIcon,
     required int index,
@@ -74,7 +82,9 @@ class AppBottomNavigation extends StatelessWidget {
         child: Icon(
           isActive ? activeIcon : icon,
           size: 28,
-          color: isActive ? Colors.black87 : Colors.black54,
+          color: isActive
+              ? Theme.of(context).colorScheme.primary
+              : Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
         ),
       ),
     );
