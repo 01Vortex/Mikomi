@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mikomi/config/themes/app_colors.dart';
-import 'package:mikomi/features/video/ui/widgets/video_player_widget.dart';
+import 'package:mikomi/features/video/ui/widgets/media_kit_player_widget.dart';
 import 'package:mikomi/features/video/ui/widgets/comment_tab_widget.dart';
 import 'package:mikomi/features/video/ui/widgets/video_tab_bar.dart';
 import 'package:mikomi/features/video/ui/widgets/episode_card.dart';
@@ -371,13 +371,26 @@ class _VideoPageState extends State<VideoPage>
 
                     return Column(
                       children: [
-                        VideoPlayerWidget(
-                          videoUrl: videoUrl,
-                          title: widget.title,
-                          currentEpisode: _currentEpisode,
-                          totalEpisodes: _totalEpisodes,
-                          episodeTitle: _currentEpisodeTitle,
-                          playerController: _playerController,
+                        Container(
+                          width: MediaQuery.of(context).size.width,
+                          height: MediaQuery.of(context).size.width * 9 / 16,
+                          color: Colors.black,
+                          child: videoUrl.isNotEmpty
+                              ? MediaKitPlayerWidget(
+                                  videoUrl: videoUrl,
+                                  title: widget.title,
+                                  currentEpisode: _currentEpisode,
+                                  totalEpisodes: _totalEpisodes,
+                                  playerController: _playerController,
+                                  episodeTitle: _currentEpisodeTitle,
+                                )
+                              : Center(
+                                  child: Icon(
+                                    Icons.play_circle_outline,
+                                    size: 80,
+                                    color: Colors.white.withValues(alpha: 0.8),
+                                  ),
+                                ),
                         ),
                         Expanded(
                           child: Container(

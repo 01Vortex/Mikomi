@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 import 'package:mikomi/features/video/controllers/video_player_controller.dart';
 
@@ -42,11 +41,7 @@ class _MediaKitPlayerWidgetState extends State<MediaKitPlayerWidget> {
   bool _lockPanel = false;
   Timer? _hideTimer;
 
-  // 手势控制相关
-  double _brightness = 0.5;
-  double _volume = 0.5;
-  bool _showBrightness = false;
-  bool _showVolume = false;
+  // 手势控制相关(预留)
   Timer? _hideVolumeUITimer;
   Timer? _hideBrightnessUITimer;
 
@@ -251,10 +246,6 @@ class _MediaKitPlayerWidgetState extends State<MediaKitPlayerWidget> {
 
           // 锁定按钮
           _buildLockButton(),
-
-          // 音量/亮度指示器
-          if (_showVolume) _buildVolumeIndicator(),
-          if (_showBrightness) _buildBrightnessIndicator(),
         ],
       ),
     );
@@ -485,9 +476,7 @@ class _MediaKitPlayerWidgetState extends State<MediaKitPlayerWidget> {
             // 全屏按钮
             IconButton(
               icon: const Icon(Icons.fullscreen, color: Colors.white, size: 28),
-              onPressed: () {
-                // TODO: 实现全屏切换
-              },
+              onPressed: () {},
             ),
           ],
         ),
@@ -512,60 +501,6 @@ class _MediaKitPlayerWidgetState extends State<MediaKitPlayerWidget> {
             }
           });
         },
-      ),
-    );
-  }
-
-  Widget _buildVolumeIndicator() {
-    return Positioned.fill(
-      child: Center(
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.black.withValues(alpha: 0.7),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                _volume > 0 ? Icons.volume_up : Icons.volume_off,
-                color: Colors.white,
-                size: 32,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                '${(_volume * 100).toInt()}%',
-                style: const TextStyle(color: Colors.white, fontSize: 16),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildBrightnessIndicator() {
-    return Positioned.fill(
-      child: Center(
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.black.withValues(alpha: 0.7),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.brightness_6, color: Colors.white, size: 32),
-              const SizedBox(height: 8),
-              Text(
-                '${(_brightness * 100).toInt()}%',
-                style: const TextStyle(color: Colors.white, fontSize: 16),
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }
