@@ -1,19 +1,22 @@
-import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
 import 'package:mikomi/core/models/watch_history.dart';
+import 'package:mikomi/core/services/history_notifier.dart';
 
 class WatchHistoryService {
-  static const String _historyKey = 'watch_history';
-  static const int _maxHistoryCount = 500;
+  static const String _key = 'watch_history';
+  static const int _maxHistoryCount = 50;
+  final HistoryNotifier _notifier = HistoryNotifier();
 
-  Future<List<WatchHistory>> getHistory() async {
+  Future<List<WatchHistory>> getHistories() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final historyJson = prefs.getStringList(_historyKey) ?? [];
+      final String? historiesJson = prefs.getString(_key);
 
-      return historyJson
-          .map((json) => WatchHistory.fromJson(jsonDecode(json)))
-          .toList();
+      if (historiesJson == null) return [];
+
+      final List<dynamic> decoded = json.decode(historiesJson);
+      return decoded.map((item) => WatchHistory.fromJson(item)).toList();
     } catch (e) {
       return [];
     }
@@ -22,64 +25,51 @@ class WatchHistoryService {
   Future<void> addHistory(WatchHistory history) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final historyList = await getHistory();
+      final histories = await getHistories();
 
-      historyList.removeWhere(
-        (h) =>
-            h.bangumiId == history.bangumiId &&
-            h.episodeIndex == history.episodeIndex,
-      );
+      histories.removeWhere((h) => h.bangumiId == history.bangumiId);
+      histories.insert(0, history);
 
-      historyList.insert(0, history);
-
-      if (historyList.length > _maxHistoryCount) {
-        historyList.removeRange(_maxHistoryCount, historyList.length);
+      if (histories.length > _maxHistoryCount) {
+        histories.removeRange(_maxHistoryCount, histories.length);
       }
 
-      final historyJson = historyList
-          .map((h) => jsonEncode(h.toJson()))
-          .toList();
+      final encoded = json.encode(histories.map((h) => h.toJson()).toList());
+      await prefs.setString(_key, encoded);
 
-      await prefs.setStringList(_historyKey, historyJson);
+      // 通知历史记录已变更
+      _notifier.notifyHistoryChanged();
     } catch (e) {
       // 忽略错误
     }
   }
 
-  Future<void> removeHistory(int bangumiId, int episodeIndex) async {
+  Future<void> deleteHistory(int bangumiId) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final historyList = await getHistory();
+      final histories = await getHistories();
 
-      historyList.removeWhere(
-        (h) => h.bangumiId == bangumiId && h.episodeIndex == episodeIndex,
-      );
+      histories.removeWhere((h) => h.bangumiId == bangumiId);
 
-      final historyJson = historyList
-          .map((h) => jsonEncode(h.toJson()))
-          .toList();
+      final encoded = json.encode(histories.map((h) => h.toJson()).toList());
+      await prefs.setString(_key, encoded);
 
-      await prefs.setStringList(_historyKey, historyJson);
+      // 通知历史记录已变更
+      _notifier.notifyHistoryChanged();
     } catch (e) {
       // 忽略错误
     }
   }
 
-  Future<void> clearHistory() async {
+  Future<void> clearAll() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      await prefs.remove(_historyKey);
+      await prefs.remove(_key);
+
+      // 通知历史记录已变更
+      _notifier.notifyHistoryChanged();
     } catch (e) {
       // 忽略错误
-    }
-  }
-
-  Future<WatchHistory?> getHistoryByBangumi(int bangumiId) async {
-    try {
-      final historyList = await getHistory();
-      return historyList.firstWhere((h) => h.bangumiId == bangumiId);
-    } catch (e) {
-      return null;
     }
   }
 }

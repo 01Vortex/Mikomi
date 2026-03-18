@@ -12,6 +12,8 @@ import 'package:mikomi/core/models/episode.dart';
 import 'package:mikomi/core/services/bangumi_episodes_service.dart';
 import 'package:mikomi/features/video/data/repositories/video_source_repository.dart';
 import 'package:mikomi/features/video/controllers/video_player_controller.dart';
+import 'package:mikomi/core/services/watch_history_service.dart';
+import 'package:mikomi/core/models/watch_history.dart';
 
 class VideoPage extends StatefulWidget {
   final String title;
@@ -22,6 +24,8 @@ class VideoPage extends StatefulWidget {
   final String? pluginName;
   final String? animeTitle;
   final int? bangumiId;
+  final String? coverUrl;
+  final Duration? initialProgress; // 初始播放进度
 
   const VideoPage({
     super.key,
@@ -33,6 +37,8 @@ class VideoPage extends StatefulWidget {
     this.pluginName,
     this.animeTitle,
     this.bangumiId,
+    this.coverUrl,
+    this.initialProgress,
   });
 
   @override
@@ -54,11 +60,13 @@ class _VideoPageState extends State<VideoPage>
   final TextEditingController _danmakuController = TextEditingController();
   final BangumiEpisodesService _episodesService = BangumiEpisodesService();
   final VideoSourceRepository _videoSourceRepo = VideoSourceRepository();
+  final WatchHistoryService _historyService = WatchHistoryService();
 
   late final VideoPlayerController _playerController;
   Future<String>? _currentVideoUrlFuture;
   bool _showTimeoutHint = false;
   Timer? _timeoutTimer;
+  Timer? _saveHistoryTimer; // 定期保存历史的计时器
 
   @override
   void initState() {
@@ -91,7 +99,7 @@ class _VideoPageState extends State<VideoPage>
     _currentVideoUrlFuture = _getCurrentVideoUrl();
 
     // 启动超时计时器
-    _timeoutTimer = Timer(const Duration(seconds: 6), () {
+    _timeoutTimer = Timer(const Duration(seconds: 3), () {
       if (mounted) {
         setState(() {
           _showTimeoutHint = true;
@@ -103,6 +111,11 @@ class _VideoPageState extends State<VideoPage>
     if (_episodes.isEmpty && _currentPluginName != null) {
       _loadEpisodesInBackground();
     }
+
+    // 启动定期保存历史的计时器(每2秒保存一次)
+    _saveHistoryTimer = Timer.periodic(const Duration(seconds: 2), (timer) {
+      _saveWatchHistory();
+    });
   }
 
   @override
@@ -122,8 +135,8 @@ class _VideoPageState extends State<VideoPage>
 
     _timeoutTimer?.cancel();
 
-    // 启动6秒超时计时器
-    _timeoutTimer = Timer(const Duration(seconds: 6), () {
+    // 启动3秒超时计时器
+    _timeoutTimer = Timer(const Duration(seconds: 3), () {
       if (mounted) {
         setState(() {
           _showTimeoutHint = true;
@@ -259,6 +272,9 @@ class _VideoPageState extends State<VideoPage>
 
   Future<void> _playNextEpisode() async {
     if (_hasNextEpisode) {
+      // 保存当前集数的观看历史
+      _saveWatchHistory();
+
       // 立即停止当前播放
       await _playerController.stop();
 
@@ -271,6 +287,9 @@ class _VideoPageState extends State<VideoPage>
 
   Future<void> _playPreviousEpisode() async {
     if (_hasPreviousEpisode) {
+      // 保存当前集数的观看历史
+      _saveWatchHistory();
+
       // 立即停止当前播放
       await _playerController.stop();
 
@@ -379,9 +398,68 @@ class _VideoPageState extends State<VideoPage>
     );
   }
 
+  void _saveWatchHistory() {
+    // 只有在有番剧ID和标题时才保存历史
+    if (widget.bangumiId == null || widget.title.isEmpty) {
+      debugPrint(
+        '跳过保存历史: bangumiId=${widget.bangumiId}, title=${widget.title}',
+      );
+      return;
+    }
+
+    // 只有在播放器已初始化时才保存
+    if (_playerController.player == null || !_playerController.isInitialized) {
+      debugPrint('跳过保存历史: 播放器未初始化');
+      return;
+    }
+
+    try {
+      // 获取播放进度和总时长
+      final progress = _playerController.player!.state.position;
+      final duration = _playerController.player!.state.duration;
+
+      debugPrint('========== 保存观看历史 ==========');
+      debugPrint('当前进度: ${progress.inSeconds}秒');
+      debugPrint('视频总时长: ${duration.inSeconds}秒');
+
+      // 如果进度为0或总时长为0,跳过保存
+      if (progress.inSeconds == 0 || duration.inSeconds == 0) {
+        debugPrint('跳过保存: 进度或时长为0');
+        debugPrint('==================================');
+        return;
+      }
+
+      final history = WatchHistory(
+        bangumiId: widget.bangumiId!,
+        bangumiName: widget.title,
+        bangumiNameCn: widget.animeTitle ?? widget.title,
+        coverUrl: widget.coverUrl ?? '',
+        lastWatchEpisode: _currentEpisode,
+        lastWatchEpisodeName: _currentEpisodeTitle ?? '',
+        lastWatchTime: DateTime.now(),
+        pluginName: _currentPluginName ?? '',
+        progress: progress,
+        duration: duration,
+      );
+
+      _historyService.addHistory(history);
+      debugPrint('保存观看历史: ${history.displayName} - 第${_currentEpisode}集');
+      debugPrint(
+        '进度: ${progress.inSeconds}s / ${duration.inSeconds}s (${history.progressPercent.toStringAsFixed(1)}%)',
+      );
+      debugPrint('==================================');
+    } catch (e) {
+      debugPrint('保存观看历史失败: $e');
+    }
+  }
+
   @override
   void dispose() {
     _timeoutTimer?.cancel();
+    _saveHistoryTimer?.cancel(); // 取消定期保存计时器
+
+    // 最后保存一次观看历史
+    _saveWatchHistory();
 
     try {
       _playerController.dispose();
@@ -484,6 +562,7 @@ class _VideoPageState extends State<VideoPage>
                                       : null,
                                   hasNextEpisode: _hasNextEpisode,
                                   hasPreviousEpisode: _hasPreviousEpisode,
+                                  initialProgress: widget.initialProgress,
                                 ),
                               if (isLoading)
                                 Stack(

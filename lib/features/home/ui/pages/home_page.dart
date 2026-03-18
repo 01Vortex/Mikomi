@@ -5,6 +5,7 @@ import 'package:mikomi/features/home/ui/widgets/history_section.dart';
 import 'package:mikomi/features/home/ui/widgets/recommend_section.dart';
 import 'package:mikomi/core/services/bangumi_service.dart';
 import 'package:mikomi/core/services/watch_history_service.dart';
+import 'package:mikomi/core/services/history_notifier.dart';
 import 'package:mikomi/core/models/bangumi_item.dart';
 import 'package:mikomi/core/models/watch_history.dart';
 import 'package:mikomi/shared/widgets/skeleton.dart';
@@ -22,6 +23,7 @@ class _HomePageState extends State<HomePage>
     with AutomaticKeepAliveClientMixin {
   final BangumiService _bangumiService = BangumiService();
   final WatchHistoryService _historyService = WatchHistoryService();
+  final HistoryNotifier _historyNotifier = HistoryNotifier();
   final ScrollController _scrollController = ScrollController();
 
   List<BangumiItem> _trendsList = [];
@@ -40,13 +42,26 @@ class _HomePageState extends State<HomePage>
     super.initState();
     _loadData();
     _scrollController.addListener(_onScroll);
+
+    // 监听历史记录变更
+    _historyNotifier.addListener(_onHistoryChanged);
   }
 
   @override
   void dispose() {
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
+    _historyNotifier.removeListener(_onHistoryChanged);
     super.dispose();
+  }
+
+  void _onHistoryChanged() async {
+    final history = await _historyService.getHistories();
+    if (mounted) {
+      setState(() {
+        _historyList = history.take(6).toList();
+      });
+    }
   }
 
   void _onScroll() {
@@ -68,7 +83,7 @@ class _HomePageState extends State<HomePage>
       offset: _currentOffset,
     );
 
-    final history = await _historyService.getHistory();
+    final history = await _historyService.getHistories();
 
     if (mounted) {
       setState(() {

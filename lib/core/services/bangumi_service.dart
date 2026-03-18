@@ -129,4 +129,17 @@ class BangumiService {
       return [];
     }
   }
+
+  Future<BangumiItem?> getBangumiById(int id) async {
+    try {
+      final response = await _dioClient.get(
+        '${ApiConstants.bangumiApiDomain}/v0/subjects/$id',
+      );
+
+      return BangumiItem.fromJson(response.data);
+    } catch (e) {
+      debugPrint('获取番剧详情失败: $e');
+      return null;
+    }
+  }
 }

@@ -1,58 +1,74 @@
 class WatchHistory {
   final int bangumiId;
-  final String title;
+  final String bangumiName;
+  final String bangumiNameCn;
   final String coverUrl;
-  final int episodeIndex;
-  final String episodeTitle;
-  final int progress;
-  final int duration;
+  final int lastWatchEpisode;
+  final String lastWatchEpisodeName;
   final DateTime lastWatchTime;
+  final String pluginName;
+  final Duration progress;
+  final Duration duration; // 视频总时长
 
   WatchHistory({
     required this.bangumiId,
-    required this.title,
+    required this.bangumiName,
+    required this.bangumiNameCn,
     required this.coverUrl,
-    required this.episodeIndex,
-    required this.episodeTitle,
+    required this.lastWatchEpisode,
+    required this.lastWatchEpisodeName,
+    required this.lastWatchTime,
+    required this.pluginName,
     required this.progress,
     required this.duration,
-    required this.lastWatchTime,
   });
+
+  String get displayName =>
+      bangumiNameCn.isNotEmpty ? bangumiNameCn : bangumiName;
+
+  String get title => displayName;
+
+  String get episodeDisplay => lastWatchEpisodeName.isNotEmpty
+      ? lastWatchEpisodeName
+      : '第$lastWatchEpisode话';
+
+  String get episodeTitle => episodeDisplay;
+
+  double get progressPercent {
+    if (progress.inSeconds == 0 || duration.inSeconds == 0) return 0;
+    final percent = (progress.inSeconds / duration.inSeconds) * 100;
+    return percent.clamp(0, 100);
+  }
 
   Map<String, dynamic> toJson() {
     return {
       'bangumiId': bangumiId,
-      'title': title,
+      'bangumiName': bangumiName,
+      'bangumiNameCn': bangumiNameCn,
       'coverUrl': coverUrl,
-      'episodeIndex': episodeIndex,
-      'episodeTitle': episodeTitle,
-      'progress': progress,
-      'duration': duration,
+      'lastWatchEpisode': lastWatchEpisode,
+      'lastWatchEpisodeName': lastWatchEpisodeName,
       'lastWatchTime': lastWatchTime.toIso8601String(),
+      'pluginName': pluginName,
+      'progress': progress.inMilliseconds,
+      'duration': duration.inMilliseconds,
     };
   }
 
   factory WatchHistory.fromJson(Map<String, dynamic> json) {
     return WatchHistory(
       bangumiId: json['bangumiId'] ?? 0,
-      title: json['title'] ?? '',
+      bangumiName: json['bangumiName'] ?? '',
+      bangumiNameCn: json['bangumiNameCn'] ?? '',
       coverUrl: json['coverUrl'] ?? '',
-      episodeIndex: json['episodeIndex'] ?? 0,
-      episodeTitle: json['episodeTitle'] ?? '',
-      progress: json['progress'] ?? 0,
-      duration: json['duration'] ?? 0,
-      lastWatchTime: DateTime.parse(json['lastWatchTime']),
+      lastWatchEpisode: json['lastWatchEpisode'] ?? 0,
+      lastWatchEpisodeName: json['lastWatchEpisodeName'] ?? '',
+      lastWatchTime: DateTime.parse(
+        json['lastWatchTime'] ?? DateTime.now().toIso8601String(),
+      ),
+      pluginName: json['pluginName'] ?? '',
+      progress: Duration(milliseconds: json['progress'] ?? 0),
+      duration: Duration(milliseconds: json['duration'] ?? 0),
     );
-  }
-
-  int get progressPercent {
-    if (duration == 0) return 0;
-    return ((progress / duration) * 100).round();
-  }
-
-  String get progressText {
-    final minutes = (progress / 60).floor();
-    final seconds = progress % 60;
-    return '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
   }
 }

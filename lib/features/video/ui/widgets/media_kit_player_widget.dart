@@ -17,6 +17,7 @@ class MediaKitPlayerWidget extends StatefulWidget {
   final VoidCallback? onPreviousEpisode;
   final bool hasNextEpisode;
   final bool hasPreviousEpisode;
+  final Duration? initialProgress; // 初始播放进度
 
   const MediaKitPlayerWidget({
     super.key,
@@ -32,6 +33,7 @@ class MediaKitPlayerWidget extends StatefulWidget {
     this.onPreviousEpisode,
     this.hasNextEpisode = false,
     this.hasPreviousEpisode = false,
+    this.initialProgress,
   });
 
   @override
@@ -52,6 +54,7 @@ class _MediaKitPlayerWidgetState extends State<MediaKitPlayerWidget> {
   Duration _lastBufferPosition = Duration.zero;
   DateTime? _lastBufferTime;
   Timer? _hideTimer;
+  bool _hasRestoredProgress = false; // 是否已恢复进度
 
   // 手势控制相关(预留)
   Timer? _hideVolumeUITimer;
@@ -146,6 +149,18 @@ class _MediaKitPlayerWidgetState extends State<MediaKitPlayerWidget> {
               setState(() {
                 _totalDuration = duration;
               });
+
+              // 当视频时长加载完成后,跳转到初始进度(只执行一次)
+              if (!_hasRestoredProgress &&
+                  widget.initialProgress != null &&
+                  widget.initialProgress!.inSeconds > 0 &&
+                  duration.inSeconds > 0) {
+                _hasRestoredProgress = true;
+                debugPrint(
+                  '视频加载完成,恢复播放进度: ${widget.initialProgress!.inSeconds}秒 / ${duration.inSeconds}秒',
+                );
+                player.seek(widget.initialProgress!);
+              }
             }
           });
 
@@ -196,6 +211,7 @@ class _MediaKitPlayerWidgetState extends State<MediaKitPlayerWidget> {
   void didUpdateWidget(MediaKitPlayerWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.videoUrl != widget.videoUrl && widget.videoUrl.isNotEmpty) {
+      _hasRestoredProgress = false; // 重置标志位
       _initPlayer();
     }
   }

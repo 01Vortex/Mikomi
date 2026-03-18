@@ -4,11 +4,22 @@ import 'package:mikomi/core/models/watch_history.dart';
 import 'package:mikomi/config/themes/app_colors.dart';
 import 'package:mikomi/shared/widgets/cached_image.dart';
 import 'package:mikomi/config/localization/app_localizations.dart';
+import 'package:mikomi/core/services/bangumi_service.dart';
+import 'package:mikomi/features/video/ui/pages/video_page.dart';
+import 'package:mikomi/core/services/watch_history_service.dart';
+import 'package:mikomi/features/my/ui/pages/watch_history_page.dart';
 
-class HistorySection extends StatelessWidget {
+class HistorySection extends StatefulWidget {
   final List<WatchHistory> historyList;
 
   const HistorySection({super.key, required this.historyList});
+
+  @override
+  State<HistorySection> createState() => _HistorySectionState();
+}
+
+class _HistorySectionState extends State<HistorySection> {
+  final WatchHistoryService _historyService = WatchHistoryService();
 
   @override
   Widget build(BuildContext context) {
@@ -17,21 +28,60 @@ class HistorySection extends StatelessWidget {
       children: [
         SectionHeader(
           title: AppLocalizations.of(context).watchHistory,
-          moreText: historyList.isEmpty
+          moreText: widget.historyList.isEmpty
               ? AppLocalizations.of(context).noHistory
               : AppLocalizations.of(context).more,
-          onMoreTap: historyList.isEmpty ? null : () {},
+          onMoreTap: widget.historyList.isEmpty
+              ? null
+              : () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const WatchHistoryPage(),
+                    ),
+                  );
+                },
         ),
-        if (historyList.isNotEmpty)
+        if (widget.historyList.isNotEmpty)
           SizedBox(
             height: 210,
             child: ListView.builder(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               scrollDirection: Axis.horizontal,
-              itemCount: historyList.length,
+              itemCount: widget.historyList.length,
               itemBuilder: (context, index) {
-                final history = historyList[index];
-                return _HistoryCard(history: history);
+                final history = widget.historyList[index];
+                return _HistoryCard(
+                  history: history,
+                  onDelete: () async {
+                    final confirmed = await showDialog<bool>(
+                      context: context,
+                      builder: (context) => AlertDialog(
+                        title: const Text('删除历史记录'),
+                        content: Text('确认删除《${history.displayName}》的观看记录吗?'),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(context, false),
+                            child: Text(
+                              '取消',
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.outline,
+                              ),
+                            ),
+                          ),
+                          TextButton(
+                            onPressed: () => Navigator.pop(context, true),
+                            child: const Text('删除'),
+                          ),
+                        ],
+                      ),
+                    );
+
+                    if (confirmed == true) {
+                      await _historyService.deleteHistory(history.bangumiId);
+                    }
+                  },
+                );
               },
             ),
           ),
@@ -40,17 +90,79 @@ class HistorySection extends StatelessWidget {
   }
 }
 
-class _HistoryCard extends StatelessWidget {
+class _HistoryCard extends StatefulWidget {
   final WatchHistory history;
+  final VoidCallback? onDelete;
 
-  const _HistoryCard({required this.history});
+  const _HistoryCard({required this.history, this.onDelete});
+
+  @override
+  State<_HistoryCard> createState() => _HistoryCardState();
+}
+
+class _HistoryCardState extends State<_HistoryCard> {
+  final BangumiService _bangumiService = BangumiService();
+  String _coverUrl = '';
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCover();
+  }
+
+  Future<void> _loadCover() async {
+    if (widget.history.coverUrl.isNotEmpty) {
+      setState(() {
+        _coverUrl = widget.history.coverUrl;
+        _isLoading = false;
+      });
+      return;
+    }
+
+    final bangumi = await _bangumiService.getBangumiById(
+      widget.history.bangumiId,
+    );
+    if (mounted && bangumi != null) {
+      setState(() {
+        _coverUrl = bangumi.coverUrl;
+        _isLoading = false;
+      });
+    } else if (mounted) {
+      setState(() => _isLoading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () {
-        // TODO: 跳转到播放页面
+        // 直接跳转到视频播放页
+        Navigator.push(
+          context,
+          PageRouteBuilder(
+            pageBuilder: (context, animation, secondaryAnimation) => VideoPage(
+              title: widget.history.displayName,
+              videoUrl: '',
+              currentEpisode: widget.history.lastWatchEpisode,
+              episodes: const [],
+              pluginName: widget.history.pluginName.isNotEmpty
+                  ? widget.history.pluginName
+                  : null,
+              animeTitle: widget.history.bangumiNameCn,
+              bangumiId: widget.history.bangumiId,
+              coverUrl: widget.history.coverUrl,
+              initialProgress: widget.history.progress,
+            ),
+            transitionsBuilder:
+                (context, animation, secondaryAnimation, child) {
+                  return FadeTransition(opacity: animation, child: child);
+                },
+            transitionDuration: const Duration(milliseconds: 200),
+          ),
+        );
       },
+      onLongPress: widget.onDelete,
       child: Container(
         width: 120,
         margin: const EdgeInsets.only(right: 12),
@@ -68,12 +180,19 @@ class _HistoryCard extends StatelessWidget {
                   ),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(8),
-                    child: CachedImage(
-                      imageUrl: history.coverUrl,
-                      width: 120,
-                      height: 160,
-                      fit: BoxFit.cover,
-                    ),
+                    child: _isLoading
+                        ? Container(
+                            color: Colors.grey[300],
+                            child: const Center(
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            ),
+                          )
+                        : CachedImage(
+                            imageUrl: _coverUrl,
+                            width: 120,
+                            height: 160,
+                            fit: BoxFit.cover,
+                          ),
                   ),
                 ),
                 Positioned(
@@ -91,7 +210,7 @@ class _HistoryCard extends StatelessWidget {
                     ),
                     child: FractionallySizedBox(
                       alignment: Alignment.centerLeft,
-                      widthFactor: history.progressPercent / 100,
+                      widthFactor: widget.history.progressPercent / 100,
                       child: Container(
                         decoration: BoxDecoration(
                           color: Theme.of(context).colorScheme.primary,
@@ -108,14 +227,14 @@ class _HistoryCard extends StatelessWidget {
             ),
             const SizedBox(height: 6),
             Text(
-              history.title,
+              widget.history.title,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
             ),
             const SizedBox(height: 2),
             Text(
-              history.episodeTitle,
+              '第${widget.history.lastWatchEpisode}集 ${widget.history.progressPercent.toStringAsFixed(0)}%',
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: const TextStyle(
