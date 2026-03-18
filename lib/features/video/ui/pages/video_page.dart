@@ -66,13 +66,16 @@ class _VideoPageState extends State<VideoPage>
     _currentPluginName = widget.pluginName;
     _tabController = TabController(length: 2, vsync: this);
 
-    // 显示状态栏 - 使用edgeToEdge模式
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    // 显示状态栏和导航栏
+    SystemChrome.setEnabledSystemUIMode(
+      SystemUiMode.manual,
+      overlays: [SystemUiOverlay.top, SystemUiOverlay.bottom],
+    );
 
-    // 设置状态栏样式 - 白色背景，黑色图标
+    // 设置状态栏样式
     SystemChrome.setSystemUIOverlayStyle(
-      const SystemUiOverlayStyle(
-        statusBarColor: Colors.white,
+      SystemUiOverlayStyle(
+        statusBarColor: AppColors.surface,
         statusBarIconBrightness: Brightness.dark,
         statusBarBrightness: Brightness.light,
       ),
@@ -344,7 +347,10 @@ class _VideoPageState extends State<VideoPage>
     }
 
     // 恢复默认状态栏
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    SystemChrome.setEnabledSystemUIMode(
+      SystemUiMode.manual,
+      overlays: [SystemUiOverlay.top, SystemUiOverlay.bottom],
+    );
     SystemChrome.setSystemUIOverlayStyle(
       const SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,
@@ -360,9 +366,9 @@ class _VideoPageState extends State<VideoPage>
   @override
   Widget build(BuildContext context) {
     return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: const SystemUiOverlayStyle(
-        statusBarColor: Colors.white, // 白色背景
-        statusBarIconBrightness: Brightness.dark, // 黑色图标
+      value: SystemUiOverlayStyle(
+        statusBarColor: AppColors.surface,
+        statusBarIconBrightness: Brightness.dark,
         statusBarBrightness: Brightness.light,
       ),
       child: PopScope(
@@ -377,12 +383,14 @@ class _VideoPageState extends State<VideoPage>
           }
         },
         child: Scaffold(
-          backgroundColor: Colors.black,
+          backgroundColor: AppColors.background,
           resizeToAvoidBottomInset: true,
-          extendBodyBehindAppBar: true,
           body: Column(
             children: [
-              SizedBox(height: MediaQuery.of(context).padding.top),
+              Container(
+                height: MediaQuery.of(context).padding.top,
+                color: AppColors.surface,
+              ),
               Expanded(
                 child: FutureBuilder<String>(
                   key: ValueKey(_currentEpisode),

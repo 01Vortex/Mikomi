@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:mikomi/config/themes/app_colors.dart';
 import 'package:mikomi/features/video/controllers/video_player_controller.dart';
 import 'package:mikomi/features/video/ui/widgets/fullscreen_video_controls.dart';
 import 'package:media_kit_video/media_kit_video.dart';
@@ -52,13 +53,17 @@ class _FullscreenVideoPageState extends State<FullscreenVideoPage> {
     // 恢复竖屏
     SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
 
-    // 恢复状态栏
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    // 恢复状态栏 - 与视频页面保持一致
+    SystemChrome.setEnabledSystemUIMode(
+      SystemUiMode.manual,
+      overlays: [SystemUiOverlay.top, SystemUiOverlay.bottom],
+    );
 
     SystemChrome.setSystemUIOverlayStyle(
-      const SystemUiOverlayStyle(
-        statusBarColor: Colors.transparent,
+      SystemUiOverlayStyle(
+        statusBarColor: AppColors.surface,
         statusBarIconBrightness: Brightness.dark,
+        statusBarBrightness: Brightness.light,
       ),
     );
   }
