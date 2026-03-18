@@ -39,21 +39,18 @@ class _FullscreenVideoPageState extends State<FullscreenVideoPage> {
   }
 
   void _enterFullscreen() {
+    // 立即隐藏状态栏和导航栏
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+
     // 设置横屏
     SystemChrome.setPreferredOrientations([
       DeviceOrientation.landscapeLeft,
       DeviceOrientation.landscapeRight,
     ]);
-
-    // 隐藏状态栏和导航栏
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
   }
 
   void _exitFullscreen() {
-    // 恢复竖屏
-    SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
-
-    // 恢复状态栏 - 与视频页面保持一致
+    // 立即恢复状态栏 - 与视频页面保持一致
     SystemChrome.setEnabledSystemUIMode(
       SystemUiMode.manual,
       overlays: [SystemUiOverlay.top, SystemUiOverlay.bottom],
@@ -66,6 +63,9 @@ class _FullscreenVideoPageState extends State<FullscreenVideoPage> {
         statusBarBrightness: Brightness.light,
       ),
     );
+
+    // 恢复竖屏
+    SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
   }
 
   @override

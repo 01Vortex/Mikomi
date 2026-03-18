@@ -216,17 +216,29 @@ class _MediaKitPlayerWidgetState extends State<MediaKitPlayerWidget> {
 
   void _enterFullscreen() {
     Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => FullscreenVideoPage(
-          playerController: widget.playerController,
-          title: widget.title,
-          currentEpisode: widget.currentEpisode,
-          episodeTitle: widget.episodeTitle,
-          onNextEpisode: widget.onNextEpisode,
-          onPreviousEpisode: widget.onPreviousEpisode,
-          hasNextEpisode: widget.hasNextEpisode,
-          hasPreviousEpisode: widget.hasPreviousEpisode,
-        ),
+      PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) =>
+            FullscreenVideoPage(
+              playerController: widget.playerController,
+              title: widget.title,
+              currentEpisode: widget.currentEpisode,
+              episodeTitle: widget.episodeTitle,
+              onNextEpisode: widget.onNextEpisode,
+              onPreviousEpisode: widget.onPreviousEpisode,
+              hasNextEpisode: widget.hasNextEpisode,
+              hasPreviousEpisode: widget.hasPreviousEpisode,
+            ),
+        transitionDuration: const Duration(milliseconds: 200),
+        reverseTransitionDuration: const Duration(milliseconds: 200),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          // 使用缓动曲线让动画更流畅
+          final curvedAnimation = CurvedAnimation(
+            parent: animation,
+            curve: Curves.easeInOut,
+          );
+
+          return FadeTransition(opacity: curvedAnimation, child: child);
+        },
       ),
     );
   }
@@ -412,6 +424,16 @@ class _MediaKitPlayerWidgetState extends State<MediaKitPlayerWidget> {
                     ),
                 ],
               ),
+            ),
+            IconButton(
+              icon: const Icon(Icons.more_vert, color: Colors.white),
+              onPressed: () {
+                // TODO: 显示设置菜单
+                debugPrint('打开播放器设置');
+              },
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(),
+              iconSize: 24,
             ),
             if (widget.onOpenMenu != null)
               IconButton(

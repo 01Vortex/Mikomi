@@ -229,8 +229,11 @@ class _VideoPageState extends State<VideoPage>
   bool get _hasNextEpisode => _currentEpisode < _totalEpisodes;
   bool get _hasPreviousEpisode => _currentEpisode > 1;
 
-  void _playNextEpisode() {
+  Future<void> _playNextEpisode() async {
     if (_hasNextEpisode) {
+      // 立即停止当前播放
+      await _playerController.stop();
+
       setState(() {
         _currentEpisode++;
         _updateCurrentVideoUrl();
@@ -238,8 +241,11 @@ class _VideoPageState extends State<VideoPage>
     }
   }
 
-  void _playPreviousEpisode() {
+  Future<void> _playPreviousEpisode() async {
     if (_hasPreviousEpisode) {
+      // 立即停止当前播放
+      await _playerController.stop();
+
       setState(() {
         _currentEpisode--;
         _updateCurrentVideoUrl();
@@ -397,6 +403,8 @@ class _VideoPageState extends State<VideoPage>
                   future: _currentVideoUrlFuture,
                   builder: (context, snapshot) {
                     final videoUrl = snapshot.data ?? _videoUrl;
+                    final isLoading =
+                        snapshot.connectionState == ConnectionState.waiting;
 
                     return Column(
                       children: [
@@ -404,8 +412,10 @@ class _VideoPageState extends State<VideoPage>
                           width: MediaQuery.of(context).size.width,
                           height: MediaQuery.of(context).size.width * 9 / 16,
                           color: Colors.black,
-                          child: videoUrl.isNotEmpty
-                              ? MediaKitPlayerWidget(
+                          child: Stack(
+                            children: [
+                              if (videoUrl.isNotEmpty && !isLoading)
+                                MediaKitPlayerWidget(
                                   videoUrl: videoUrl,
                                   title: widget.title,
                                   currentEpisode: _currentEpisode,
@@ -420,14 +430,39 @@ class _VideoPageState extends State<VideoPage>
                                       : null,
                                   hasNextEpisode: _hasNextEpisode,
                                   hasPreviousEpisode: _hasPreviousEpisode,
-                                )
-                              : Center(
+                                ),
+                              if (isLoading)
+                                Center(
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      const CircularProgressIndicator(
+                                        color: Colors.white,
+                                        strokeWidth: 3,
+                                      ),
+                                      const SizedBox(height: 16),
+                                      Text(
+                                        '解析中',
+                                        style: TextStyle(
+                                          color: Colors.white.withValues(
+                                            alpha: 0.8,
+                                          ),
+                                          fontSize: 14,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              if (!isLoading && videoUrl.isEmpty)
+                                Center(
                                   child: Icon(
                                     Icons.play_circle_outline,
                                     size: 80,
                                     color: Colors.white.withValues(alpha: 0.8),
                                   ),
                                 ),
+                            ],
+                          ),
                         ),
                         Expanded(
                           child: Container(
@@ -627,7 +662,10 @@ class _VideoPageState extends State<VideoPage>
               return EpisodeCard(
                 episode: episode,
                 isCurrent: isCurrent,
-                onTap: () {
+                onTap: () async {
+                  // 立即停止当前播放
+                  await _playerController.stop();
+
                   setState(() {
                     _currentEpisode = episode.number;
                     _updateCurrentVideoUrl();

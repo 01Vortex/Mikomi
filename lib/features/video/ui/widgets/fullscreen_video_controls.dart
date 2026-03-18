@@ -303,7 +303,7 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
                 ),
               ),
               IconButton(
-                icon: const Icon(Icons.settings, color: Colors.white),
+                icon: const Icon(Icons.more_vert, color: Colors.white),
                 onPressed: () {
                   // TODO: 打开设置面板
                 },
