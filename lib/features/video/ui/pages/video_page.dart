@@ -223,6 +223,27 @@ class _VideoPageState extends State<VideoPage>
     }
   }
 
+  bool get _hasNextEpisode => _currentEpisode < _totalEpisodes;
+  bool get _hasPreviousEpisode => _currentEpisode > 1;
+
+  void _playNextEpisode() {
+    if (_hasNextEpisode) {
+      setState(() {
+        _currentEpisode++;
+        _updateCurrentVideoUrl();
+      });
+    }
+  }
+
+  void _playPreviousEpisode() {
+    if (_hasPreviousEpisode) {
+      setState(() {
+        _currentEpisode--;
+        _updateCurrentVideoUrl();
+      });
+    }
+  }
+
   Future<String> _getCurrentVideoUrl() async {
     try {
       // 如果剧集列表为空,返回初始URL
@@ -383,6 +404,14 @@ class _VideoPageState extends State<VideoPage>
                                   totalEpisodes: _totalEpisodes,
                                   playerController: _playerController,
                                   episodeTitle: _currentEpisodeTitle,
+                                  onNextEpisode: _hasNextEpisode
+                                      ? _playNextEpisode
+                                      : null,
+                                  onPreviousEpisode: _hasPreviousEpisode
+                                      ? _playPreviousEpisode
+                                      : null,
+                                  hasNextEpisode: _hasNextEpisode,
+                                  hasPreviousEpisode: _hasPreviousEpisode,
                                 )
                               : Center(
                                   child: Icon(

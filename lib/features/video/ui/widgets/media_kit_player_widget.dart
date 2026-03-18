@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 import 'package:mikomi/features/video/controllers/video_player_controller.dart';
+import 'package:mikomi/features/video/ui/pages/fullscreen_video_page.dart';
 
 class MediaKitPlayerWidget extends StatefulWidget {
   final String videoUrl;
@@ -12,6 +13,10 @@ class MediaKitPlayerWidget extends StatefulWidget {
   final String? episodeTitle;
   final VoidCallback? onBack;
   final VoidCallback? onOpenMenu;
+  final VoidCallback? onNextEpisode;
+  final VoidCallback? onPreviousEpisode;
+  final bool hasNextEpisode;
+  final bool hasPreviousEpisode;
 
   const MediaKitPlayerWidget({
     super.key,
@@ -23,6 +28,10 @@ class MediaKitPlayerWidget extends StatefulWidget {
     this.episodeTitle,
     this.onBack,
     this.onOpenMenu,
+    this.onNextEpisode,
+    this.onPreviousEpisode,
+    this.hasNextEpisode = false,
+    this.hasPreviousEpisode = false,
   });
 
   @override
@@ -203,6 +212,23 @@ class _MediaKitPlayerWidgetState extends State<MediaKitPlayerWidget> {
       _doubleTapCount = 0;
       _doubleTapTimer?.cancel();
     }
+  }
+
+  void _enterFullscreen() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => FullscreenVideoPage(
+          playerController: widget.playerController,
+          title: widget.title,
+          currentEpisode: widget.currentEpisode,
+          episodeTitle: widget.episodeTitle,
+          onNextEpisode: widget.onNextEpisode,
+          onPreviousEpisode: widget.onPreviousEpisode,
+          hasNextEpisode: widget.hasNextEpisode,
+          hasPreviousEpisode: widget.hasPreviousEpisode,
+        ),
+      ),
+    );
   }
 
   @override
@@ -476,7 +502,7 @@ class _MediaKitPlayerWidgetState extends State<MediaKitPlayerWidget> {
             // 全屏按钮
             IconButton(
               icon: const Icon(Icons.fullscreen, color: Colors.white, size: 28),
-              onPressed: () {},
+              onPressed: _enterFullscreen,
             ),
           ],
         ),
