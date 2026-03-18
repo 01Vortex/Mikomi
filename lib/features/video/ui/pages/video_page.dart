@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mikomi/config/themes/app_colors.dart';
@@ -56,6 +57,8 @@ class _VideoPageState extends State<VideoPage>
 
   late final VideoPlayerController _playerController;
   Future<String>? _currentVideoUrlFuture;
+  bool _showTimeoutHint = false;
+  Timer? _timeoutTimer;
 
   @override
   void initState() {
@@ -81,19 +84,24 @@ class _VideoPageState extends State<VideoPage>
       ),
     );
 
-    _initializePlayer();
+    // 初始化播放器
+    _playerController = VideoPlayerController();
 
+    // 立即开始解析视频
+    _currentVideoUrlFuture = _getCurrentVideoUrl();
+
+    // 启动超时计时器
+    _timeoutTimer = Timer(const Duration(seconds: 6), () {
+      if (mounted) {
+        setState(() {
+          _showTimeoutHint = true;
+        });
+      }
+    });
+
+    // 异步加载剧集列表，不阻塞视频播放
     if (_episodes.isEmpty && _currentPluginName != null) {
       _loadEpisodesInBackground();
-    }
-  }
-
-  Future<void> _initializePlayer() async {
-    try {
-      _playerController = VideoPlayerController();
-      _updateCurrentVideoUrl();
-    } catch (e) {
-      debugPrint('初始化播放器失败: $e');
     }
   }
 
@@ -102,12 +110,26 @@ class _VideoPageState extends State<VideoPage>
     super.reassemble();
     // 热重启时重新初始化播放器
     debugPrint('VideoPage: 热重启检测到，重新初始化');
-    _initializePlayer();
+    _updateCurrentVideoUrl();
   }
 
   /// 更新当前视频URL(切换集数时调用)
   void _updateCurrentVideoUrl() {
-    _currentVideoUrlFuture = _getCurrentVideoUrl();
+    setState(() {
+      _showTimeoutHint = false;
+      _currentVideoUrlFuture = _getCurrentVideoUrl();
+    });
+
+    _timeoutTimer?.cancel();
+
+    // 启动6秒超时计时器
+    _timeoutTimer = Timer(const Duration(seconds: 6), () {
+      if (mounted) {
+        setState(() {
+          _showTimeoutHint = true;
+        });
+      }
+    });
   }
 
   Future<void> _loadEpisodesInBackground() async {
@@ -117,6 +139,7 @@ class _VideoPageState extends State<VideoPage>
 
     try {
       if (widget.animeTitle != null && _currentPluginName != null) {
+        // 异步加载剧集，不影响当前视频播放
         await _loadEpisodesWithVideoSource(_currentPluginName!);
       } else if (widget.bangumiId != null) {
         await _loadBangumiEpisodes();
@@ -134,6 +157,7 @@ class _VideoPageState extends State<VideoPage>
     if (widget.animeTitle == null) return;
 
     try {
+      // 异步获取视频源剧集
       final videoEpisodes = await _videoSourceRepo
           .searchAndGetEpisodes(widget.animeTitle!, pluginName)
           .timeout(
@@ -149,6 +173,7 @@ class _VideoPageState extends State<VideoPage>
         return;
       }
 
+      // 异步获取Bangumi剧集信息（如果有）
       List<Episode>? bangumiEpisodes;
       if (widget.bangumiId != null) {
         try {
@@ -166,6 +191,7 @@ class _VideoPageState extends State<VideoPage>
         }
       }
 
+      // 合并剧集信息
       final mergedEpisodes = <Episode>[];
       for (int i = 0; i < videoEpisodes.length; i++) {
         final videoEp = videoEpisodes[i];
@@ -187,11 +213,13 @@ class _VideoPageState extends State<VideoPage>
           if (_currentEpisode > mergedEpisodes.length) {
             _currentEpisode = 1;
           }
-          // 更新视频URL
-          _updateCurrentVideoUrl();
         });
         debugPrint('成功加载 ${mergedEpisodes.length} 集');
         debugPrint('第一集URL: ${mergedEpisodes.first.url}');
+
+        // 剧集加载完成后，重新解析视频URL
+        debugPrint('剧集加载完成，重新解析视频URL');
+        _updateCurrentVideoUrl();
       }
     } catch (e) {
       debugPrint('加载视频源剧集失败: $e');
@@ -273,6 +301,7 @@ class _VideoPageState extends State<VideoPage>
         return _videoUrl;
       }
 
+      // 从剧集列表获取URL
       final url =
           _episodes.firstWhere((ep) => ep.number == _currentEpisode).url ??
           _videoUrl;
@@ -312,7 +341,13 @@ class _VideoPageState extends State<VideoPage>
     });
 
     try {
+      // 异步加载新视频源的剧集列表
       await _loadEpisodesWithVideoSource(source.name);
+
+      // 加载完成后更新当前视频URL
+      if (mounted) {
+        _updateCurrentVideoUrl();
+      }
     } finally {
       if (mounted) {
         setState(() => _isLoadingEpisodes = false);
@@ -346,6 +381,8 @@ class _VideoPageState extends State<VideoPage>
 
   @override
   void dispose() {
+    _timeoutTimer?.cancel();
+
     try {
       _playerController.dispose();
     } catch (e) {
@@ -399,12 +436,29 @@ class _VideoPageState extends State<VideoPage>
               ),
               Expanded(
                 child: FutureBuilder<String>(
-                  key: ValueKey(_currentEpisode),
+                  key: ValueKey(
+                    '${_currentEpisode}_${_currentVideoUrlFuture.hashCode}',
+                  ),
                   future: _currentVideoUrlFuture,
                   builder: (context, snapshot) {
-                    final videoUrl = snapshot.data ?? _videoUrl;
+                    final videoUrl = snapshot.data ?? '';
                     final isLoading =
-                        snapshot.connectionState == ConnectionState.waiting;
+                        snapshot.connectionState == ConnectionState.waiting ||
+                        (snapshot.connectionState == ConnectionState.done &&
+                            videoUrl.isEmpty &&
+                            !snapshot.hasError);
+                    final hasError = snapshot.hasError;
+
+                    debugPrint('========== FutureBuilder状态 ==========');
+                    debugPrint('connectionState: ${snapshot.connectionState}');
+                    debugPrint('hasData: ${snapshot.hasData}');
+                    debugPrint('hasError: $hasError');
+                    debugPrint('videoUrl: $videoUrl');
+                    debugPrint('isLoading: $isLoading');
+                    if (hasError) {
+                      debugPrint('error: ${snapshot.error}');
+                    }
+                    debugPrint('==================================');
 
                     return Column(
                       children: [
@@ -432,33 +486,162 @@ class _VideoPageState extends State<VideoPage>
                                   hasPreviousEpisode: _hasPreviousEpisode,
                                 ),
                               if (isLoading)
+                                Stack(
+                                  children: [
+                                    // 顶部渐变遮罩（超时后显示）
+                                    if (_showTimeoutHint)
+                                      Positioned(
+                                        top: 0,
+                                        left: 0,
+                                        right: 0,
+                                        child: Container(
+                                          height: 80,
+                                          decoration: BoxDecoration(
+                                            gradient: LinearGradient(
+                                              begin: Alignment.topCenter,
+                                              end: Alignment.bottomCenter,
+                                              colors: [
+                                                Colors.black.withValues(
+                                                  alpha: 0.7,
+                                                ),
+                                                Colors.transparent,
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    // 返回按钮（超时后显示）
+                                    if (_showTimeoutHint)
+                                      Positioned(
+                                        top: 10,
+                                        left: 4,
+                                        child: IconButton(
+                                          icon: const Icon(
+                                            Icons.arrow_back,
+                                            color: Colors.white,
+                                          ),
+                                          onPressed: () =>
+                                              Navigator.of(context).pop(),
+                                          padding: EdgeInsets.zero,
+                                          constraints: const BoxConstraints(),
+                                          iconSize: 24,
+                                        ),
+                                      ),
+                                    // 中间加载提示
+                                    Center(
+                                      child: Column(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: [
+                                          const CircularProgressIndicator(
+                                            color: Colors.white,
+                                            strokeWidth: 3,
+                                          ),
+                                          const SizedBox(height: 16),
+                                          Text(
+                                            '解析中',
+                                            style: TextStyle(
+                                              color: Colors.white.withValues(
+                                                alpha: 0.8,
+                                              ),
+                                              fontSize: 14,
+                                            ),
+                                          ),
+                                          if (_showTimeoutHint) ...[
+                                            const SizedBox(height: 12),
+                                            Text(
+                                              '加载时间较长',
+                                              style: TextStyle(
+                                                color: Colors.white.withValues(
+                                                  alpha: 0.7,
+                                                ),
+                                                fontSize: 13,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 8),
+                                            GestureDetector(
+                                              onTap: _showVideoSourceSelector,
+                                              child: Container(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                      horizontal: 20,
+                                                      vertical: 10,
+                                                    ),
+                                                decoration: BoxDecoration(
+                                                  color: AppColors.primary,
+                                                  borderRadius:
+                                                      BorderRadius.circular(20),
+                                                ),
+                                                child: const Text(
+                                                  '切换视频源',
+                                                  style: TextStyle(
+                                                    color: Colors.white,
+                                                    fontSize: 14,
+                                                    fontWeight: FontWeight.w500,
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              if (!isLoading && videoUrl.isEmpty)
                                 Center(
                                   child: Column(
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
-                                      const CircularProgressIndicator(
-                                        color: Colors.white,
-                                        strokeWidth: 3,
-                                      ),
-                                      const SizedBox(height: 16),
-                                      Text(
-                                        '解析中',
-                                        style: TextStyle(
-                                          color: Colors.white.withValues(
-                                            alpha: 0.8,
-                                          ),
-                                          fontSize: 14,
+                                      Icon(
+                                        hasError
+                                            ? Icons.error_outline
+                                            : Icons.play_circle_outline,
+                                        size: 80,
+                                        color: Colors.white.withValues(
+                                          alpha: 0.8,
                                         ),
                                       ),
+                                      if (hasError) ...[
+                                        const SizedBox(height: 16),
+                                        Text(
+                                          '视频解析失败',
+                                          style: TextStyle(
+                                            color: Colors.white.withValues(
+                                              alpha: 0.8,
+                                            ),
+                                            fontSize: 14,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 8),
+                                        GestureDetector(
+                                          onTap: () {
+                                            setState(() {
+                                              _updateCurrentVideoUrl();
+                                            });
+                                          },
+                                          child: Container(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 20,
+                                              vertical: 10,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: AppColors.primary,
+                                              borderRadius:
+                                                  BorderRadius.circular(20),
+                                            ),
+                                            child: const Text(
+                                              '重试',
+                                              style: TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 14,
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
                                     ],
-                                  ),
-                                ),
-                              if (!isLoading && videoUrl.isEmpty)
-                                Center(
-                                  child: Icon(
-                                    Icons.play_circle_outline,
-                                    size: 80,
-                                    color: Colors.white.withValues(alpha: 0.8),
                                   ),
                                 ),
                             ],

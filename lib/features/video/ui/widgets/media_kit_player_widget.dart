@@ -48,6 +48,9 @@ class _MediaKitPlayerWidgetState extends State<MediaKitPlayerWidget> {
   Duration _totalDuration = Duration.zero;
   bool _isDragging = false;
   bool _lockPanel = false;
+  double _bufferingSpeed = 0.0; // KB/s
+  Duration _lastBufferPosition = Duration.zero;
+  DateTime? _lastBufferTime;
   Timer? _hideTimer;
 
   // 手势控制相关(预留)
@@ -113,6 +116,11 @@ class _MediaKitPlayerWidgetState extends State<MediaKitPlayerWidget> {
             if (mounted) {
               setState(() {
                 _isBuffering = buffering;
+                if (!buffering) {
+                  // 缓冲结束，重置速度
+                  _bufferingSpeed = 0.0;
+                  _lastBufferTime = null;
+                }
               });
             }
           });
@@ -138,6 +146,32 @@ class _MediaKitPlayerWidgetState extends State<MediaKitPlayerWidget> {
               setState(() {
                 _totalDuration = duration;
               });
+            }
+          });
+
+          // 监听buffer变化来估算下载速度
+          player.stream.buffer.listen((buffer) {
+            if (mounted && _isBuffering) {
+              final now = DateTime.now();
+              if (_lastBufferTime != null) {
+                final timeDiff = now
+                    .difference(_lastBufferTime!)
+                    .inMilliseconds;
+                final bufferDiff =
+                    buffer.inMilliseconds - _lastBufferPosition.inMilliseconds;
+
+                if (timeDiff > 0 && bufferDiff > 0) {
+                  // 假设平均码率为2Mbps，根据缓冲时长估算下载速度
+                  // 这是一个粗略估算
+                  final estimatedKBps =
+                      (bufferDiff / timeDiff) * 250; // 2Mbps = 250KB/s
+                  setState(() {
+                    _bufferingSpeed = estimatedKBps;
+                  });
+                }
+              }
+              _lastBufferTime = now;
+              _lastBufferPosition = buffer;
             }
           });
         }
@@ -327,8 +361,24 @@ class _MediaKitPlayerWidgetState extends State<MediaKitPlayerWidget> {
     return Positioned.fill(
       child: Container(
         color: Colors.black.withValues(alpha: 0.3),
-        child: const Center(
-          child: CircularProgressIndicator(color: Colors.white, strokeWidth: 3),
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const CircularProgressIndicator(
+                color: Colors.white,
+                strokeWidth: 3,
+              ),
+              const SizedBox(height: 12),
+              Text(
+                '缓冲中...',
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.9),
+                  fontSize: 13,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

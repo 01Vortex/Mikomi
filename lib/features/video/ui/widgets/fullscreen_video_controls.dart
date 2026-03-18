@@ -215,8 +215,21 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
   }
 
   Widget _buildBufferingIndicator() {
-    return const Center(
-      child: CircularProgressIndicator(color: Colors.white, strokeWidth: 3),
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const CircularProgressIndicator(color: Colors.white, strokeWidth: 3),
+          const SizedBox(height: 12),
+          Text(
+            '缓冲中...',
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.9),
+              fontSize: 13,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
