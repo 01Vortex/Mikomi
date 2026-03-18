@@ -18,7 +18,7 @@ class VideoPluginService {
 
     try {
       // 加载所有插件配置
-      final pluginNames = ['7sefun', 'AGE', 'DM84'];
+      final pluginNames = ['AGE', 'DM84'];
 
       for (final name in pluginNames) {
         try {

@@ -8,6 +8,7 @@
       "version": "1.0.0+1",
       "dependencies": [
         "cached_network_image",
+        "card_settings_ui",
         "card_swiper",
         "cupertino_icons",
         "dio",
@@ -21,6 +22,7 @@
         "media_kit",
         "media_kit_libs_video",
         "media_kit_video",
+        "provider",
         "shared_preferences",
         "xpath_selector_html_parser"
       ],
@@ -170,6 +172,22 @@
       "version": "3.0.1",
       "dependencies": [
         "flutter"
+      ]
+    },
+    {
+      "name": "card_settings_ui",
+      "version": "2.0.1",
+      "dependencies": [
+        "flutter"
+      ]
+    },
+    {
+      "name": "provider",
+      "version": "6.1.5+1",
+      "dependencies": [
+        "collection",
+        "flutter",
+        "nested"
       ]
     },
     {
@@ -613,6 +631,13 @@
       "dependencies": [
         "flutter",
         "flutter_cache_manager"
+      ]
+    },
+    {
+      "name": "nested",
+      "version": "1.0.0",
+      "dependencies": [
+        "flutter"
       ]
     },
     {

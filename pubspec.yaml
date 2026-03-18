@@ -46,6 +46,12 @@ dependencies:
   # 本地存储
   shared_preferences: ^2.3.3
   
+  # 状态管理
+  provider: ^6.1.2
+  
+  # 设置UI
+  card_settings_ui: ^2.0.1
+  
   # 轮播图
   card_swiper: ^3.0.1
   
@@ -97,6 +103,12 @@ flutter:
   assets:
     - assets/plugins/
     - assets/icons/
+
+  # 字体
+  fonts:
+    - family: LXGWWenKai
+      fonts:
+        - asset: assets/fonts/LXGWWenKai-Regular.ttf
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

@@ -34,7 +34,6 @@ class _BangumiDetailPageState extends State<BangumiDetailPage>
   // 视频源列表（从插件动态加载）
   final List<VideoSource> _videoSources = [
     VideoSource(name: 'DM84'),
-    VideoSource(name: '7sefun'),
     VideoSource(name: 'AGE'),
   ];
 

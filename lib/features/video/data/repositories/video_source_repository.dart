@@ -21,13 +21,6 @@ class VideoSourceRepository {
         return [];
       }
 
-      // 7sefun的搜索结果需要JavaScript渲染，无法通过HTTP请求获取
-      // 暂时跳过检查，但用户仍可点击尝试播放
-      if (pluginName == '7sefun') {
-        debugPrint('[$pluginName] 搜索需要JavaScript，跳过检查');
-        return [];
-      }
-
       // 搜索动漫
       debugPrint('[$pluginName] 开始搜索: $keyword');
       final searchResults = await _datasource.search(keyword, plugin);

@@ -44,6 +44,12 @@
       "languageVersion": "3.0"
     },
     {
+      "name": "card_settings_ui",
+      "rootUri": "file:///D:/CodeApp/Data/Android/Flutter_Cache/hosted/pub.flutter-io.cn/card_settings_ui-2.0.1",
+      "packageUri": "lib/",
+      "languageVersion": "3.0"
+    },
+    {
       "name": "card_swiper",
       "rootUri": "file:///D:/CodeApp/Data/Android/Flutter_Cache/hosted/pub.flutter-io.cn/card_swiper-3.0.1",
       "packageUri": "lib/",
@@ -404,6 +410,12 @@
       "languageVersion": "3.10"
     },
     {
+      "name": "nested",
+      "rootUri": "file:///D:/CodeApp/Data/Android/Flutter_Cache/hosted/pub.flutter-io.cn/nested-1.0.0",
+      "packageUri": "lib/",
+      "languageVersion": "2.12"
+    },
+    {
       "name": "objective_c",
       "rootUri": "file:///D:/CodeApp/Data/Android/Flutter_Cache/hosted/pub.flutter-io.cn/objective_c-9.3.0",
       "packageUri": "lib/",
@@ -498,6 +510,12 @@
       "rootUri": "file:///D:/CodeApp/Data/Android/Flutter_Cache/hosted/pub.flutter-io.cn/posix-6.5.0",
       "packageUri": "lib/",
       "languageVersion": "3.0"
+    },
+    {
+      "name": "provider",
+      "rootUri": "file:///D:/CodeApp/Data/Android/Flutter_Cache/hosted/pub.flutter-io.cn/provider-6.1.5+1",
+      "packageUri": "lib/",
+      "languageVersion": "2.12"
     },
     {
       "name": "pub_semver",

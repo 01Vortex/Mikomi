@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:mikomi/features/my/ui/widgets/profile_header.dart';
 import 'package:mikomi/features/my/ui/widgets/action_chips.dart';
+import 'package:mikomi/features/my/ui/pages/settings_page.dart';
+import 'package:mikomi/features/my/ui/pages/theme_page.dart';
 
 class MyPage extends StatefulWidget {
   const MyPage({super.key});
@@ -38,7 +40,12 @@ class _MyPageState extends State<MyPage> {
               top: 16,
               left: 16,
               child: IconButton(
-                onPressed: () {},
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const ThemePage()),
+                  );
+                },
                 icon: const Icon(Icons.palette_outlined),
                 style: IconButton.styleFrom(
                   backgroundColor: Colors.white.withValues(alpha: 0.9),
@@ -50,7 +57,14 @@ class _MyPageState extends State<MyPage> {
               top: 16,
               right: 16,
               child: IconButton(
-                onPressed: () {},
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const SettingsPage(),
+                    ),
+                  );
+                },
                 icon: const Icon(Icons.settings_outlined),
                 style: IconButton.styleFrom(
                   backgroundColor: Colors.white.withValues(alpha: 0.9),
