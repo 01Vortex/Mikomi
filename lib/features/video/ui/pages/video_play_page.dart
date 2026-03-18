@@ -53,31 +53,13 @@ class _VideoPlayPageState extends State<VideoPlayPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
-      body: Stack(
-        children: [
-          // 视频播放器
-          Center(
-            child: MediaKitPlayerWidget(
-              videoUrl: widget.videoUrl,
-              title: widget.title,
-              currentEpisode: widget.currentEpisode,
-              totalEpisodes: widget.totalEpisodes,
-              playerController: _playerController,
-            ),
-          ),
-
-          // 返回按钮
-          Positioned(
-            top: 0,
-            left: 0,
-            child: SafeArea(
-              child: IconButton(
-                icon: const Icon(Icons.arrow_back, color: Colors.white),
-                onPressed: () => Navigator.pop(context),
-              ),
-            ),
-          ),
-        ],
+      body: MediaKitPlayerWidget(
+        videoUrl: widget.videoUrl,
+        title: widget.title,
+        currentEpisode: widget.currentEpisode,
+        totalEpisodes: widget.totalEpisodes,
+        playerController: _playerController,
+        onBack: () => Navigator.pop(context),
       ),
     );
   }

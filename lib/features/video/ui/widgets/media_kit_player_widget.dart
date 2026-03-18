@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 import 'package:mikomi/features/video/controllers/video_player_controller.dart';
 
@@ -9,6 +11,8 @@ class MediaKitPlayerWidget extends StatefulWidget {
   final int totalEpisodes;
   final VideoPlayerController playerController;
   final String? episodeTitle;
+  final VoidCallback? onBack;
+  final VoidCallback? onOpenMenu;
 
   const MediaKitPlayerWidget({
     super.key,
@@ -18,6 +22,8 @@ class MediaKitPlayerWidget extends StatefulWidget {
     required this.totalEpisodes,
     required this.playerController,
     this.episodeTitle,
+    this.onBack,
+    this.onOpenMenu,
   });
 
   @override
@@ -29,26 +35,45 @@ class _MediaKitPlayerWidgetState extends State<MediaKitPlayerWidget> {
   bool _isBuffering = false;
   bool _showControls = true;
   String? _errorMessage;
-  double _bufferSpeed = 0.0; // KB/s
-  int _lastBufferedBytes = 0;
-  DateTime _lastUpdateTime = DateTime.now();
   bool _isPlaying = false;
   Duration _currentPosition = Duration.zero;
   Duration _totalDuration = Duration.zero;
   bool _isDragging = false;
+  bool _lockPanel = false;
+  Timer? _hideTimer;
+
+  // 手势控制相关
+  double _brightness = 0.5;
+  double _volume = 0.5;
+  bool _showBrightness = false;
+  bool _showVolume = false;
+  Timer? _hideVolumeUITimer;
+  Timer? _hideBrightnessUITimer;
+
+  // 双击控制
+  int _doubleTapCount = 0;
+  Timer? _doubleTapTimer;
 
   @override
   void initState() {
     super.initState();
     _initPlayer();
-    _startSpeedMonitoring();
     _startControlsTimer();
   }
 
+  @override
+  void dispose() {
+    _hideTimer?.cancel();
+    _hideVolumeUITimer?.cancel();
+    _hideBrightnessUITimer?.cancel();
+    _doubleTapTimer?.cancel();
+    super.dispose();
+  }
+
   void _startControlsTimer() {
-    // 3秒后自动隐藏控制器
-    Future.delayed(const Duration(seconds: 3), () {
-      if (mounted && _showControls) {
+    _hideTimer?.cancel();
+    _hideTimer = Timer(const Duration(seconds: 4), () {
+      if (mounted && _showControls && !_lockPanel) {
         setState(() {
           _showControls = false;
         });
@@ -57,6 +82,7 @@ class _MediaKitPlayerWidgetState extends State<MediaKitPlayerWidget> {
   }
 
   void _toggleControls() {
+    if (_lockPanel) return;
     setState(() {
       _showControls = !_showControls;
     });
@@ -75,12 +101,10 @@ class _MediaKitPlayerWidgetState extends State<MediaKitPlayerWidget> {
       await widget.playerController.initialize();
 
       if (mounted && widget.videoUrl.isNotEmpty) {
-        debugPrint('开始自动播放视频: ${widget.videoUrl}');
         await widget.playerController.play(widget.videoUrl);
 
         final player = widget.playerController.player;
         if (player != null) {
-          // 监听缓冲状态
           player.stream.buffering.listen((buffering) {
             if (mounted) {
               setState(() {
@@ -89,7 +113,6 @@ class _MediaKitPlayerWidgetState extends State<MediaKitPlayerWidget> {
             }
           });
 
-          // 监听播放状态
           player.stream.playing.listen((playing) {
             if (mounted) {
               setState(() {
@@ -98,7 +121,6 @@ class _MediaKitPlayerWidgetState extends State<MediaKitPlayerWidget> {
             }
           });
 
-          // 监听播放进度
           player.stream.position.listen((position) {
             if (mounted && !_isDragging) {
               setState(() {
@@ -107,7 +129,6 @@ class _MediaKitPlayerWidgetState extends State<MediaKitPlayerWidget> {
             }
           });
 
-          // 监听总时长
           player.stream.duration.listen((duration) {
             if (mounted) {
               setState(() {
@@ -124,7 +145,6 @@ class _MediaKitPlayerWidgetState extends State<MediaKitPlayerWidget> {
         }
       }
     } catch (e) {
-      debugPrint('播放器初始化失败: $e');
       if (mounted) {
         setState(() {
           _isLoading = false;
@@ -134,44 +154,9 @@ class _MediaKitPlayerWidgetState extends State<MediaKitPlayerWidget> {
     }
   }
 
-  void _startSpeedMonitoring() {
-    // 每秒更新一次网速
-    Future.delayed(const Duration(seconds: 1), () {
-      if (!mounted) return;
-
-      final player = widget.playerController.player;
-      if (player != null) {
-        // 监听缓冲进度来计算网速
-        player.stream.buffer.listen((buffer) {
-          if (!mounted) return;
-
-          final now = DateTime.now();
-          final timeDiff = now.difference(_lastUpdateTime).inMilliseconds;
-
-          if (timeDiff >= 1000) {
-            // 估算网速（这是一个简化的实现）
-            final currentBytes = (buffer.inMilliseconds / 1000 * 1024 * 100)
-                .toInt();
-            final bytesDiff = currentBytes - _lastBufferedBytes;
-            final speed = (bytesDiff / (timeDiff / 1000)) / 1024; // KB/s
-
-            setState(() {
-              _bufferSpeed = speed > 0 ? speed : 0;
-              _lastBufferedBytes = currentBytes;
-              _lastUpdateTime = now;
-            });
-          }
-        });
-      }
-
-      _startSpeedMonitoring();
-    });
-  }
-
   @override
   void didUpdateWidget(MediaKitPlayerWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
-
     if (oldWidget.videoUrl != widget.videoUrl && widget.videoUrl.isNotEmpty) {
       _initPlayer();
     }
@@ -194,17 +179,6 @@ class _MediaKitPlayerWidgetState extends State<MediaKitPlayerWidget> {
     player.seek(position);
   }
 
-  void _seekRelative(int seconds) {
-    final newPosition = _currentPosition + Duration(seconds: seconds);
-    if (newPosition < Duration.zero) {
-      _seekTo(Duration.zero);
-    } else if (newPosition > _totalDuration) {
-      _seekTo(_totalDuration);
-    } else {
-      _seekTo(newPosition);
-    }
-  }
-
   String _formatDuration(Duration duration) {
     final hours = duration.inHours;
     final minutes = duration.inMinutes.remainder(60);
@@ -217,75 +191,29 @@ class _MediaKitPlayerWidgetState extends State<MediaKitPlayerWidget> {
     }
   }
 
-  Widget _buildCenterButton({
-    required IconData icon,
-    required VoidCallback onTap,
-    double size = 56,
-    double iconSize = 32,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: size,
-        height: size,
-        decoration: BoxDecoration(
-          color: Colors.black.withValues(alpha: 0.6),
-          shape: BoxShape.circle,
-          border: Border.all(
-            color: Colors.white.withValues(alpha: 0.3),
-            width: 1.5,
-          ),
-        ),
-        child: Icon(icon, color: Colors.white, size: iconSize),
-      ),
-    );
+  void _handleTap() {
+    _toggleControls();
   }
 
-  Widget _buildControlButton({
-    required IconData icon,
-    required VoidCallback onPressed,
-  }) {
-    return Container(
-      width: 36,
-      height: 36,
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.15),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: IconButton(
-        icon: Icon(icon, color: Colors.white, size: 20),
-        onPressed: onPressed,
-        padding: EdgeInsets.zero,
-        constraints: const BoxConstraints(),
-      ),
-    );
+  void _handleDoubleTap() {
+    _doubleTapCount++;
+    _doubleTapTimer?.cancel();
+
+    if (_doubleTapCount == 1) {
+      _doubleTapTimer = Timer(const Duration(milliseconds: 300), () {
+        _doubleTapCount = 0;
+      });
+    } else if (_doubleTapCount == 2) {
+      _togglePlayPause();
+      _doubleTapCount = 0;
+      _doubleTapTimer?.cancel();
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     if (_errorMessage != null) {
-      return Container(
-        color: Colors.black,
-        child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.error_outline, color: Colors.white70, size: 48),
-              const SizedBox(height: 16),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 32),
-                child: Text(
-                  _errorMessage!,
-                  style: const TextStyle(color: Colors.white70),
-                  textAlign: TextAlign.center,
-                ),
-              ),
-              const SizedBox(height: 16),
-              TextButton(onPressed: _initPlayer, child: const Text('重试')),
-            ],
-          ),
-        ),
-      );
+      return _buildErrorWidget();
     }
 
     final controller = widget.playerController.videoController;
@@ -293,298 +221,352 @@ class _MediaKitPlayerWidgetState extends State<MediaKitPlayerWidget> {
     if (_isLoading ||
         !widget.playerController.isInitialized ||
         controller == null) {
-      return Container(
-        color: Colors.black,
-        child: Center(
-          child: Container(
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: Colors.black.withValues(alpha: 0.7),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const CircularProgressIndicator(
-                  color: Colors.white,
-                  strokeWidth: 3,
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  '${_bufferSpeed.toStringAsFixed(0)} KB/s',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      );
+      return _buildLoadingWidget();
     }
 
-    return Stack(
-      children: [
-        GestureDetector(
-          onTap: _toggleControls,
-          child: Video(controller: controller, controls: NoVideoControls),
+    return GestureDetector(
+      onTap: _handleTap,
+      onDoubleTap: _handleDoubleTap,
+      child: Stack(
+        children: [
+          // 视频播放器
+          Positioned.fill(
+            child: Video(controller: controller, controls: NoVideoControls),
+          ),
+
+          // 缓冲指示器
+          if (_isBuffering) _buildBufferingIndicator(),
+
+          // 顶部渐变遮罩
+          if (_showControls && !_lockPanel) _buildTopGradient(),
+
+          // 底部渐变遮罩
+          if (_showControls && !_lockPanel) _buildBottomGradient(),
+
+          // 顶部控制栏
+          if (_showControls && !_lockPanel) _buildTopControls(),
+
+          // 底部控制栏
+          if (_showControls && !_lockPanel) _buildBottomControls(),
+
+          // 锁定按钮
+          _buildLockButton(),
+
+          // 音量/亮度指示器
+          if (_showVolume) _buildVolumeIndicator(),
+          if (_showBrightness) _buildBrightnessIndicator(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildErrorWidget() {
+    return Container(
+      color: Colors.black,
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.error_outline, color: Colors.white70, size: 48),
+            const SizedBox(height: 16),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 32),
+              child: Text(
+                _errorMessage!,
+                style: const TextStyle(color: Colors.white70),
+                textAlign: TextAlign.center,
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextButton(onPressed: _initPlayer, child: const Text('重试')),
+          ],
         ),
-        // 顶部标题栏（在状态栏下方）
-        if (_showControls)
-          Positioned(
-            top: MediaQuery.of(context).padding.top,
-            left: 0,
-            right: 0,
-            child: AnimatedOpacity(
-              opacity: _showControls ? 1.0 : 0.0,
-              duration: const Duration(milliseconds: 300),
-              child: Container(
-                height: 100, // 固定高度，确保渐变覆盖足够区域
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      Colors.black.withValues(alpha: 0.8),
-                      Colors.black.withValues(alpha: 0.6),
-                      Colors.transparent,
-                    ],
-                  ),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 12,
-                  ),
-                  child: Row(
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.arrow_back, color: Colors.white),
-                        onPressed: () => Navigator.of(context).pop(),
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              widget.title,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            if (widget.episodeTitle != null &&
-                                widget.episodeTitle!.isNotEmpty) ...[
-                              const SizedBox(height: 4),
-                              Text(
-                                '第${widget.currentEpisode}集 ${widget.episodeTitle}',
-                                style: TextStyle(
-                                  color: Colors.white.withValues(alpha: 0.9),
-                                  fontSize: 13,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ] else
-                              Text(
-                                '第${widget.currentEpisode}集',
-                                style: TextStyle(
-                                  color: Colors.white.withValues(alpha: 0.9),
-                                  fontSize: 13,
-                                ),
-                              ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
+      ),
+    );
+  }
+
+  Widget _buildLoadingWidget() {
+    return Container(
+      color: Colors.black,
+      child: const Center(
+        child: CircularProgressIndicator(color: Colors.white, strokeWidth: 3),
+      ),
+    );
+  }
+
+  Widget _buildBufferingIndicator() {
+    return Positioned.fill(
+      child: Container(
+        color: Colors.black.withValues(alpha: 0.3),
+        child: const Center(
+          child: CircularProgressIndicator(color: Colors.white, strokeWidth: 3),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTopGradient() {
+    return Positioned(
+      top: 0,
+      left: 0,
+      right: 0,
+      child: Container(
+        height: 120,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Colors.black.withValues(alpha: 0.7), Colors.transparent],
           ),
-        // 缓冲时在中心显示加载圈和网速
-        if (_isBuffering)
-          Positioned.fill(
-            child: Container(
-              color: Colors.black.withValues(alpha: 0.3),
-              child: Center(
-                child: Container(
-                  padding: const EdgeInsets.all(24),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.7),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const CircularProgressIndicator(
-                        color: Colors.white,
-                        strokeWidth: 3,
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        '${_bufferSpeed.toStringAsFixed(0)} KB/s',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBottomGradient() {
+    return Positioned(
+      bottom: 0,
+      left: 0,
+      right: 0,
+      child: Container(
+        height: 120,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Colors.transparent, Colors.black.withValues(alpha: 0.7)],
           ),
-        // 中心控制区域（播放/暂停、快进/快退）
-        if (_showControls && !_isBuffering)
-          Positioned.fill(
-            child: Center(
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTopControls() {
+    return Positioned(
+      top: 0,
+      left: 0,
+      right: 0,
+      child: Padding(
+        padding: const EdgeInsets.only(left: 4, right: 4, top: 10),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            IconButton(
+              icon: const Icon(Icons.arrow_back, color: Colors.white),
+              onPressed: widget.onBack ?? () => Navigator.of(context).pop(),
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(),
+              iconSize: 24,
+            ),
+            const SizedBox(width: 4),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  // 快退10秒
-                  _buildCenterButton(
-                    icon: Icons.replay_10,
-                    onTap: () => _seekRelative(-10),
+                  Text(
+                    widget.title,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(width: 40),
-                  // 播放/暂停
-                  _buildCenterButton(
-                    icon: _isPlaying ? Icons.pause : Icons.play_arrow,
-                    onTap: _togglePlayPause,
-                    size: 72,
-                    iconSize: 48,
-                  ),
-                  const SizedBox(width: 40),
-                  // 快进10秒
-                  _buildCenterButton(
-                    icon: Icons.forward_10,
-                    onTap: () => _seekRelative(10),
-                  ),
+                  if (widget.episodeTitle != null &&
+                      widget.episodeTitle!.isNotEmpty)
+                    Text(
+                      '第${widget.currentEpisode}集 ${widget.episodeTitle}',
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.9),
+                        fontSize: 13,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    )
+                  else
+                    Text(
+                      '第${widget.currentEpisode}集',
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.9),
+                        fontSize: 13,
+                      ),
+                    ),
                 ],
               ),
             ),
-          ),
-        // 底部控制栏（毛玻璃效果）
-        if (_showControls && !_isBuffering)
-          Positioned(
-            bottom: 0,
-            left: 0,
-            right: 0,
-            child: AnimatedOpacity(
-              opacity: _showControls ? 1.0 : 0.0,
-              duration: const Duration(milliseconds: 300),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.75),
-                  border: Border(
-                    top: BorderSide(
-                      color: Colors.white.withValues(alpha: 0.1),
-                      width: 0.5,
-                    ),
+            if (widget.onOpenMenu != null)
+              IconButton(
+                icon: const Icon(Icons.menu_open, color: Colors.white),
+                onPressed: widget.onOpenMenu,
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+                iconSize: 24,
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBottomControls() {
+    return Positioned(
+      bottom: 0,
+      left: 0,
+      right: 0,
+      child: SafeArea(
+        child: Row(
+          children: [
+            // 播放/暂停按钮
+            IconButton(
+              icon: Icon(
+                _isPlaying ? Icons.pause : Icons.play_arrow,
+                color: Colors.white,
+                size: 28,
+              ),
+              onPressed: _togglePlayPause,
+            ),
+            // 当前时间
+            Text(
+              _formatDuration(_currentPosition),
+              style: const TextStyle(color: Colors.white, fontSize: 12),
+            ),
+            // 进度条
+            Expanded(
+              child: SliderTheme(
+                data: SliderThemeData(
+                  trackHeight: 3,
+                  thumbShape: const RoundSliderThumbShape(
+                    enabledThumbRadius: 6,
                   ),
+                  overlayShape: const RoundSliderOverlayShape(
+                    overlayRadius: 12,
+                  ),
+                  activeTrackColor: Theme.of(context).colorScheme.primary,
+                  inactiveTrackColor: Colors.white.withValues(alpha: 0.3),
+                  thumbColor: Theme.of(context).colorScheme.primary,
+                  overlayColor: Theme.of(
+                    context,
+                  ).colorScheme.primary.withValues(alpha: 0.3),
                 ),
-                child: Row(
-                  children: [
-                    // 播放/暂停按钮
-                    _buildControlButton(
-                      icon: _isPlaying ? Icons.pause : Icons.play_arrow,
-                      onPressed: _togglePlayPause,
-                    ),
-                    const SizedBox(width: 8),
-                    // 时间显示和进度条
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          // 可拖动的进度条
-                          SliderTheme(
-                            data: SliderThemeData(
-                              trackHeight: 2,
-                              thumbShape: const RoundSliderThumbShape(
-                                enabledThumbRadius: 5,
-                              ),
-                              overlayShape: const RoundSliderOverlayShape(
-                                overlayRadius: 10,
-                              ),
-                              activeTrackColor: Theme.of(
-                                context,
-                              ).colorScheme.primary,
-                              inactiveTrackColor: Colors.white.withValues(
-                                alpha: 0.3,
-                              ),
-                              thumbColor: Theme.of(context).colorScheme.primary,
-                              overlayColor: Theme.of(
-                                context,
-                              ).colorScheme.primary.withValues(alpha: 0.3),
-                            ),
-                            child: Slider(
-                              value: _totalDuration.inMilliseconds > 0
-                                  ? _currentPosition.inMilliseconds /
-                                        _totalDuration.inMilliseconds
-                                  : 0.0,
-                              onChanged: (value) {
-                                setState(() {
-                                  _isDragging = true;
-                                  _currentPosition = Duration(
-                                    milliseconds:
-                                        (value * _totalDuration.inMilliseconds)
-                                            .toInt(),
-                                  );
-                                });
-                              },
-                              onChangeEnd: (value) {
-                                final position = Duration(
-                                  milliseconds:
-                                      (value * _totalDuration.inMilliseconds)
-                                          .toInt(),
-                                );
-                                _seekTo(position);
-                                setState(() {
-                                  _isDragging = false;
-                                });
-                              },
-                            ),
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.only(left: 4, bottom: 2),
-                            child: Text(
-                              '${_formatDuration(_currentPosition)} / ${_formatDuration(_totalDuration)}',
-                              style: TextStyle(
-                                color: Colors.white.withValues(alpha: 0.9),
-                                fontSize: 11,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    // 全屏按钮
-                    _buildControlButton(
-                      icon: Icons.fullscreen,
-                      onPressed: () {
-                        // TODO: 实现全屏功能
-                      },
-                    ),
-                  ],
+                child: Slider(
+                  value: _totalDuration.inMilliseconds > 0
+                      ? _currentPosition.inMilliseconds /
+                            _totalDuration.inMilliseconds
+                      : 0.0,
+                  onChanged: (value) {
+                    setState(() {
+                      _isDragging = true;
+                      _currentPosition = Duration(
+                        milliseconds: (value * _totalDuration.inMilliseconds)
+                            .toInt(),
+                      );
+                    });
+                  },
+                  onChangeEnd: (value) {
+                    final position = Duration(
+                      milliseconds: (value * _totalDuration.inMilliseconds)
+                          .toInt(),
+                    );
+                    _seekTo(position);
+                    setState(() {
+                      _isDragging = false;
+                    });
+                  },
                 ),
               ),
             ),
+            // 总时长
+            Text(
+              _formatDuration(_totalDuration),
+              style: const TextStyle(color: Colors.white, fontSize: 12),
+            ),
+            // 全屏按钮
+            IconButton(
+              icon: const Icon(Icons.fullscreen, color: Colors.white, size: 28),
+              onPressed: () {
+                // TODO: 实现全屏切换
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLockButton() {
+    return Positioned(
+      left: 16,
+      top: MediaQuery.of(context).size.height / 2 - 24,
+      child: IconButton(
+        icon: Icon(
+          _lockPanel ? Icons.lock : Icons.lock_open,
+          color: Colors.white.withValues(alpha: _lockPanel ? 1.0 : 0.5),
+        ),
+        onPressed: () {
+          setState(() {
+            _lockPanel = !_lockPanel;
+            if (_lockPanel) {
+              _showControls = false;
+            }
+          });
+        },
+      ),
+    );
+  }
+
+  Widget _buildVolumeIndicator() {
+    return Positioned.fill(
+      child: Center(
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.black.withValues(alpha: 0.7),
+            borderRadius: BorderRadius.circular(8),
           ),
-      ],
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                _volume > 0 ? Icons.volume_up : Icons.volume_off,
+                color: Colors.white,
+                size: 32,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                '${(_volume * 100).toInt()}%',
+                style: const TextStyle(color: Colors.white, fontSize: 16),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBrightnessIndicator() {
+    return Positioned.fill(
+      child: Center(
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.black.withValues(alpha: 0.7),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.brightness_6, color: Colors.white, size: 32),
+              const SizedBox(height: 8),
+              Text(
+                '${(_brightness * 100).toInt()}%',
+                style: const TextStyle(color: Colors.white, fontSize: 16),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
