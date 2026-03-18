@@ -9,6 +9,7 @@ class BangumiItem {
   final int ratingCount;
   final int rank;
   final List<BangumiTag> tags;
+  final String info;
 
   BangumiItem({
     required this.id,
@@ -21,6 +22,7 @@ class BangumiItem {
     required this.ratingCount,
     required this.rank,
     this.tags = const [],
+    this.info = '',
   });
 
   factory BangumiItem.fromJson(Map<String, dynamic> json) {
@@ -58,12 +60,42 @@ class BangumiItem {
       ratingCount: rating['total'] ?? 0,
       rank: rating['rank'] ?? 0,
       tags: tagsList,
+      info: subject['info'] ?? '',
     );
   }
 
   String get displayName => nameCn.isNotEmpty ? nameCn : name;
 
   String get coverUrl => images['large'] ?? images['common'] ?? '';
+
+  // 添加copyWith方法用于数据迁移
+  BangumiItem copyWith({
+    int? id,
+    String? name,
+    String? nameCn,
+    String? summary,
+    String? airDate,
+    Map<String, String>? images,
+    double? ratingScore,
+    int? ratingCount,
+    int? rank,
+    List<BangumiTag>? tags,
+    String? info,
+  }) {
+    return BangumiItem(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      nameCn: nameCn ?? this.nameCn,
+      summary: summary ?? this.summary,
+      airDate: airDate ?? this.airDate,
+      images: images ?? this.images,
+      ratingScore: ratingScore ?? this.ratingScore,
+      ratingCount: ratingCount ?? this.ratingCount,
+      rank: rank ?? this.rank,
+      tags: tags ?? this.tags,
+      info: info ?? this.info,
+    );
+  }
 }
 
 class BangumiTag {

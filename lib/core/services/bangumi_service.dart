@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:mikomi/core/network/dio_client.dart';
 import 'package:mikomi/core/network/api_constants.dart';
 import 'package:mikomi/core/models/bangumi_item.dart';
@@ -57,9 +58,12 @@ class BangumiService {
 
   Future<List<List<BangumiItem>>> getCalendar() async {
     try {
+      debugPrint('开始获取每周时间表...');
       final response = await _dioClient.get(
         ApiConstants.bangumiApiNextDomain + ApiConstants.bangumiCalendar,
       );
+
+      debugPrint('时间表API响应状态: ${response.statusCode}');
 
       List<List<BangumiItem>> calendar = [];
       final jsonData = response.data;
@@ -67,16 +71,23 @@ class BangumiService {
       for (int i = 1; i <= 7; i++) {
         List<BangumiItem> dayList = [];
         final jsonList = jsonData['$i'] ?? [];
+        debugPrint('第$i天原始数据: ${jsonList.length}条');
         for (dynamic jsonItem in jsonList) {
           try {
-            dayList.add(BangumiItem.fromJson(jsonItem));
-          } catch (_) {}
+            // Calendar API返回的数据结构中，番剧信息在subject字段中
+            final subjectData = jsonItem['subject'] ?? jsonItem;
+            dayList.add(BangumiItem.fromJson(subjectData));
+          } catch (e) {
+            debugPrint('解析番剧数据失败: $e');
+          }
         }
         calendar.add(dayList);
       }
 
+      debugPrint('成功获取时间表，共${calendar.length}天');
       return calendar;
     } catch (e) {
+      debugPrint('获取时间表失败: $e');
       return List.generate(7, (_) => <BangumiItem>[]);
     }
   }
