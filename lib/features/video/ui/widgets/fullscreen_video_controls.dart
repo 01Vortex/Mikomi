@@ -46,6 +46,7 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
   bool _isDanmakuEnabled = false;
   bool _showDanmakuInput = false;
   final TextEditingController _danmakuController = TextEditingController();
+  final GlobalKey _speedButtonKey = GlobalKey();
 
   @override
   void initState() {
@@ -114,61 +115,57 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
     _startHideTimer();
   }
 
-  void _seekForward() {
-    final newPosition = _position + const Duration(seconds: 10);
-    widget.playerController.player?.seek(
-      newPosition > _duration ? _duration : newPosition,
-    );
-  }
-
-  void _seekBackward() {
-    final newPosition = _position - const Duration(seconds: 10);
-    widget.playerController.player?.seek(
-      newPosition < Duration.zero ? Duration.zero : newPosition,
-    );
-  }
-
   void _showSpeedSelector() {
-    showModalBottomSheet(
+    final RenderBox? renderBox =
+        _speedButtonKey.currentContext?.findRenderObject() as RenderBox?;
+    if (renderBox == null) return;
+
+    final overlay = Overlay.of(context).context.findRenderObject() as RenderBox;
+    final buttonPosition = renderBox.localToGlobal(
+      Offset.zero,
+      ancestor: overlay,
+    );
+    final buttonSize = renderBox.size;
+
+    showMenu(
       context: context,
-      backgroundColor: Colors.black87,
-      builder: (context) => Container(
-        padding: const EdgeInsets.symmetric(vertical: 20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text(
-              '播放速度',
+      position: RelativeRect.fromLTRB(
+        buttonPosition.dx,
+        buttonPosition.dy - 280,
+        buttonPosition.dx + buttonSize.width,
+        buttonPosition.dy,
+      ),
+      color: Colors.black.withValues(alpha: 0.9),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      constraints: const BoxConstraints(minWidth: 100, maxWidth: 100),
+      items: [0.5, 0.75, 1.0, 1.25, 1.5, 2.0].map((speed) {
+        return PopupMenuItem(
+          value: speed,
+          height: 42,
+          padding: EdgeInsets.zero,
+          child: Container(
+            alignment: Alignment.center,
+            child: Text(
+              '${speed}x',
               style: TextStyle(
-                color: Colors.white,
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
+                color: _playbackSpeed == speed
+                    ? AppColors.primary
+                    : Colors.white,
+                fontSize: 15,
+                fontWeight: _playbackSpeed == speed
+                    ? FontWeight.w600
+                    : FontWeight.normal,
               ),
             ),
-            const SizedBox(height: 16),
-            ...[0.5, 0.75, 1.0, 1.25, 1.5, 2.0].map((speed) {
-              return ListTile(
-                title: Text(
-                  '${speed}x',
-                  style: TextStyle(
-                    color: _playbackSpeed == speed
-                        ? AppColors.primary
-                        : Colors.white,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                selected: _playbackSpeed == speed,
-                onTap: () {
-                  setState(() => _playbackSpeed = speed);
-                  widget.playerController.player?.setRate(speed);
-                  Navigator.pop(context);
-                },
-              );
-            }),
-          ],
-        ),
-      ),
-    );
+          ),
+        );
+      }).toList(),
+    ).then((value) {
+      if (value != null) {
+        setState(() => _playbackSpeed = value);
+        widget.playerController.player?.setRate(value);
+      }
+    });
   }
 
   String _formatDuration(Duration duration) {
@@ -305,6 +302,12 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
                   ],
                 ),
               ),
+              IconButton(
+                icon: const Icon(Icons.settings, color: Colors.white),
+                onPressed: () {
+                  // TODO: 打开设置面板
+                },
+              ),
             ],
           ),
         ),
@@ -314,31 +317,10 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
 
   Widget _buildCenterControls() {
     return Center(
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          if (widget.hasPreviousEpisode)
-            _buildControlButton(
-              icon: Icons.skip_previous,
-              onTap: widget.onPreviousEpisode ?? () {},
-            ),
-          if (widget.hasPreviousEpisode) const SizedBox(width: 24),
-          _buildControlButton(icon: Icons.replay_10, onTap: _seekBackward),
-          const SizedBox(width: 40),
-          _buildControlButton(
-            icon: _isPlaying ? Icons.pause : Icons.play_arrow,
-            onTap: _togglePlayPause,
-            size: 64,
-          ),
-          const SizedBox(width: 40),
-          _buildControlButton(icon: Icons.forward_10, onTap: _seekForward),
-          if (widget.hasNextEpisode) const SizedBox(width: 24),
-          if (widget.hasNextEpisode)
-            _buildControlButton(
-              icon: Icons.skip_next,
-              onTap: widget.onNextEpisode ?? () {},
-            ),
-        ],
+      child: _buildControlButton(
+        icon: _isPlaying ? Icons.pause : Icons.play_arrow,
+        onTap: _togglePlayPause,
+        size: 64,
       ),
     );
   }
@@ -454,7 +436,7 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
                           iconOnly: true,
                         ),
                       ],
-                      const SizedBox(width: 12),
+                      const SizedBox(width: 24),
                       _buildDanmakuButton(),
                       const SizedBox(width: 12),
                       _buildDanmakuSettingButton(),
@@ -467,10 +449,21 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
                   // 右侧按钮组
                   Row(
                     children: [
+                      Container(
+                        key: _speedButtonKey,
+                        child: _buildBottomButton(
+                          icon: Icons.speed,
+                          label: '${_playbackSpeed}x',
+                          onTap: _showSpeedSelector,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
                       _buildBottomButton(
-                        icon: Icons.speed,
-                        label: '${_playbackSpeed}x',
-                        onTap: _showSpeedSelector,
+                        icon: Icons.playlist_play,
+                        label: '选集',
+                        onTap: () {
+                          // TODO: 打开选集面板
+                        },
                       ),
                       const SizedBox(width: 12),
                       _buildBottomButton(
@@ -633,7 +626,7 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
 
   Widget _buildLockButton() {
     return Positioned(
-      left: 16,
+      right: 16,
       top: MediaQuery.of(context).size.height / 2 - 24,
       child: GestureDetector(
         onTap: () {
