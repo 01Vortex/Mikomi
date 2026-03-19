@@ -44,6 +44,12 @@
       "languageVersion": "3.0"
     },
     {
+      "name": "canvas_danmaku",
+      "rootUri": "file:///D:/CodeApp/Data/Android/Flutter_Cache/hosted/pub.flutter-io.cn/canvas_danmaku-0.3.1",
+      "packageUri": "lib/",
+      "languageVersion": "3.0"
+    },
+    {
       "name": "card_settings_ui",
       "rootUri": "file:///D:/CodeApp/Data/Android/Flutter_Cache/hosted/pub.flutter-io.cn/card_settings_ui-2.0.1",
       "packageUri": "lib/",

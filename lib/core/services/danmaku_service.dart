@@ -9,13 +9,18 @@ class DanmakuService {
       baseUrl: 'https://api.dandanplay.net',
       connectTimeout: const Duration(seconds: 10),
       receiveTimeout: const Duration(seconds: 10),
+      headers: {
+        'user-agent':
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+        'referer': 'https://www.dandanplay.com/',
+      },
     ),
   );
 
   // 从Bangumi ID获取弹弹Play番剧ID
   Future<int> getDanDanBangumiIdByBgmId(int bgmBangumiId) async {
     try {
-      final response = await _dio.get('/api/v2/bangumi/$bgmBangumiId');
+      final response = await _dio.get('/api/v2/bangumi/bgmtv/$bgmBangumiId');
       final data = DanmakuEpisodeResponse.fromJson(response.data);
       return data.bangumiId;
     } catch (e) {

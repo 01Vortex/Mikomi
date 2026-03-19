@@ -418,15 +418,11 @@ class _VideoPageState extends State<VideoPage>
   void _saveWatchHistory() {
     // 只有在有番剧ID和标题时才保存历史
     if (widget.bangumiId == null || widget.title.isEmpty) {
-      debugPrint(
-        '跳过保存历史: bangumiId=${widget.bangumiId}, title=${widget.title}',
-      );
       return;
     }
 
     // 只有在播放器已初始化时才保存
     if (_playerController.player == null || !_playerController.isInitialized) {
-      debugPrint('跳过保存历史: 播放器未初始化');
       return;
     }
 
@@ -435,14 +431,8 @@ class _VideoPageState extends State<VideoPage>
       final progress = _playerController.player!.state.position;
       final duration = _playerController.player!.state.duration;
 
-      debugPrint('========== 保存观看历史 ==========');
-      debugPrint('当前进度: ${progress.inSeconds}秒');
-      debugPrint('视频总时长: ${duration.inSeconds}秒');
-
       // 如果进度为0或总时长为0,跳过保存
       if (progress.inSeconds == 0 || duration.inSeconds == 0) {
-        debugPrint('跳过保存: 进度或时长为0');
-        debugPrint('==================================');
         return;
       }
 
@@ -460,13 +450,8 @@ class _VideoPageState extends State<VideoPage>
       );
 
       _historyService.addHistory(history);
-      debugPrint('保存观看历史: ${history.displayName} - 第${_currentEpisode}集');
-      debugPrint(
-        '进度: ${progress.inSeconds}s / ${duration.inSeconds}s (${history.progressPercent.toStringAsFixed(1)}%)',
-      );
-      debugPrint('==================================');
     } catch (e) {
-      debugPrint('保存观看历史失败: $e');
+      // 静默处理错误
     }
   }
 
@@ -598,6 +583,9 @@ class _VideoPageState extends State<VideoPage>
                                       _isDescending = !_isDescending;
                                     });
                                   },
+                                  isDanmakuEnabled: _isDanmakuEnabled,
+                                  animeTitle: widget.animeTitle,
+                                  bangumiId: widget.bangumiId,
                                 ),
                               if (isLoading)
                                 Stack(

@@ -73,6 +73,9 @@ dependencies:
   
   # WebView（用于视频地址解析）
   flutter_inappwebview: ^6.1.5
+  
+  # 弹幕
+  canvas_danmaku: ^0.3.1
 
 dev_dependencies:
   flutter_test:

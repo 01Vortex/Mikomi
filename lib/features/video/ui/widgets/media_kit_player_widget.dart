@@ -1,7 +1,9 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:media_kit_video/media_kit_video.dart';
+import 'package:canvas_danmaku/canvas_danmaku.dart';
 import 'package:mikomi/features/video/controllers/video_player_controller.dart';
+import 'package:mikomi/features/video/controllers/danmaku_controller.dart';
 import 'package:mikomi/features/video/ui/pages/fullscreen_video_page.dart';
 import 'package:mikomi/core/models/episode.dart';
 
@@ -24,6 +26,9 @@ class MediaKitPlayerWidget extends StatefulWidget {
   final bool isLoadingEpisodes;
   final bool isDescending;
   final VoidCallback? onToggleSort;
+  final bool isDanmakuEnabled;
+  final String? animeTitle;
+  final int? bangumiId;
 
   const MediaKitPlayerWidget({
     super.key,
@@ -45,6 +50,9 @@ class MediaKitPlayerWidget extends StatefulWidget {
     this.isLoadingEpisodes = false,
     this.isDescending = false,
     this.onToggleSort,
+    this.isDanmakuEnabled = false,
+    this.animeTitle,
+    this.bangumiId,
   });
 
   @override
@@ -72,11 +80,49 @@ class _MediaKitPlayerWidgetState extends State<MediaKitPlayerWidget> {
   int _doubleTapCount = 0;
   Timer? _doubleTapTimer;
 
+  // 弹幕控制
+  final DanmakuPlayerController _danmakuController = DanmakuPlayerController();
+  int _lastDanmakuSecond = -1;
+  DanmakuController? _canvasController;
+
   @override
   void initState() {
     super.initState();
     _initPlayer();
     _startControlsTimer();
+    _loadDanmaku();
+  }
+
+  @override
+  void didUpdateWidget(MediaKitPlayerWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    // 监听弹幕开关变化
+    if (oldWidget.isDanmakuEnabled != widget.isDanmakuEnabled) {
+      debugPrint(
+        '弹幕开关状态变化: ${oldWidget.isDanmakuEnabled} -> ${widget.isDanmakuEnabled}',
+      );
+      if (widget.isDanmakuEnabled && !_danmakuController.isLoaded) {
+        _loadDanmaku();
+      }
+    }
+
+    // 监听集数变化
+    if (oldWidget.currentEpisode != widget.currentEpisode) {
+      debugPrint(
+        '集数变化: ${oldWidget.currentEpisode} -> ${widget.currentEpisode}',
+      );
+      if (widget.isDanmakuEnabled) {
+        _loadDanmaku();
+      }
+    }
+
+    // 只有在URL真正变化时才重新初始化播放器
+    if (oldWidget.videoUrl != widget.videoUrl && widget.videoUrl.isNotEmpty) {
+      debugPrint('视频URL变化: ${oldWidget.videoUrl} -> ${widget.videoUrl}');
+      _hasRestoredProgress = false;
+      _initPlayer();
+    }
   }
 
   @override
@@ -85,7 +131,68 @@ class _MediaKitPlayerWidgetState extends State<MediaKitPlayerWidget> {
     _hideVolumeUITimer?.cancel();
     _hideBrightnessUITimer?.cancel();
     _doubleTapTimer?.cancel();
+    _danmakuController.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadDanmaku() async {
+    debugPrint('========== 开始加载弹幕 ==========');
+    debugPrint('弹幕开关状态: ${widget.isDanmakuEnabled}');
+    debugPrint('番剧ID: ${widget.bangumiId}');
+    debugPrint('番剧标题: ${widget.animeTitle}');
+    debugPrint('当前集数: ${widget.currentEpisode}');
+
+    if (!widget.isDanmakuEnabled) {
+      debugPrint('弹幕未开启,跳过加载');
+      debugPrint('==================================');
+      return;
+    }
+
+    if (widget.bangumiId != null) {
+      await _danmakuController.loadDanmakuByBangumiId(
+        widget.bangumiId!,
+        widget.currentEpisode,
+        fallbackTitle: widget.animeTitle,
+      );
+    } else if (widget.animeTitle != null) {
+      await _danmakuController.loadDanmakuByTitle(
+        widget.animeTitle!,
+        widget.currentEpisode,
+      );
+    } else {
+      debugPrint('没有番剧ID或标题,无法加载弹幕');
+    }
+
+    debugPrint('弹幕加载完成,已加载: ${_danmakuController.isLoaded}');
+    debugPrint('弹幕数据量: ${_danmakuController.danmakuMap.length} 秒');
+    debugPrint('==================================');
+  }
+
+  void _sendDanmakuAtTime(int second) {
+    if (!widget.isDanmakuEnabled ||
+        !_danmakuController.isLoaded ||
+        _canvasController == null) {
+      return;
+    }
+
+    final danmakus = _danmakuController.getDanmakuAtTime(second);
+    if (danmakus.isNotEmpty) {
+      debugPrint('发送 ${danmakus.length} 条弹幕 (时间: ${second}s)');
+    }
+
+    for (var danmaku in danmakus) {
+      _canvasController!.addDanmaku(
+        DanmakuContentItem(
+          danmaku.message,
+          color: danmaku.color,
+          type: danmaku.type == 5
+              ? DanmakuItemType.top
+              : (danmaku.type == 4
+                    ? DanmakuItemType.bottom
+                    : DanmakuItemType.scroll),
+        ),
+      );
+    }
   }
 
   void _startControlsTimer() {
@@ -144,6 +251,15 @@ class _MediaKitPlayerWidgetState extends State<MediaKitPlayerWidget> {
               setState(() {
                 _currentPosition = position;
               });
+
+              // 发送弹幕
+              if (widget.isDanmakuEnabled && _isPlaying) {
+                final currentSecond = position.inSeconds;
+                if (currentSecond != _lastDanmakuSecond) {
+                  _lastDanmakuSecond = currentSecond;
+                  _sendDanmakuAtTime(currentSecond);
+                }
+              }
             }
           });
 
@@ -192,17 +308,6 @@ class _MediaKitPlayerWidgetState extends State<MediaKitPlayerWidget> {
           _errorMessage = '视频加载失败: $e';
         });
       }
-    }
-  }
-
-  @override
-  void didUpdateWidget(MediaKitPlayerWidget oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    // 只有在URL真正变化时才重新初始化播放器
-    if (oldWidget.videoUrl != widget.videoUrl && widget.videoUrl.isNotEmpty) {
-      debugPrint('视频URL变化: ${oldWidget.videoUrl} -> ${widget.videoUrl}');
-      _hasRestoredProgress = false;
-      _initPlayer();
     }
   }
 
@@ -310,6 +415,25 @@ class _MediaKitPlayerWidgetState extends State<MediaKitPlayerWidget> {
           Positioned.fill(
             child: Video(controller: controller, controls: NoVideoControls),
           ),
+
+          // 弹幕层
+          if (widget.isDanmakuEnabled)
+            Positioned.fill(
+              child: IgnorePointer(
+                child: DanmakuScreen(
+                  createdController: (controller) {
+                    _canvasController = controller;
+                  },
+                  option: DanmakuOption(
+                    fontSize: 16,
+                    opacity: 1.0,
+                    duration: 8,
+                    strokeWidth: 1.0,
+                    area: 0.5,
+                  ),
+                ),
+              ),
+            ),
 
           // 缓冲指示器
           if (_isBuffering) _buildBufferingIndicator(),

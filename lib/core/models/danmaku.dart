@@ -41,7 +41,10 @@ class Danmaku {
   }
 
   Map<String, dynamic> toJson() {
-    final colorValue = ((color.red) << 16) | ((color.green) << 8) | color.blue;
+    final colorValue =
+        ((color.r * 255).toInt() << 16) |
+        ((color.g * 255).toInt() << 8) |
+        (color.b * 255).toInt();
     return {'m': message, 'p': '$time,$type,$colorValue,$source'};
   }
 }

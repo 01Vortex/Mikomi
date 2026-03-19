@@ -8,6 +8,7 @@
       "version": "1.0.0+1",
       "dependencies": [
         "cached_network_image",
+        "canvas_danmaku",
         "card_settings_ui",
         "card_swiper",
         "cupertino_icons",
@@ -68,6 +69,13 @@
         "stream_channel",
         "test_api",
         "vector_math"
+      ]
+    },
+    {
+      "name": "canvas_danmaku",
+      "version": "0.3.1",
+      "dependencies": [
+        "flutter"
       ]
     },
     {
