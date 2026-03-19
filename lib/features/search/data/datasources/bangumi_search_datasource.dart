@@ -25,7 +25,6 @@ class BangumiSearchDatasource implements SearchDatasource {
               'sort': 'rank',
               'filter': {
                 'type': [2],
-                'tag': ['日本'],
                 'rank': ['>0', '<=99999'],
                 'nsfw': false,
               },
