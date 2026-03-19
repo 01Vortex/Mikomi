@@ -67,6 +67,7 @@ class _VideoPageState extends State<VideoPage>
   bool _showTimeoutHint = false;
   Timer? _timeoutTimer;
   Timer? _saveHistoryTimer; // 定期保存历史的计时器
+  Duration? _currentInitialProgress; // 当前使用的初始进度
 
   @override
   void initState() {
@@ -76,6 +77,9 @@ class _VideoPageState extends State<VideoPage>
     _videoUrl = widget.videoUrl;
     _currentPluginName = widget.pluginName;
     _tabController = TabController(length: 2, vsync: this);
+
+    // 只在第一次加载时使用初始进度
+    _currentInitialProgress = widget.initialProgress;
 
     // 显示状态栏和导航栏
     SystemChrome.setEnabledSystemUIMode(
@@ -287,6 +291,8 @@ class _VideoPageState extends State<VideoPage>
 
       setState(() {
         _currentEpisode++;
+        // 切换集数时清除初始进度
+        _currentInitialProgress = null;
         _updateCurrentVideoUrl();
       });
     }
@@ -302,6 +308,8 @@ class _VideoPageState extends State<VideoPage>
 
       setState(() {
         _currentEpisode--;
+        // 切换集数时清除初始进度
+        _currentInitialProgress = null;
         _updateCurrentVideoUrl();
       });
     }
@@ -364,6 +372,8 @@ class _VideoPageState extends State<VideoPage>
     setState(() {
       _currentPluginName = source.name;
       _isLoadingEpisodes = true;
+      // 切换视频源时清除初始进度
+      _currentInitialProgress = null;
     });
 
     try {
@@ -571,7 +581,7 @@ class _VideoPageState extends State<VideoPage>
                                       : null,
                                   hasNextEpisode: _hasNextEpisode,
                                   hasPreviousEpisode: _hasPreviousEpisode,
-                                  initialProgress: widget.initialProgress,
+                                  initialProgress: _currentInitialProgress,
                                 ),
                               if (isLoading)
                                 Stack(
@@ -939,6 +949,8 @@ class _VideoPageState extends State<VideoPage>
 
                   setState(() {
                     _currentEpisode = episode.number;
+                    // 切换集数时清除初始进度
+                    _currentInitialProgress = null;
                     _updateCurrentVideoUrl();
                   });
                 },

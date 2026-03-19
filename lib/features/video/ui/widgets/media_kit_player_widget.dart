@@ -50,9 +50,6 @@ class _MediaKitPlayerWidgetState extends State<MediaKitPlayerWidget> {
   Duration _totalDuration = Duration.zero;
   bool _isDragging = false;
   bool _lockPanel = false;
-  double _bufferingSpeed = 0.0; // KB/s
-  Duration _lastBufferPosition = Duration.zero;
-  DateTime? _lastBufferTime;
   Timer? _hideTimer;
   bool _hasRestoredProgress = false; // 是否已恢复进度
 
@@ -119,11 +116,6 @@ class _MediaKitPlayerWidgetState extends State<MediaKitPlayerWidget> {
             if (mounted) {
               setState(() {
                 _isBuffering = buffering;
-                if (!buffering) {
-                  // 缓冲结束，重置速度
-                  _bufferingSpeed = 0.0;
-                  _lastBufferTime = null;
-                }
               });
             }
           });
@@ -156,37 +148,22 @@ class _MediaKitPlayerWidgetState extends State<MediaKitPlayerWidget> {
                   widget.initialProgress!.inSeconds > 0 &&
                   duration.inSeconds > 0) {
                 _hasRestoredProgress = true;
-                debugPrint(
-                  '视频加载完成,恢复播放进度: ${widget.initialProgress!.inSeconds}秒 / ${duration.inSeconds}秒',
-                );
-                player.seek(widget.initialProgress!);
-              }
-            }
-          });
+                debugPrint('========== 恢复播放进度 ==========');
+                debugPrint('目标进度: ${widget.initialProgress!.inSeconds}秒');
+                debugPrint('视频总时长: ${duration.inSeconds}秒');
+                debugPrint('==================================');
 
-          // 监听buffer变化来估算下载速度
-          player.stream.buffer.listen((buffer) {
-            if (mounted && _isBuffering) {
-              final now = DateTime.now();
-              if (_lastBufferTime != null) {
-                final timeDiff = now
-                    .difference(_lastBufferTime!)
-                    .inMilliseconds;
-                final bufferDiff =
-                    buffer.inMilliseconds - _lastBufferPosition.inMilliseconds;
-
-                if (timeDiff > 0 && bufferDiff > 0) {
-                  // 假设平均码率为2Mbps，根据缓冲时长估算下载速度
-                  // 这是一个粗略估算
-                  final estimatedKBps =
-                      (bufferDiff / timeDiff) * 250; // 2Mbps = 250KB/s
-                  setState(() {
-                    _bufferingSpeed = estimatedKBps;
-                  });
-                }
+                // 延迟一小段时间再跳转,确保播放器完全准备好
+                Future.delayed(const Duration(milliseconds: 500), () {
+                  if (mounted &&
+                      player.state.duration.inSeconds > 0 &&
+                      widget.initialProgress!.inSeconds <
+                          player.state.duration.inSeconds) {
+                    player.seek(widget.initialProgress!);
+                    debugPrint('进度恢复成功');
+                  }
+                });
               }
-              _lastBufferTime = now;
-              _lastBufferPosition = buffer;
             }
           });
         }
@@ -210,8 +187,10 @@ class _MediaKitPlayerWidgetState extends State<MediaKitPlayerWidget> {
   @override
   void didUpdateWidget(MediaKitPlayerWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
+    // 只有在URL真正变化时才重新初始化播放器
     if (oldWidget.videoUrl != widget.videoUrl && widget.videoUrl.isNotEmpty) {
-      _hasRestoredProgress = false; // 重置标志位
+      debugPrint('视频URL变化: ${oldWidget.videoUrl} -> ${widget.videoUrl}');
+      _hasRestoredProgress = false;
       _initPlayer();
     }
   }
