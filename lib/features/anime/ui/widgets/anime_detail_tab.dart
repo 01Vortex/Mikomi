@@ -6,8 +6,7 @@ import 'package:mikomi/core/models/staff_item.dart';
 import 'package:mikomi/core/network/dio_client.dart';
 import 'package:mikomi/features/anime/data/datasources/detail_datasource.dart';
 import 'package:mikomi/features/anime/data/repositories/detail_repository_impl.dart';
-import 'package:mikomi/features/anime/ui/pages/anime_detail.dart';
-import 'package:mikomi/shared/widgets/cached_image.dart';
+import 'package:mikomi/features/anime/ui/pages/anime_detail_more.dart';
 import 'package:mikomi/shared/widgets/scrolling_text.dart';
 import 'package:mikomi/shared/widgets/skeleton.dart';
 
@@ -252,12 +251,25 @@ class _AnimeDetailTabState extends State<AnimeDetailTab> {
         width: 160,
         child: Row(
           children: [
-            ClipOval(
-              child: CachedImage(
-                imageUrl: character.images.medium,
-                width: 60,
-                height: 60,
-                fit: BoxFit.cover,
+            Container(
+              width: 60,
+              height: 60,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Theme.of(context).colorScheme.surfaceContainerHighest,
+              ),
+              child: ClipOval(
+                child: character.images.grid.isNotEmpty
+                    ? Image.network(
+                        character.images.grid,
+                        width: 60,
+                        height: 60,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return const Icon(Icons.person, size: 30);
+                        },
+                      )
+                    : const Icon(Icons.person, size: 30),
               ),
             ),
             const SizedBox(width: 8),
@@ -332,12 +344,25 @@ class _AnimeDetailTabState extends State<AnimeDetailTab> {
         width: 160,
         child: Row(
           children: [
-            ClipOval(
-              child: CachedImage(
-                imageUrl: staffItem.staff.images?.medium ?? '',
-                width: 60,
-                height: 60,
-                fit: BoxFit.cover,
+            Container(
+              width: 60,
+              height: 60,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Theme.of(context).colorScheme.surfaceContainerHighest,
+              ),
+              child: ClipOval(
+                child: (staffItem.staff.images?.grid ?? '').isNotEmpty
+                    ? Image.network(
+                        staffItem.staff.images!.grid,
+                        width: 60,
+                        height: 60,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return const Icon(Icons.person, size: 30);
+                        },
+                      )
+                    : const Icon(Icons.person, size: 30),
               ),
             ),
             const SizedBox(width: 8),
