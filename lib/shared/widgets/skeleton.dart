@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:mikomi/config/themes/app_colors.dart';
 
 class SkeletonLoader extends StatefulWidget {
   final double? width;
@@ -164,6 +163,39 @@ class SkeletonGridCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(4),
         ),
       ],
+    );
+  }
+}
+
+// 剧集卡片骨架屏
+class SkeletonEpisodeCard extends StatelessWidget {
+  const SkeletonEpisodeCard({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.grey.withValues(alpha: 0.2), width: 1),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SkeletonLoader(
+            width: 50,
+            height: 13,
+            borderRadius: BorderRadius.circular(4),
+          ),
+          const SizedBox(height: 4),
+          SkeletonLoader(
+            width: 70,
+            height: 11,
+            borderRadius: BorderRadius.circular(4),
+          ),
+        ],
+      ),
     );
   }
 }

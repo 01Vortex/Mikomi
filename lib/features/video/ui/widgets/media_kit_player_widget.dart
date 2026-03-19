@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 import 'package:mikomi/features/video/controllers/video_player_controller.dart';
 import 'package:mikomi/features/video/ui/pages/fullscreen_video_page.dart';
+import 'package:mikomi/core/models/episode.dart';
 
 class MediaKitPlayerWidget extends StatefulWidget {
   final String videoUrl;
@@ -17,7 +18,12 @@ class MediaKitPlayerWidget extends StatefulWidget {
   final VoidCallback? onPreviousEpisode;
   final bool hasNextEpisode;
   final bool hasPreviousEpisode;
-  final Duration? initialProgress; // 初始播放进度
+  final Duration? initialProgress;
+  final List<Episode> episodes;
+  final Function(Episode)? onEpisodeSelected;
+  final bool isLoadingEpisodes;
+  final bool isDescending;
+  final VoidCallback? onToggleSort;
 
   const MediaKitPlayerWidget({
     super.key,
@@ -34,6 +40,11 @@ class MediaKitPlayerWidget extends StatefulWidget {
     this.hasNextEpisode = false,
     this.hasPreviousEpisode = false,
     this.initialProgress,
+    this.episodes = const [],
+    this.onEpisodeSelected,
+    this.isLoadingEpisodes = false,
+    this.isDescending = false,
+    this.onToggleSort,
   });
 
   @override
@@ -256,11 +267,15 @@ class _MediaKitPlayerWidgetState extends State<MediaKitPlayerWidget> {
               onPreviousEpisode: widget.onPreviousEpisode,
               hasNextEpisode: widget.hasNextEpisode,
               hasPreviousEpisode: widget.hasPreviousEpisode,
+              episodes: widget.episodes,
+              onEpisodeSelected: widget.onEpisodeSelected,
+              isLoadingEpisodes: widget.isLoadingEpisodes,
+              isDescending: widget.isDescending,
+              onToggleSort: widget.onToggleSort,
             ),
         transitionDuration: const Duration(milliseconds: 200),
         reverseTransitionDuration: const Duration(milliseconds: 200),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          // 使用缓动曲线让动画更流畅
           final curvedAnimation = CurvedAnimation(
             parent: animation,
             curve: Curves.easeInOut,

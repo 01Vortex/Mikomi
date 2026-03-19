@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:mikomi/config/themes/app_colors.dart';
 import 'package:mikomi/features/video/controllers/video_player_controller.dart';
 import 'package:mikomi/features/video/ui/widgets/fullscreen_video_controls.dart';
+import 'package:mikomi/core/models/episode.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 
 class FullscreenVideoPage extends StatefulWidget {
@@ -14,6 +15,11 @@ class FullscreenVideoPage extends StatefulWidget {
   final VoidCallback? onPreviousEpisode;
   final bool hasNextEpisode;
   final bool hasPreviousEpisode;
+  final List<Episode> episodes;
+  final Function(Episode)? onEpisodeSelected;
+  final bool isLoadingEpisodes;
+  final bool isDescending;
+  final VoidCallback? onToggleSort;
 
   const FullscreenVideoPage({
     super.key,
@@ -25,6 +31,11 @@ class FullscreenVideoPage extends StatefulWidget {
     this.onPreviousEpisode,
     this.hasNextEpisode = false,
     this.hasPreviousEpisode = false,
+    this.episodes = const [],
+    this.onEpisodeSelected,
+    this.isLoadingEpisodes = false,
+    this.isDescending = false,
+    this.onToggleSort,
   });
 
   @override
@@ -116,6 +127,11 @@ class _FullscreenVideoPageState extends State<FullscreenVideoPage> {
               onPreviousEpisode: widget.onPreviousEpisode,
               hasNextEpisode: widget.hasNextEpisode,
               hasPreviousEpisode: widget.hasPreviousEpisode,
+              episodes: widget.episodes,
+              onEpisodeSelected: widget.onEpisodeSelected,
+              isLoadingEpisodes: widget.isLoadingEpisodes,
+              isDescending: widget.isDescending,
+              onToggleSort: widget.onToggleSort,
             ),
           ],
         ),

@@ -2,6 +2,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:mikomi/features/video/controllers/video_player_controller.dart';
+import 'package:mikomi/features/video/ui/widgets/fullscreen_episode_selector.dart';
+import 'package:mikomi/core/models/episode.dart';
 
 class FullscreenVideoControls extends StatefulWidget {
   final VideoPlayerController playerController;
@@ -13,6 +15,11 @@ class FullscreenVideoControls extends StatefulWidget {
   final VoidCallback? onPreviousEpisode;
   final bool hasNextEpisode;
   final bool hasPreviousEpisode;
+  final List<Episode> episodes;
+  final Function(Episode)? onEpisodeSelected;
+  final bool isLoadingEpisodes;
+  final bool isDescending;
+  final VoidCallback? onToggleSort;
 
   const FullscreenVideoControls({
     super.key,
@@ -25,6 +32,11 @@ class FullscreenVideoControls extends StatefulWidget {
     this.onPreviousEpisode,
     this.hasNextEpisode = false,
     this.hasPreviousEpisode = false,
+    this.episodes = const [],
+    this.onEpisodeSelected,
+    this.isLoadingEpisodes = false,
+    this.isDescending = false,
+    this.onToggleSort,
   });
 
   @override
@@ -165,6 +177,42 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
         widget.playerController.player?.setRate(value);
       }
     });
+  }
+
+  void _showEpisodeSelector() {
+    showGeneralDialog(
+      context: context,
+      barrierDismissible: true,
+      barrierLabel: '',
+      barrierColor: Colors.black.withValues(alpha: 0.5),
+      transitionDuration: const Duration(milliseconds: 300),
+      pageBuilder: (context, animation, secondaryAnimation) {
+        return Align(
+          alignment: Alignment.centerRight,
+          child: SlideTransition(
+            position: Tween<Offset>(begin: const Offset(1, 0), end: Offset.zero)
+                .animate(
+                  CurvedAnimation(
+                    parent: animation,
+                    curve: Curves.easeOutCubic,
+                  ),
+                ),
+            child: FullscreenEpisodeSelector(
+              episodes: widget.episodes,
+              currentEpisode: widget.currentEpisode,
+              onEpisodeSelected: (episode) {
+                if (widget.onEpisodeSelected != null) {
+                  widget.onEpisodeSelected!(episode);
+                }
+              },
+              isLoading: widget.isLoadingEpisodes,
+              isDescending: widget.isDescending,
+              onToggleSort: widget.onToggleSort ?? () {},
+            ),
+          ),
+        );
+      },
+    );
   }
 
   String _formatDuration(Duration duration) {
@@ -473,9 +521,7 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
                       _buildBottomButton(
                         icon: Icons.playlist_play,
                         label: '选集',
-                        onTap: () {
-                          // TODO: 打开选集面板
-                        },
+                        onTap: _showEpisodeSelector,
                       ),
                       const SizedBox(width: 12),
                       _buildBottomButton(
@@ -505,7 +551,7 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
       child: Container(
         padding: iconOnly
             ? const EdgeInsets.all(8)
-            : const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            : const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         decoration: BoxDecoration(
           color: Colors.white.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(iconOnly ? 8 : 16),

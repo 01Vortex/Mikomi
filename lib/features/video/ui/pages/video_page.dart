@@ -7,6 +7,7 @@ import 'package:mikomi/features/video/ui/widgets/video_tab_bar.dart';
 import 'package:mikomi/features/video/ui/widgets/episode_card.dart';
 import 'package:mikomi/features/video/ui/widgets/danmaku_input_bar.dart';
 import 'package:mikomi/features/anime/ui/widgets/video_source_selector.dart';
+import 'package:mikomi/shared/widgets/skeleton.dart';
 import 'package:mikomi/core/models/episode.dart';
 import 'package:mikomi/core/services/bangumi_episodes_service.dart';
 import 'package:mikomi/features/video/data/repositories/video_source_repository.dart';
@@ -581,6 +582,22 @@ class _VideoPageState extends State<VideoPage>
                                   hasNextEpisode: _hasNextEpisode,
                                   hasPreviousEpisode: _hasPreviousEpisode,
                                   initialProgress: _currentInitialProgress,
+                                  episodes: _episodes,
+                                  onEpisodeSelected: (episode) async {
+                                    await _playerController.stop();
+                                    setState(() {
+                                      _currentEpisode = episode.number;
+                                      _currentInitialProgress = null;
+                                      _updateCurrentVideoUrl();
+                                    });
+                                  },
+                                  isLoadingEpisodes: _isLoadingEpisodes,
+                                  isDescending: _isDescending,
+                                  onToggleSort: () {
+                                    setState(() {
+                                      _isDescending = !_isDescending;
+                                    });
+                                  },
                                 ),
                               if (isLoading)
                                 Stack(
@@ -825,22 +842,61 @@ class _VideoPageState extends State<VideoPage>
 
   Widget _buildEpisodeTab() {
     if (_isLoadingEpisodes && _episodes.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const CircularProgressIndicator(),
-            const SizedBox(height: 16),
-            Text(
-              '正在加载剧集...',
-              style: TextStyle(
-                color: Theme.of(
-                  context,
-                ).colorScheme.onSurface.withValues(alpha: 0.6),
-              ),
+      return Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const SizedBox.shrink(),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.surfaceContainerHighest,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.arrow_upward,
+                        size: 16,
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        '正序',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+          Expanded(
+            child: GridView.builder(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 3,
+                childAspectRatio: 2.2,
+                crossAxisSpacing: 12,
+                mainAxisSpacing: 12,
+              ),
+              itemCount: 12,
+              itemBuilder: (context, index) => const SkeletonEpisodeCard(),
+            ),
+          ),
+        ],
       );
     }
 
