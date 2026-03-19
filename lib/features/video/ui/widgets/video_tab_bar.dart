@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:mikomi/shared/utils/theme_extensions.dart';
 
 class VideoTabBar extends StatelessWidget {
   final TabController tabController;
@@ -27,10 +28,7 @@ class VideoTabBar extends StatelessWidget {
       height: 48,
       decoration: BoxDecoration(
         border: Border(
-          bottom: BorderSide(
-            color: Theme.of(context).colorScheme.outlineVariant,
-            width: 0.5,
-          ),
+          bottom: BorderSide(color: context.colors.outlineVariant, width: 0.5),
         ),
       ),
       child: Stack(
@@ -171,16 +169,13 @@ class VideoTabBar extends StatelessWidget {
         height: 36,
         padding: const EdgeInsets.symmetric(horizontal: 16),
         decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surfaceContainerHighest,
+          color: context.colors.surfaceContainerHighest,
           borderRadius: BorderRadius.circular(18),
         ),
         alignment: Alignment.center,
         child: Text(
           currentPluginName ?? '视频源',
-          style: TextStyle(
-            fontSize: 14,
-            color: Theme.of(context).colorScheme.onSurface,
-          ),
+          style: TextStyle(fontSize: 14, color: context.colors.textPrimary),
         ),
       ),
     );

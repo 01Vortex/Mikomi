@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mikomi/shared/utils/theme_extensions.dart';
 
 class DanmakuInputBar extends StatelessWidget {
   final TextEditingController controller;
@@ -22,12 +23,9 @@ class DanmakuInputBar extends StatelessWidget {
         bottom: MediaQuery.of(context).viewInsets.bottom + 12,
       ),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
+        color: context.colors.surface,
         border: Border(
-          top: BorderSide(
-            color: Theme.of(context).colorScheme.outlineVariant,
-            width: 0.5,
-          ),
+          top: BorderSide(color: context.colors.outlineVariant, width: 0.5),
         ),
       ),
       child: Row(
