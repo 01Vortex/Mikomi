@@ -4,7 +4,7 @@ import 'package:mikomi/core/models/character_comment.dart';
 import 'package:mikomi/core/models/person_detail.dart';
 import 'package:mikomi/core/models/person_comment.dart';
 import 'package:mikomi/core/models/staff_item.dart';
-import 'package:mikomi/features/anime/data/datasources/detail_remote_datasource.dart';
+import 'package:mikomi/features/anime/data/datasources/detail_datasource.dart';
 import 'package:mikomi/features/anime/domain/repositories/detail_repository.dart';
 
 class DetailRepositoryImpl implements DetailRepository {

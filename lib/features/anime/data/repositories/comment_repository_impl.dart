@@ -1,6 +1,6 @@
 import 'package:mikomi/core/models/comment_item.dart';
-import 'package:mikomi/features/anime/data/datasources/comment_remote_datasource.dart';
-import 'package:mikomi/features/anime/domain/repositories/comment_repository.dart';
+import 'package:mikomi/features/anime/data/datasources/teasing_datasource.dart';
+import 'package:mikomi/features/anime/domain/repositories/teasing_repository.dart';
 
 class CommentRepositoryImpl implements CommentRepository {
   final CommentRemoteDataSource _remoteDataSource;

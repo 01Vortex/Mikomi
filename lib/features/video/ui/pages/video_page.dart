@@ -1,17 +1,17 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:mikomi/features/video/ui/widgets/media_kit_player_widget.dart';
-import 'package:mikomi/features/video/ui/widgets/comment_tab_widget.dart';
-import 'package:mikomi/features/video/ui/widgets/video_tab_bar.dart';
-import 'package:mikomi/features/video/ui/widgets/episode_card.dart';
-import 'package:mikomi/features/video/ui/widgets/danmaku_input_bar.dart';
+import 'package:mikomi/features/video/ui/widgets/smallscreen_video.dart';
+import 'package:mikomi/features/video/ui/widgets/video_comment.dart';
+import 'package:mikomi/features/video/ui/widgets/video_tab.dart';
+import 'package:mikomi/features/video/ui/widgets/smallscreen_episcode.dart';
+import 'package:mikomi/features/video/ui/widgets/danmaku_input.dart';
 import 'package:mikomi/features/anime/ui/widgets/video_source_selector.dart';
 import 'package:mikomi/shared/widgets/skeleton.dart';
 import 'package:mikomi/core/models/episode.dart';
 import 'package:mikomi/core/services/bangumi_episodes_service.dart';
 import 'package:mikomi/features/video/data/repositories/video_source_repository.dart';
-import 'package:mikomi/features/video/controllers/video_player_controller.dart';
+import 'package:mikomi/features/video/controllers/video_controller.dart';
 import 'package:mikomi/core/services/watch_history_service.dart';
 import 'package:mikomi/core/models/watch_history.dart';
 

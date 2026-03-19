@@ -5,7 +5,7 @@ import 'package:mikomi/core/models/character_comment.dart';
 import 'package:mikomi/core/models/person_detail.dart';
 import 'package:mikomi/core/models/person_comment.dart';
 import 'package:mikomi/core/network/dio_client.dart';
-import 'package:mikomi/features/anime/data/datasources/detail_remote_datasource.dart';
+import 'package:mikomi/features/anime/data/datasources/detail_datasource.dart';
 import 'package:mikomi/features/anime/data/repositories/detail_repository_impl.dart';
 import 'package:mikomi/features/anime/ui/widgets/comment_list_widget.dart';
 import 'package:mikomi/features/anime/ui/widgets/person_info_widget.dart';

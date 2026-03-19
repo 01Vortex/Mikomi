@@ -3,7 +3,7 @@ import 'package:mikomi/config/themes/app_colors.dart';
 import 'package:mikomi/core/models/bangumi_item.dart';
 import 'package:mikomi/core/models/comment_item.dart';
 import 'package:mikomi/core/network/dio_client.dart';
-import 'package:mikomi/features/anime/data/datasources/comment_remote_datasource.dart';
+import 'package:mikomi/features/anime/data/datasources/teasing_datasource.dart';
 import 'package:mikomi/features/anime/data/repositories/comment_repository_impl.dart';
 import 'package:mikomi/shared/widgets/cached_image.dart';
 import 'package:mikomi/shared/widgets/skeleton.dart';

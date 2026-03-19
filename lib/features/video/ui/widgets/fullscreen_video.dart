@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:mikomi/features/video/controllers/video_player_controller.dart';
-import 'package:mikomi/features/video/ui/widgets/fullscreen_episode_selector.dart';
+import 'package:mikomi/features/video/controllers/video_controller.dart';
+import 'package:mikomi/features/video/ui/widgets/fullscreen_episode.dart';
 import 'package:mikomi/core/models/episode.dart';
 
 class FullscreenVideoControls extends StatefulWidget {
