@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:mikomi/config/themes/app_colors.dart';
 
 class CommentTabWidget extends StatelessWidget {
   const CommentTabWidget({super.key});
@@ -14,14 +13,18 @@ class CommentTabWidget extends StatelessWidget {
           Icon(
             Icons.chat_bubble_outline,
             size: 64,
-            color: AppColors.textSecondary.withValues(alpha: 0.3),
+            color: Theme.of(
+              context,
+            ).colorScheme.onSurface.withValues(alpha: 0.3),
           ),
           const SizedBox(height: 16),
           Text(
             '暂无评论',
             style: TextStyle(
               fontSize: 16,
-              color: AppColors.textSecondary.withValues(alpha: 0.7),
+              color: Theme.of(
+                context,
+              ).colorScheme.onSurface.withValues(alpha: 0.7),
             ),
           ),
           const SizedBox(height: 8),
@@ -29,7 +32,9 @@ class CommentTabWidget extends StatelessWidget {
             '快来发表第一条评论吧',
             style: TextStyle(
               fontSize: 13,
-              color: AppColors.textSecondary.withValues(alpha: 0.5),
+              color: Theme.of(
+                context,
+              ).colorScheme.onSurface.withValues(alpha: 0.5),
             ),
           ),
         ],

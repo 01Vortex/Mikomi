@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:mikomi/config/themes/app_colors.dart';
 
 class VideoTabBar extends StatelessWidget {
   final TabController tabController;
@@ -26,9 +25,12 @@ class VideoTabBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       height: 48,
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         border: Border(
-          bottom: BorderSide(color: AppColors.divider, width: 0.5),
+          bottom: BorderSide(
+            color: Theme.of(context).colorScheme.outlineVariant,
+            width: 0.5,
+          ),
         ),
       ),
       child: Stack(
@@ -39,7 +41,7 @@ class VideoTabBar extends StatelessWidget {
             top: 0,
             bottom: 0,
             width: 120,
-            child: _buildTabSection(),
+            child: _buildTabSection(context),
           ),
           // 上层：右侧按钮区域，从120开始到右边
           Positioned(
@@ -47,7 +49,7 @@ class VideoTabBar extends StatelessWidget {
             right: 0,
             top: 0,
             bottom: 0,
-            child: _buildActionSection(),
+            child: _buildActionSection(context),
           ),
         ],
       ),
@@ -55,14 +57,16 @@ class VideoTabBar extends StatelessWidget {
   }
 
   // Tab标签区域
-  Widget _buildTabSection() {
+  Widget _buildTabSection(BuildContext context) {
     return SizedBox(
       width: 120,
       child: TabBar(
         controller: tabController,
-        labelColor: AppColors.primary,
-        unselectedLabelColor: AppColors.textSecondary,
-        indicatorColor: AppColors.primary,
+        labelColor: Theme.of(context).colorScheme.primary,
+        unselectedLabelColor: Theme.of(
+          context,
+        ).colorScheme.onSurface.withValues(alpha: 0.6),
+        indicatorColor: Theme.of(context).colorScheme.primary,
         indicatorWeight: 3,
         labelPadding: const EdgeInsets.symmetric(horizontal: 8),
         padding: EdgeInsets.zero,
@@ -76,32 +80,32 @@ class VideoTabBar extends StatelessWidget {
   }
 
   // 右侧按钮区域
-  Widget _buildActionSection() {
+  Widget _buildActionSection(BuildContext context) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
         // 弹幕输入提示（仅在开启弹幕时显示）
-        if (isDanmakuEnabled) _buildDanmakuInputHint(),
+        if (isDanmakuEnabled) _buildDanmakuInputHint(context),
         // 弹幕开关按钮
-        _buildDanmakuToggleButton(),
+        _buildDanmakuToggleButton(context),
         const SizedBox(width: 8),
         // 视频源按钮
-        _buildVideoSourceButton(),
+        _buildVideoSourceButton(context),
         const SizedBox(width: 12),
       ],
     );
   }
 
   // 弹幕输入提示
-  Widget _buildDanmakuInputHint() {
+  Widget _buildDanmakuInputHint(BuildContext context) {
     return GestureDetector(
       onTap: onDanmakuInputTap,
       child: Container(
         height: 36,
         padding: const EdgeInsets.symmetric(horizontal: 12),
-        decoration: const BoxDecoration(
-          color: AppColors.background,
-          borderRadius: BorderRadius.only(
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surfaceContainerHighest,
+          borderRadius: const BorderRadius.only(
             topLeft: Radius.circular(18),
             bottomLeft: Radius.circular(18),
           ),
@@ -112,8 +116,10 @@ class VideoTabBar extends StatelessWidget {
           style: TextStyle(
             fontSize: 14,
             color: isDanmakuInputExpanded
-                ? AppColors.primary
-                : AppColors.textSecondary,
+                ? Theme.of(context).colorScheme.primary
+                : Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withValues(alpha: 0.6),
           ),
         ),
       ),
@@ -121,14 +127,14 @@ class VideoTabBar extends StatelessWidget {
   }
 
   // 弹幕开关按钮
-  Widget _buildDanmakuToggleButton() {
+  Widget _buildDanmakuToggleButton(BuildContext context) {
     return GestureDetector(
       onTap: onDanmakuToggle,
       child: Container(
         height: 36,
         width: 36,
         decoration: BoxDecoration(
-          color: AppColors.background,
+          color: Theme.of(context).colorScheme.surfaceContainerHighest,
           borderRadius: BorderRadius.circular(isDanmakuEnabled ? 0 : 18)
               .copyWith(
                 topRight: const Radius.circular(18),
@@ -145,9 +151,11 @@ class VideoTabBar extends StatelessWidget {
           colorFilter: ColorFilter.mode(
             isDanmakuEnabled
                 ? (isDanmakuInputExpanded
-                      ? AppColors.primary
-                      : AppColors.textPrimary)
-                : AppColors.textSecondary,
+                      ? Theme.of(context).colorScheme.primary
+                      : Theme.of(context).colorScheme.onSurface)
+                : Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withValues(alpha: 0.6),
             BlendMode.srcIn,
           ),
         ),
@@ -156,20 +164,23 @@ class VideoTabBar extends StatelessWidget {
   }
 
   // 视频源按钮
-  Widget _buildVideoSourceButton() {
+  Widget _buildVideoSourceButton(BuildContext context) {
     return GestureDetector(
       onTap: onVideoSourceTap,
       child: Container(
         height: 36,
         padding: const EdgeInsets.symmetric(horizontal: 16),
         decoration: BoxDecoration(
-          color: AppColors.background,
+          color: Theme.of(context).colorScheme.surfaceContainerHighest,
           borderRadius: BorderRadius.circular(18),
         ),
         alignment: Alignment.center,
         child: Text(
           currentPluginName ?? '视频源',
-          style: const TextStyle(fontSize: 14, color: AppColors.textPrimary),
+          style: TextStyle(
+            fontSize: 14,
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
         ),
       ),
     );

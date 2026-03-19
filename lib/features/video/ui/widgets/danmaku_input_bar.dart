@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:mikomi/config/themes/app_colors.dart';
 
 class DanmakuInputBar extends StatelessWidget {
   final TextEditingController controller;
@@ -22,9 +21,14 @@ class DanmakuInputBar extends StatelessWidget {
         top: 12,
         bottom: MediaQuery.of(context).viewInsets.bottom + 12,
       ),
-      decoration: const BoxDecoration(
-        color: AppColors.surface,
-        border: Border(top: BorderSide(color: AppColors.divider, width: 0.5)),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        border: Border(
+          top: BorderSide(
+            color: Theme.of(context).colorScheme.outlineVariant,
+            width: 0.5,
+          ),
+        ),
       ),
       child: Row(
         children: [
@@ -32,22 +36,24 @@ class DanmakuInputBar extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
-                color: AppColors.background,
+                color: Theme.of(context).colorScheme.surfaceContainerHighest,
                 borderRadius: BorderRadius.circular(24),
               ),
               child: TextField(
                 controller: controller,
                 autofocus: true,
                 textInputAction: TextInputAction.send,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 15,
-                  color: AppColors.textPrimary,
+                  color: Theme.of(context).colorScheme.onSurface,
                 ),
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   hintText: '点我发弹幕',
                   hintStyle: TextStyle(
                     fontSize: 15,
-                    color: AppColors.textSecondary,
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.onSurface.withValues(alpha: 0.6),
                   ),
                   border: InputBorder.none,
                   contentPadding: EdgeInsets.zero,
@@ -66,10 +72,16 @@ class DanmakuInputBar extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: AppColors.primary.withValues(alpha: 0.1),
+                color: Theme.of(
+                  context,
+                ).colorScheme.primary.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.send, size: 20, color: AppColors.primary),
+              child: Icon(
+                Icons.send,
+                size: 20,
+                color: Theme.of(context).colorScheme.primary,
+              ),
             ),
           ),
         ],

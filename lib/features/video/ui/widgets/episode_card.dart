@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:mikomi/config/themes/app_colors.dart';
 import 'package:mikomi/core/models/episode.dart';
 
 class EpisodeCard extends StatelessWidget {
@@ -22,11 +21,13 @@ class EpisodeCard extends StatelessWidget {
       child: Container(
         decoration: BoxDecoration(
           color: isCurrent
-              ? AppColors.primary.withValues(alpha: 0.15)
-              : AppColors.background,
+              ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.15)
+              : Theme.of(context).colorScheme.surfaceContainerHighest,
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
-            color: isCurrent ? AppColors.primary : AppColors.divider,
+            color: isCurrent
+                ? Theme.of(context).colorScheme.primary
+                : Theme.of(context).colorScheme.outlineVariant,
             width: isCurrent ? 2 : 1,
           ),
         ),
@@ -40,16 +41,20 @@ class EpisodeCard extends StatelessWidget {
               style: TextStyle(
                 fontSize: 13,
                 fontWeight: isCurrent ? FontWeight.bold : FontWeight.w500,
-                color: isCurrent ? AppColors.primary : AppColors.textPrimary,
+                color: isCurrent
+                    ? Theme.of(context).colorScheme.primary
+                    : Theme.of(context).colorScheme.onSurface,
               ),
             ),
             if (episode.title != null && episode.title!.isNotEmpty) ...[
               const SizedBox(height: 2),
               Text(
                 episode.title!,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 11,
-                  color: AppColors.textSecondary,
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withValues(alpha: 0.6),
                 ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,

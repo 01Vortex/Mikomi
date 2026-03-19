@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:mikomi/config/themes/app_colors.dart';
 import 'package:mikomi/features/video/ui/widgets/media_kit_player_widget.dart';
 import 'package:mikomi/features/video/ui/widgets/comment_tab_widget.dart';
 import 'package:mikomi/features/video/ui/widgets/video_tab_bar.dart';
@@ -666,7 +665,9 @@ class _VideoPageState extends State<VideoPage>
                                                       vertical: 10,
                                                     ),
                                                 decoration: BoxDecoration(
-                                                  color: AppColors.primary,
+                                                  color: Theme.of(
+                                                    context,
+                                                  ).colorScheme.primary,
                                                   borderRadius:
                                                       BorderRadius.circular(20),
                                                 ),
@@ -724,7 +725,9 @@ class _VideoPageState extends State<VideoPage>
                                               vertical: 10,
                                             ),
                                             decoration: BoxDecoration(
-                                              color: AppColors.primary,
+                                              color: Theme.of(
+                                                context,
+                                              ).colorScheme.primary,
                                               borderRadius:
                                                   BorderRadius.circular(20),
                                             ),
@@ -822,13 +825,20 @@ class _VideoPageState extends State<VideoPage>
 
   Widget _buildEpisodeTab() {
     if (_isLoadingEpisodes && _episodes.isEmpty) {
-      return const Center(
+      return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            CircularProgressIndicator(),
-            SizedBox(height: 16),
-            Text('正在加载剧集...', style: TextStyle(color: AppColors.textSecondary)),
+            const CircularProgressIndicator(),
+            const SizedBox(height: 16),
+            Text(
+              '正在加载剧集...',
+              style: TextStyle(
+                color: Theme.of(
+                  context,
+                ).colorScheme.onSurface.withValues(alpha: 0.6),
+              ),
+            ),
           ],
         ),
       );
@@ -856,7 +866,9 @@ class _VideoPageState extends State<VideoPage>
                       vertical: 8,
                     ),
                     decoration: BoxDecoration(
-                      color: AppColors.background,
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.surfaceContainerHighest,
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Row(
@@ -867,14 +879,14 @@ class _VideoPageState extends State<VideoPage>
                               ? Icons.expand_less
                               : Icons.expand_more,
                           size: 16,
-                          color: AppColors.textPrimary,
+                          color: Theme.of(context).colorScheme.onSurface,
                         ),
                         const SizedBox(width: 6),
                         Text(
                           _isEpisodesExpanded ? '收起' : '展开',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 14,
-                            color: AppColors.textPrimary,
+                            color: Theme.of(context).colorScheme.onSurface,
                           ),
                         ),
                       ],
@@ -897,7 +909,9 @@ class _VideoPageState extends State<VideoPage>
                     vertical: 8,
                   ),
                   decoration: BoxDecoration(
-                    color: AppColors.background,
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.surfaceContainerHighest,
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Row(
@@ -908,14 +922,14 @@ class _VideoPageState extends State<VideoPage>
                             ? Icons.arrow_downward
                             : Icons.arrow_upward,
                         size: 16,
-                        color: AppColors.textPrimary,
+                        color: Theme.of(context).colorScheme.onSurface,
                       ),
                       const SizedBox(width: 6),
                       Text(
                         _isDescending ? '倒序' : '正序',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 14,
-                          color: AppColors.textPrimary,
+                          color: Theme.of(context).colorScheme.onSurface,
                         ),
                       ),
                     ],

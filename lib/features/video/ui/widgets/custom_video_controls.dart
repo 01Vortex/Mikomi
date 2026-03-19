@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:mikomi/config/themes/app_colors.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 
 class CustomVideoControls extends StatefulWidget {
@@ -328,7 +327,7 @@ class _CustomVideoControlsState extends State<CustomVideoControls> {
                         _isDragging = false;
                         widget.controller.player.seek(_position);
                       },
-                      activeColor: AppColors.primary,
+                      activeColor: Theme.of(context).colorScheme.primary,
                       inactiveColor: Colors.white.withValues(alpha: 0.3),
                     ),
                   ),
@@ -446,7 +445,7 @@ class _CustomVideoControlsState extends State<CustomVideoControls> {
             child: Text(
               '发送',
               style: TextStyle(
-                color: AppColors.primary,
+                color: Theme.of(context).colorScheme.primary,
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
               ),

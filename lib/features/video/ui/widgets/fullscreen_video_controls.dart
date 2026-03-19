@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:mikomi/config/themes/app_colors.dart';
 import 'package:mikomi/features/video/controllers/video_player_controller.dart';
 
 class FullscreenVideoControls extends StatefulWidget {
@@ -149,7 +148,7 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
               '${speed}x',
               style: TextStyle(
                 color: _playbackSpeed == speed
-                    ? AppColors.primary
+                    ? Theme.of(context).colorScheme.primary
                     : Colors.white,
                 fontSize: 15,
                 fontWeight: _playbackSpeed == speed
@@ -386,9 +385,9 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
                         overlayShape: const RoundSliderOverlayShape(
                           overlayRadius: 12,
                         ),
-                        activeTrackColor: AppColors.primary,
+                        activeTrackColor: Theme.of(context).colorScheme.primary,
                         inactiveTrackColor: Colors.white.withValues(alpha: 0.3),
-                        thumbColor: AppColors.primary,
+                        thumbColor: Theme.of(context).colorScheme.primary,
                       ),
                       child: Slider(
                         value: _duration.inMilliseconds > 0
@@ -620,7 +619,7 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
             decoration: BoxDecoration(
-              color: AppColors.primary,
+              color: Theme.of(context).colorScheme.primary,
               borderRadius: BorderRadius.circular(20),
             ),
             child: const Text(
