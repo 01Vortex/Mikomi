@@ -1,15 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:mikomi/config/themes/app_colors.dart';
 import 'package:mikomi/core/models/bangumi_item.dart';
 import 'package:mikomi/core/services/bangumi_detail_service.dart';
 import 'package:mikomi/features/anime/ui/widgets/anime_header.dart';
 import 'package:mikomi/features/anime/ui/widgets/anime_overview_tab.dart';
 import 'package:mikomi/features/anime/ui/widgets/anime_detail_tab.dart';
 import 'package:mikomi/features/anime/ui/widgets/anime_tucao_tab.dart';
-import 'package:mikomi/features/anime/ui/widgets/anime_comments_tab.dart';
 import 'package:mikomi/features/anime/ui/widgets/collection_status_selector.dart';
 import 'package:mikomi/features/anime/ui/widgets/play_button.dart';
 import 'package:mikomi/features/anime/ui/widgets/video_source_selector.dart';
+import 'package:mikomi/shared/utils/theme_extensions.dart';
 
 class BangumiDetailPage extends StatefulWidget {
   final BangumiItem bangumiItem;
@@ -89,7 +88,7 @@ class _BangumiDetailPageState extends State<BangumiDetailPage>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: NestedScrollView(
         controller: _scrollController,
         headerSliverBuilder: (context, innerBoxIsScrolled) {
@@ -98,7 +97,7 @@ class _BangumiDetailPageState extends State<BangumiDetailPage>
               expandedHeight: 400,
               pinned: true,
               elevation: 0,
-              backgroundColor: AppColors.surface,
+              backgroundColor: Theme.of(context).cardColor,
               leading: IconButton(
                 icon: Container(
                   padding: const EdgeInsets.all(8),
@@ -127,9 +126,9 @@ class _BangumiDetailPageState extends State<BangumiDetailPage>
               delegate: _SliverTabBarDelegate(
                 TabBar(
                   controller: _tabController,
-                  labelColor: AppColors.primary,
-                  unselectedLabelColor: AppColors.textSecondary,
-                  indicatorColor: AppColors.primary,
+                  labelColor: Theme.of(context).colorScheme.primary,
+                  unselectedLabelColor: context.colors.textSecondary,
+                  indicatorColor: Theme.of(context).colorScheme.primary,
                   tabs: const [
                     Tab(text: '概述'),
                     Tab(text: '详细'),
@@ -149,9 +148,19 @@ class _BangumiDetailPageState extends State<BangumiDetailPage>
             _commentsLoaded
                 ? AnimeTucaoTab(bangumiItem: _bangumiItem)
                 : const Center(child: Text('切换到此标签页加载评论')),
-            _tabController.index == 3
-                ? AnimeCommentsTab(bangumiItem: _bangumiItem)
-                : const Center(child: Text('切换到此标签页加载评论')),
+            const Center(
+              child: Padding(
+                padding: EdgeInsets.all(32),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.construction, size: 48),
+                    SizedBox(height: 16),
+                    Text('评论功能开发中', style: TextStyle(fontSize: 16)),
+                  ],
+                ),
+              ),
+            ),
           ],
         ),
       ),
@@ -198,7 +207,7 @@ class _SliverTabBarDelegate extends SliverPersistentHeaderDelegate {
     double shrinkOffset,
     bool overlapsContent,
   ) {
-    return Container(color: AppColors.surface, child: tabBar);
+    return Container(color: Theme.of(context).cardColor, child: tabBar);
   }
 
   @override

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:mikomi/config/themes/app_colors.dart';
 import 'package:mikomi/features/video/data/repositories/video_source_repository.dart';
 
 class VideoSource {
@@ -43,13 +42,30 @@ class _VideoSourceSelectorState extends State<VideoSourceSelector>
     }
     _sources = uniqueSources.values.toList();
 
+    // 自定义排序：DM84 > AGE > 其他（按名称）
+    _sources.sort((a, b) {
+      // 定义优先级
+      int getPriority(String name) {
+        if (name == 'DM84') return 1;
+        if (name == 'AGE') return 2;
+        return 999;
+      }
+
+      final aPriority = getPriority(a.name);
+      final bPriority = getPriority(b.name);
+
+      if (aPriority != bPriority) {
+        return aPriority.compareTo(bPriority);
+      }
+
+      // 优先级相同时按名称排序
+      return a.name.compareTo(b.name);
+    });
+
     _tabController = TabController(length: _sources.length, vsync: this);
 
     if (widget.animeTitle != null && widget.animeTitle!.isNotEmpty) {
       _checkSourcesAvailability();
-    } else {
-      // 如果没有标题，只按名称排序
-      _sources.sort((a, b) => a.name.compareTo(b.name));
     }
   }
 
@@ -113,17 +129,23 @@ class _VideoSourceSelectorState extends State<VideoSourceSelector>
     if (mounted) {
       setState(() {
         _isChecking = false;
-        // 按资源可用性和名称排序
+        // 自定义排序：DM84 > AGE > 其他（按名称）
         _sources.sort((a, b) {
-          final aHasResource = _sourceAvailability[a.name] ?? false;
-          final bHasResource = _sourceAvailability[b.name] ?? false;
-
-          // 有资源的排在前面
-          if (aHasResource != bHasResource) {
-            return bHasResource ? 1 : -1;
+          // 定义优先级
+          int getPriority(String name) {
+            if (name == 'DM84') return 1;
+            if (name == 'AGE') return 2;
+            return 999;
           }
 
-          // 资源状态相同时按名称排序
+          final aPriority = getPriority(a.name);
+          final bPriority = getPriority(b.name);
+
+          if (aPriority != bPriority) {
+            return aPriority.compareTo(bPriority);
+          }
+
+          // 优先级相同时按名称排序
           return a.name.compareTo(b.name);
         });
       });
@@ -133,34 +155,60 @@ class _VideoSourceSelectorState extends State<VideoSourceSelector>
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
+          // 拖动条
           Container(
             margin: const EdgeInsets.symmetric(vertical: 12),
             width: 40,
             height: 4,
             decoration: BoxDecoration(
-              color: AppColors.divider,
+              color: Theme.of(context).dividerColor,
               borderRadius: BorderRadius.circular(2),
             ),
           ),
+          // 标题
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.video_library_outlined,
+                  size: 20,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  '选择视频源',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: Theme.of(context).textTheme.bodyLarge?.color,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          // 视频源标签
           TabBar(
             controller: _tabController,
             isScrollable: true,
-            padding: const EdgeInsets.only(left: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 16),
             tabAlignment: TabAlignment.start,
-            labelColor: AppColors.textPrimary,
-            unselectedLabelColor: AppColors.textSecondary,
-            indicatorColor: AppColors.primary,
+            labelColor: Theme.of(context).colorScheme.primary,
+            unselectedLabelColor: Theme.of(context).textTheme.bodyMedium?.color,
+            indicatorColor: Theme.of(context).colorScheme.primary,
             indicatorWeight: 3,
+            indicatorSize: TabBarIndicatorSize.label,
             labelStyle: const TextStyle(
               fontSize: 15,
-              fontWeight: FontWeight.w500,
+              fontWeight: FontWeight.w600,
             ),
             unselectedLabelStyle: const TextStyle(
               fontSize: 15,
@@ -182,7 +230,7 @@ class _VideoSourceSelectorState extends State<VideoSourceSelector>
                             ? Colors.green
                             : hasResource == false
                             ? Colors.red
-                            : AppColors.textHint,
+                            : Colors.grey,
                         shape: BoxShape.circle,
                       ),
                     ),
@@ -191,7 +239,7 @@ class _VideoSourceSelectorState extends State<VideoSourceSelector>
               );
             }).toList(),
           ),
-          const Divider(height: 1),
+          Divider(height: 1, color: Theme.of(context).dividerColor),
           SizedBox(
             height: MediaQuery.of(context).size.height * 0.5,
             child: TabBarView(
@@ -209,70 +257,184 @@ class _VideoSourceSelectorState extends State<VideoSourceSelector>
   Widget _buildSourceContent(VideoSource source) {
     final hasResource = _sourceAvailability[source.name];
     final episodeCount = _sourceEpisodeCount[source.name] ?? 0;
-    // 如果hasResource为null,说明正在检查中
     final isChecking = hasResource == null;
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (isChecking)
-            const Row(
-              children: [
-                SizedBox(
-                  width: 16,
-                  height: 16,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                ),
-                SizedBox(width: 12),
-                Text(
-                  '正在检查资源...',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-              ],
-            )
-          else
-            Row(
-              children: [
-                Icon(
-                  hasResource ? Icons.check_circle : Icons.cancel,
-                  color: hasResource ? Colors.green : Colors.red,
-                  size: 20,
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  hasResource ? '找到 $episodeCount 集' : '未找到资源',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: hasResource ? Colors.green : Colors.red,
-                  ),
-                ),
-              ],
-            ),
-          const SizedBox(height: 24),
-          SizedBox(
+          // 资源状态卡片
+          Container(
             width: double.infinity,
-            child: ElevatedButton(
-              onPressed: (hasResource ?? false) && !isChecking
-                  ? () {
-                      widget.onSourceSelected(source);
-                    }
-                  : null,
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Theme.of(context).scaffoldBackgroundColor,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: Theme.of(context).dividerColor,
+                width: 1,
               ),
-              child: const Text('立即观看', style: TextStyle(fontSize: 16)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Text(
+                      '视频源',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Theme.of(context).textTheme.bodySmall?.color,
+                      ),
+                    ),
+                    const Spacer(),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: isChecking
+                            ? Colors.grey.withValues(alpha: 0.1)
+                            : hasResource
+                            ? Colors.green.withValues(alpha: 0.1)
+                            : Colors.red.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        isChecking
+                            ? '检查中'
+                            : hasResource
+                            ? '可用'
+                            : '不可用',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                          color: isChecking
+                              ? Colors.grey
+                              : hasResource
+                              ? Colors.green
+                              : Colors.red,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  source.name,
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: Theme.of(context).textTheme.bodyLarge?.color,
+                  ),
+                ),
+                if (!isChecking && hasResource) ...[
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.video_collection_outlined,
+                        size: 16,
+                        color: Theme.of(context).textTheme.bodySmall?.color,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        '共 $episodeCount 集',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Theme.of(context).textTheme.bodySmall?.color,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ],
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
+          // 观看按钮
+          SizedBox(
+            width: double.infinity,
+            height: 48,
+            child: ElevatedButton(
+              onPressed: (hasResource ?? false) && !isChecking
+                  ? () => widget.onSourceSelected(source)
+                  : null,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Theme.of(context).colorScheme.primary,
+                foregroundColor: Colors.white,
+                disabledBackgroundColor: Theme.of(
+                  context,
+                ).disabledColor.withValues(alpha: 0.1),
+                disabledForegroundColor: Theme.of(context).disabledColor,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                elevation: 0,
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    isChecking
+                        ? Icons.hourglass_empty
+                        : hasResource
+                        ? Icons.play_arrow
+                        : Icons.error_outline,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    isChecking
+                        ? '检查中...'
+                        : hasResource
+                        ? '立即观看'
+                        : '暂无资源',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          if (!isChecking && !hasResource) ...[
+            const SizedBox(height: 12),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.red.withValues(alpha: 0.05),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: Colors.red.withValues(alpha: 0.2),
+                  width: 1,
+                ),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.info_outline,
+                    size: 16,
+                    color: Colors.red.withValues(alpha: 0.8),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      '该视频源暂无此番剧资源',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Colors.red.withValues(alpha: 0.8),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ],
       ),
     );
