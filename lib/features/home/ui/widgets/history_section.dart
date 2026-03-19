@@ -3,6 +3,7 @@ import 'package:mikomi/shared/widgets/section_header.dart';
 import 'package:mikomi/core/models/watch_history.dart';
 import 'package:mikomi/config/themes/app_colors.dart';
 import 'package:mikomi/shared/widgets/cached_image.dart';
+import 'package:mikomi/shared/widgets/skeleton.dart';
 import 'package:mikomi/config/localization/app_localizations.dart';
 import 'package:mikomi/core/services/bangumi_service.dart';
 import 'package:mikomi/features/video/ui/pages/video_page.dart';
@@ -102,8 +103,7 @@ class _HistoryCard extends StatefulWidget {
 
 class _HistoryCardState extends State<_HistoryCard> {
   final BangumiService _bangumiService = BangumiService();
-  String _coverUrl = '';
-  bool _isLoading = true;
+  String? _coverUrl;
 
   @override
   void initState() {
@@ -112,24 +112,13 @@ class _HistoryCardState extends State<_HistoryCard> {
   }
 
   Future<void> _loadCover() async {
-    if (widget.history.coverUrl.isNotEmpty) {
-      setState(() {
-        _coverUrl = widget.history.coverUrl;
-        _isLoading = false;
-      });
-      return;
-    }
-
     final bangumi = await _bangumiService.getBangumiById(
       widget.history.bangumiId,
     );
     if (mounted && bangumi != null) {
       setState(() {
         _coverUrl = bangumi.coverUrl;
-        _isLoading = false;
       });
-    } else if (mounted) {
-      setState(() => _isLoading = false);
     }
   }
 
@@ -151,7 +140,6 @@ class _HistoryCardState extends State<_HistoryCard> {
                   : null,
               animeTitle: widget.history.bangumiNameCn,
               bangumiId: widget.history.bangumiId,
-              coverUrl: widget.history.coverUrl,
               initialProgress: widget.history.progress,
             ),
             transitionsBuilder:
@@ -180,15 +168,14 @@ class _HistoryCardState extends State<_HistoryCard> {
                   ),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(8),
-                    child: _isLoading
-                        ? Container(
-                            color: Colors.grey[300],
-                            child: const Center(
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            ),
+                    child: _coverUrl == null
+                        ? SkeletonLoader(
+                            width: 120,
+                            height: 160,
+                            borderRadius: BorderRadius.circular(8),
                           )
                         : CachedImage(
-                            imageUrl: _coverUrl,
+                            imageUrl: _coverUrl!,
                             width: 120,
                             height: 160,
                             fit: BoxFit.cover,

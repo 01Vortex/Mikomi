@@ -440,7 +440,6 @@ class _VideoPageState extends State<VideoPage>
         bangumiId: widget.bangumiId!,
         bangumiName: widget.title,
         bangumiNameCn: widget.animeTitle ?? widget.title,
-        coverUrl: widget.coverUrl ?? '',
         lastWatchEpisode: _currentEpisode,
         lastWatchEpisodeName: _currentEpisodeTitle ?? '',
         lastWatchTime: DateTime.now(),

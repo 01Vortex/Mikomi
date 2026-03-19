@@ -28,7 +28,6 @@ class WatchHistoryCard extends StatefulWidget {
 class _WatchHistoryCardState extends State<WatchHistoryCard> {
   final BangumiService _bangumiService = BangumiService();
   String _coverUrl = '';
-  bool _isLoading = true;
 
   @override
   void initState() {
@@ -37,24 +36,13 @@ class _WatchHistoryCardState extends State<WatchHistoryCard> {
   }
 
   Future<void> _loadCover() async {
-    if (widget.history.coverUrl.isNotEmpty) {
-      setState(() {
-        _coverUrl = widget.history.coverUrl;
-        _isLoading = false;
-      });
-      return;
-    }
-
     final bangumi = await _bangumiService.getBangumiById(
       widget.history.bangumiId,
     );
     if (mounted && bangumi != null) {
       setState(() {
         _coverUrl = bangumi.coverUrl;
-        _isLoading = false;
       });
-    } else if (mounted) {
-      setState(() => _isLoading = false);
     }
   }
 
@@ -78,21 +66,12 @@ class _WatchHistoryCardState extends State<WatchHistoryCard> {
             children: [
               ClipRRect(
                 borderRadius: BorderRadius.circular(8),
-                child: _isLoading
-                    ? Container(
-                        width: imageWidth,
-                        height: widget.cardHeight,
-                        color: Colors.grey[300],
-                        child: const Center(
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        ),
-                      )
-                    : CachedImage(
-                        imageUrl: _coverUrl,
-                        width: imageWidth,
-                        height: widget.cardHeight,
-                        fit: BoxFit.cover,
-                      ),
+                child: CachedImage(
+                  imageUrl: _coverUrl,
+                  width: imageWidth,
+                  height: widget.cardHeight,
+                  fit: BoxFit.cover,
+                ),
               ),
               Expanded(
                 child: Padding(

@@ -209,7 +209,7 @@ class _WatchHistoryPageState extends State<WatchHistoryPage> {
                                                   : null,
                                               animeTitle: history.bangumiNameCn,
                                               bangumiId: history.bangumiId,
-                                              coverUrl: history.coverUrl,
+
                                               initialProgress: history.progress,
                                             ),
                                         transitionsBuilder:

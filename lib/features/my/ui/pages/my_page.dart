@@ -236,7 +236,6 @@ class _MyPageState extends State<MyPage> {
                                 : null,
                             animeTitle: history.bangumiNameCn,
                             bangumiId: history.bangumiId,
-                            coverUrl: history.coverUrl,
                             initialProgress: history.progress,
                           ),
                       transitionsBuilder:

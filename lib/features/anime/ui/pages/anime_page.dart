@@ -28,7 +28,7 @@ class _BangumiDetailPageState extends State<BangumiDetailPage>
   bool _showTitle = false;
   late BangumiItem _bangumiItem;
   bool _commentsLoaded = false;
-  CollectionStatus _collectionStatus = CollectionStatus.wish;
+  CollectionStatus _collectionStatus = CollectionStatus.notCollected;
 
   // 视频源列表（从插件动态加载）
   final List<VideoSource> _videoSources = [
@@ -98,14 +98,19 @@ class _BangumiDetailPageState extends State<BangumiDetailPage>
               pinned: true,
               elevation: 0,
               backgroundColor: Theme.of(context).cardColor,
+              titleSpacing: 0,
               leading: IconButton(
                 icon: Container(
-                  padding: const EdgeInsets.all(8),
+                  padding: const EdgeInsets.all(6),
                   decoration: BoxDecoration(
                     color: Colors.black.withValues(alpha: 0.3),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.arrow_back, color: Colors.white),
+                  child: const Icon(
+                    Icons.arrow_back,
+                    color: Colors.white,
+                    size: 20,
+                  ),
                 ),
                 onPressed: () => Navigator.pop(context),
               ),
@@ -114,7 +119,9 @@ class _BangumiDetailPageState extends State<BangumiDetailPage>
                 duration: const Duration(milliseconds: 200),
                 child: Text(
                   _bangumiItem.displayName,
-                  style: const TextStyle(fontSize: 16),
+                  style: const TextStyle(fontSize: 18),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
               flexibleSpace: FlexibleSpaceBar(
@@ -164,27 +171,31 @@ class _BangumiDetailPageState extends State<BangumiDetailPage>
           ],
         ),
       ),
-      floatingActionButton: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          CollectionStatusSelector(
-            currentStatus: _collectionStatus,
-            onStatusChanged: (status) {
-              setState(() {
-                _collectionStatus = status;
-              });
-            },
-          ),
-          const SizedBox(height: 12),
-          PlayButton(
-            videoSources: _videoSources,
-            animeTitle: _bangumiItem.displayName,
-            bangumiId: _bangumiItem.id,
-            onPlay: () {
-              // 播放回调
-            },
-          ),
-        ],
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.only(bottom: 16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            CollectionStatusSelector(
+              currentStatus: _collectionStatus,
+              onStatusChanged: (status) {
+                setState(() {
+                  _collectionStatus = status;
+                });
+              },
+            ),
+            const SizedBox(height: 16),
+            PlayButton(
+              videoSources: _videoSources,
+              animeTitle: _bangumiItem.displayName,
+              bangumiId: _bangumiItem.id,
+              onPlay: () {
+                // 播放回调
+              },
+            ),
+          ],
+        ),
       ),
     );
   }

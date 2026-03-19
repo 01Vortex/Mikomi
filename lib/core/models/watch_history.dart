@@ -2,7 +2,6 @@ class WatchHistory {
   final int bangumiId;
   final String bangumiName;
   final String bangumiNameCn;
-  final String coverUrl;
   final int lastWatchEpisode;
   final String lastWatchEpisodeName;
   final DateTime lastWatchTime;
@@ -14,7 +13,6 @@ class WatchHistory {
     required this.bangumiId,
     required this.bangumiName,
     required this.bangumiNameCn,
-    required this.coverUrl,
     required this.lastWatchEpisode,
     required this.lastWatchEpisodeName,
     required this.lastWatchTime,
@@ -45,7 +43,6 @@ class WatchHistory {
       'bangumiId': bangumiId,
       'bangumiName': bangumiName,
       'bangumiNameCn': bangumiNameCn,
-      'coverUrl': coverUrl,
       'lastWatchEpisode': lastWatchEpisode,
       'lastWatchEpisodeName': lastWatchEpisodeName,
       'lastWatchTime': lastWatchTime.toIso8601String(),
@@ -60,7 +57,6 @@ class WatchHistory {
       bangumiId: json['bangumiId'] ?? 0,
       bangumiName: json['bangumiName'] ?? '',
       bangumiNameCn: json['bangumiNameCn'] ?? '',
-      coverUrl: json['coverUrl'] ?? '',
       lastWatchEpisode: json['lastWatchEpisode'] ?? 0,
       lastWatchEpisodeName: json['lastWatchEpisodeName'] ?? '',
       lastWatchTime: DateTime.parse(
