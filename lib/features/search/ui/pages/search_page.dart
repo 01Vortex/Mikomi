@@ -57,7 +57,7 @@ class _SearchPageState extends State<SearchPage> {
   Future<void> _loadPopularityRankings() async {
     setState(() => _isLoadingRankings = true);
 
-    final allItems = await _bangumiService.getRecommendedList(limit: 50);
+    final allItems = await _bangumiService.getTrendsList(limit: 50);
     final rankings = PopularityAlgorithm.getPopularityRanking(
       allItems,
       limit: 10,

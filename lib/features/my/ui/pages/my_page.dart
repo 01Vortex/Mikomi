@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mikomi/features/my/ui/pages/settings_page.dart';
 import 'package:mikomi/features/my/ui/pages/theme_page.dart';
-import 'package:mikomi/features/my/ui/pages/watch_history_page.dart';
+import 'package:mikomi/features/my/ui/pages/history_play_page.dart';
 import 'package:mikomi/core/services/watch_history_service.dart';
 import 'package:mikomi/core/services/history_notifier.dart';
 import 'package:mikomi/core/models/watch_history.dart';
@@ -174,26 +174,12 @@ class _MyPageState extends State<MyPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: context.colors.surface,
-                          borderRadius: BorderRadius.circular(12),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.05),
-                              blurRadius: 4,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        child: Text(
-                          '这是简介',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: context.colors.onSurface,
-                            height: 1.5,
-                          ),
+                      Text(
+                        '这是简介',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: context.colors.onSurface,
+                          height: 1.5,
                         ),
                       ),
                       const SizedBox(height: 12),

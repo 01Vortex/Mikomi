@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:mikomi/features/home/ui/pages/home_page.dart';
-import 'package:mikomi/features/schedule/ui/pages/schedule_page.dart';
 import 'package:mikomi/features/pilgrimage/ui/pages/pilgrimage_page.dart';
 import 'package:mikomi/features/my/ui/pages/my_page.dart';
 import 'package:mikomi/shared/widgets/bottom_navigation.dart';
-import 'package:mikomi/config/localization/app_localizations.dart';
 
 class MainPage extends StatefulWidget {
   const MainPage({super.key});
@@ -17,13 +15,7 @@ class _MainPageState extends State<MainPage> {
   int _currentIndex = 0;
 
   List<Widget> _buildPages(BuildContext context) {
-    return [
-      const HomePage(),
-      const SchedulePage(),
-      const PilgrimagePage(),
-      PlaceholderPage(title: AppLocalizations.of(context).message),
-      const MyPage(),
-    ];
+    return [const HomePage(), const PilgrimagePage(), const MyPage()];
   }
 
   @override
@@ -38,20 +30,6 @@ class _MainPageState extends State<MainPage> {
           });
         },
       ),
-    );
-  }
-}
-
-class PlaceholderPage extends StatelessWidget {
-  final String title;
-
-  const PlaceholderPage({super.key, required this.title});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text(title)),
-      body: Center(child: Text(title, style: const TextStyle(fontSize: 24))),
     );
   }
 }

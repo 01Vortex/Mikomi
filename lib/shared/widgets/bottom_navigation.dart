@@ -39,27 +39,15 @@ class AppBottomNavigation extends StatelessWidget {
               ),
               _buildNavItem(
                 context: context,
-                icon: Icons.calendar_today_outlined,
-                activeIcon: Icons.calendar_today,
-                index: 1,
-              ),
-              _buildNavItem(
-                context: context,
                 icon: Icons.map_outlined,
                 activeIcon: Icons.map,
-                index: 2,
-              ),
-              _buildNavItem(
-                context: context,
-                icon: Icons.chat_bubble_outline,
-                activeIcon: Icons.chat_bubble,
-                index: 3,
+                index: 1,
               ),
               _buildNavItem(
                 context: context,
                 icon: Icons.person_outline,
                 activeIcon: Icons.person,
-                index: 4,
+                index: 2,
               ),
             ],
           ),
@@ -84,7 +72,7 @@ class AppBottomNavigation extends StatelessWidget {
           size: 28,
           color: isActive
               ? Theme.of(context).colorScheme.primary
-              : Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+              : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
         ),
       ),
     );
