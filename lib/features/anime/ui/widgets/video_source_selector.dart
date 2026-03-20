@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mikomi/features/video/data/repositories/video_source_repository.dart';
+import 'package:mikomi/features/settings/video_settings/service/plugin_manager_service.dart';
 
 class VideoSource {
   final String name;
@@ -28,6 +29,7 @@ class _VideoSourceSelectorState extends State<VideoSourceSelector>
   late TabController _tabController;
   late List<VideoSource> _sources;
   final VideoSourceRepository _videoSourceRepo = VideoSourceRepository();
+  final VideoPluginManager _pluginManager = VideoPluginManager();
   final Map<String, bool?> _sourceAvailability = {};
   final Map<String, int> _sourceEpisodeCount = {};
   bool _isChecking = false;
@@ -35,6 +37,10 @@ class _VideoSourceSelectorState extends State<VideoSourceSelector>
   @override
   void initState() {
     super.initState();
+    _initSources();
+  }
+
+  void _initSources() {
     // 去重
     final uniqueSources = <String, VideoSource>{};
     for (var source in widget.sources) {
@@ -42,31 +48,38 @@ class _VideoSourceSelectorState extends State<VideoSourceSelector>
     }
     _sources = uniqueSources.values.toList();
 
-    // 自定义排序：DM84 > AGE > 其他（按名称）
-    _sources.sort((a, b) {
-      // 定义优先级
-      int getPriority(String name) {
-        if (name == 'DM84') return 1;
-        if (name == 'AGE') return 2;
-        return 999;
-      }
-
-      final aPriority = getPriority(a.name);
-      final bPriority = getPriority(b.name);
-
-      if (aPriority != bPriority) {
-        return aPriority.compareTo(bPriority);
-      }
-
-      // 优先级相同时按名称排序
-      return a.name.compareTo(b.name);
-    });
+    // 根据VideoPluginManager中的顺序排序
+    _sortSourcesByPluginOrder();
 
     _tabController = TabController(length: _sources.length, vsync: this);
 
     if (widget.animeTitle != null && widget.animeTitle!.isNotEmpty) {
       _checkSourcesAvailability();
     }
+  }
+
+  /// 根据VideoPluginManager中的插件顺序排序视频源
+  void _sortSourcesByPluginOrder() {
+    final plugins = _pluginManager.plugins;
+    final pluginOrder = <String, int>{};
+
+    // 建立插件名称到索引的映射
+    for (int i = 0; i < plugins.length; i++) {
+      pluginOrder[plugins[i].name] = i;
+    }
+
+    // 按照插件顺序排序,未在插件列表中的排在最后
+    _sources.sort((a, b) {
+      final aOrder = pluginOrder[a.name] ?? 999;
+      final bOrder = pluginOrder[b.name] ?? 999;
+
+      if (aOrder != bOrder) {
+        return aOrder.compareTo(bOrder);
+      }
+
+      // 顺序相同时按名称排序
+      return a.name.compareTo(b.name);
+    });
   }
 
   @override
@@ -129,25 +142,6 @@ class _VideoSourceSelectorState extends State<VideoSourceSelector>
     if (mounted) {
       setState(() {
         _isChecking = false;
-        // 自定义排序：DM84 > AGE > 其他（按名称）
-        _sources.sort((a, b) {
-          // 定义优先级
-          int getPriority(String name) {
-            if (name == 'DM84') return 1;
-            if (name == 'AGE') return 2;
-            return 999;
-          }
-
-          final aPriority = getPriority(a.name);
-          final bPriority = getPriority(b.name);
-
-          if (aPriority != bPriority) {
-            return aPriority.compareTo(bPriority);
-          }
-
-          // 优先级相同时按名称排序
-          return a.name.compareTo(b.name);
-        });
       });
     }
   }

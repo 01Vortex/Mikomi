@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
-import 'package:mikomi/core/services/settings/play_service.dart';
+import 'package:mikomi/features/settings/video_settings/service/play_settings_service.dart';
 
 class VideoPlayerController {
   Player? _player;

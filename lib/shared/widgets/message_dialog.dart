@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'dart:ui';
 
 enum MessageType { success, error, warning, info }
@@ -10,7 +11,7 @@ class MessageDialog {
     BuildContext context, {
     required String message,
     required MessageType type,
-    Duration duration = const Duration(seconds: 3),
+    Duration? duration,
     VoidCallback? onDismiss,
   }) {
     // 移除之前的消息
@@ -19,6 +20,12 @@ class MessageDialog {
 
     final overlay = Overlay.of(context);
     late OverlayEntry overlayEntry;
+
+    // error和warning需要手动关闭，不自动消失
+    final shouldAutoDismiss =
+        type != MessageType.error && type != MessageType.warning;
+    final effectiveDuration =
+        duration ?? (shouldAutoDismiss ? const Duration(seconds: 3) : null);
 
     overlayEntry = OverlayEntry(
       builder: (context) => _MessageDialogWidget(
@@ -29,7 +36,7 @@ class MessageDialog {
           _currentOverlay = null;
           onDismiss?.call();
         },
-        duration: duration,
+        duration: effectiveDuration,
       ),
     );
 
@@ -63,13 +70,13 @@ class _MessageDialogWidget extends StatefulWidget {
   final String message;
   final MessageType type;
   final VoidCallback onDismiss;
-  final Duration duration;
+  final Duration? duration;
 
   const _MessageDialogWidget({
     required this.message,
     required this.type,
     required this.onDismiss,
-    required this.duration,
+    this.duration,
   });
 
   @override
@@ -108,11 +115,14 @@ class _MessageDialogWidgetState extends State<_MessageDialogWidget>
 
     _controller.forward();
 
-    Future.delayed(widget.duration, () {
-      if (mounted) {
-        _dismiss();
-      }
-    });
+    // 只有设置了duration才自动消失
+    if (widget.duration != null) {
+      Future.delayed(widget.duration!, () {
+        if (mounted) {
+          _dismiss();
+        }
+      });
+    }
   }
 
   void _dismiss() async {
@@ -129,14 +139,30 @@ class _MessageDialogWidgetState extends State<_MessageDialogWidget>
   Color _getBackgroundColor() {
     switch (widget.type) {
       case MessageType.success:
-        return const Color(0xFF10B981);
+        return const Color(0xFF0CD373);
       case MessageType.error:
-        return const Color(0xFFEF4444);
+        return const Color(0xFFFF8B8B);
       case MessageType.warning:
-        return const Color(0xFFF59E0B);
+        return const Color(0xFFFDFF9A);
       case MessageType.info:
-        return const Color(0xFF3B82F6);
+        return const Color(0xFF97D2FF);
     }
+  }
+
+  Color _getTextColor() {
+    // 黄色背景使用深色文字
+    if (widget.type == MessageType.warning) {
+      return Colors.black87;
+    }
+    return Colors.white;
+  }
+
+  Color _getIconBackgroundColor() {
+    // 黄色背景使用深色图标背景
+    if (widget.type == MessageType.warning) {
+      return Colors.black.withValues(alpha: 0.1);
+    }
+    return Colors.white.withValues(alpha: 0.2);
   }
 
   IconData _getIcon() {
@@ -154,6 +180,10 @@ class _MessageDialogWidgetState extends State<_MessageDialogWidget>
 
   @override
   Widget build(BuildContext context) {
+    final isErrorOrWarning =
+        widget.type == MessageType.error || widget.type == MessageType.warning;
+    final textColor = _getTextColor();
+
     return Positioned(
       top: MediaQuery.of(context).padding.top + 16,
       left: 16,
@@ -167,7 +197,7 @@ class _MessageDialogWidgetState extends State<_MessageDialogWidget>
             child: Material(
               color: Colors.transparent,
               child: GestureDetector(
-                onTap: _dismiss,
+                onTap: isErrorOrWarning ? null : _dismiss,
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(16),
                   child: BackdropFilter(
@@ -193,25 +223,67 @@ class _MessageDialogWidgetState extends State<_MessageDialogWidget>
                           Container(
                             padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.2),
+                              color: _getIconBackgroundColor(),
                               shape: BoxShape.circle,
                             ),
-                            child: Icon(
-                              _getIcon(),
-                              color: Colors.white,
-                              size: 24,
-                            ),
+                            child: Icon(_getIcon(), color: textColor, size: 24),
                           ),
                           const SizedBox(width: 16),
                           Expanded(
-                            child: Text(
-                              widget.message,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 15,
-                                fontWeight: FontWeight.w500,
-                                height: 1.4,
-                              ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                SelectableText(
+                                  widget.message,
+                                  style: TextStyle(
+                                    color: textColor,
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w500,
+                                    height: 1.4,
+                                  ),
+                                ),
+                                if (isErrorOrWarning) ...[
+                                  const SizedBox(height: 8),
+                                  GestureDetector(
+                                    onTap: () {
+                                      Clipboard.setData(
+                                        ClipboardData(text: widget.message),
+                                      );
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        SnackBar(
+                                          content: const Text('已复制到剪贴板'),
+                                          duration: const Duration(seconds: 1),
+                                          behavior: SnackBarBehavior.floating,
+                                        ),
+                                      );
+                                    },
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(
+                                          Icons.copy,
+                                          size: 14,
+                                          color: textColor.withValues(
+                                            alpha: 0.7,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          '复制',
+                                          style: TextStyle(
+                                            color: textColor.withValues(
+                                              alpha: 0.7,
+                                            ),
+                                            fontSize: 12,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ],
                             ),
                           ),
                           const SizedBox(width: 8),
@@ -220,12 +292,12 @@ class _MessageDialogWidgetState extends State<_MessageDialogWidget>
                             child: Container(
                               padding: const EdgeInsets.all(4),
                               decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.2),
+                                color: _getIconBackgroundColor(),
                                 shape: BoxShape.circle,
                               ),
-                              child: const Icon(
+                              child: Icon(
                                 Icons.close,
-                                color: Colors.white,
+                                color: textColor,
                                 size: 18,
                               ),
                             ),

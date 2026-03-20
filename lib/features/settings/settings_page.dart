@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:card_settings_ui/card_settings_ui.dart';
-import 'package:mikomi/core/services/settings/play_service.dart';
+import 'package:mikomi/features/settings/video_settings/service/play_settings_service.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -57,7 +57,9 @@ class _SettingsPageState extends State<SettingsPage> {
             title: const Text('播放设置'),
             tiles: [
               SettingsTile.navigation(
-                onPressed: (_) {},
+                onPressed: (_) {
+                  Navigator.pushNamed(context, '/plugin_manage');
+                },
                 leading: const Icon(Icons.video_settings_outlined),
                 title: const Text('视频源管理'),
                 description: const Text('管理视频数据源'),

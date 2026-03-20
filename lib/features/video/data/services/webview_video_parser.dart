@@ -3,7 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:mikomi/features/video/data/services/video_webview_android_impl.dart';
 
 /// WebView 视频地址解析器
-/// 完整参考 Kazumi 实现
+/// 完整参考 Kazumi 实现，支持多层防御机制
 class WebViewVideoParser {
   VideoWebviewAndroidImpl? _webviewController;
   StreamSubscription<(String, int)>? _videoUrlSubscription;
@@ -15,7 +15,7 @@ class WebViewVideoParser {
   Future<String?> parseVideoUrl(
     String pageUrl, {
     bool useLegacyParser = true,
-    Duration timeout = const Duration(seconds: 30),
+    Duration timeout = const Duration(seconds: 45),
     int maxDepth = 3,
   }) async {
     return _parseVideoUrlRecursive(
@@ -49,7 +49,7 @@ class WebViewVideoParser {
 
       // 订阅日志事件
       _logSubscription = _webviewController!.onLog.listen((log) {
-        debugPrint('WebView日志: $log');
+        debugPrint('[WebView] $log');
       });
 
       // 订阅视频URL解析事件

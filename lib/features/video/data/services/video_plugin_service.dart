@@ -1,50 +1,24 @@
-import 'dart:convert';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/services.dart';
 import 'package:mikomi/features/video/data/models/video_plugin.dart';
+import 'package:mikomi/features/settings/video_settings/service/plugin_manager_service.dart';
 
 class VideoPluginService {
   static final VideoPluginService _instance = VideoPluginService._internal();
   factory VideoPluginService() => _instance;
   VideoPluginService._internal();
 
-  final List<VideoPlugin> _plugins = [];
-  bool _initialized = false;
+  final VideoPluginManager _pluginManager = VideoPluginManager();
 
-  List<VideoPlugin> get plugins => List.unmodifiable(_plugins);
+  List<VideoPlugin> get plugins => _pluginManager.plugins;
 
   Future<void> initialize() async {
-    if (_initialized) return;
-
-    try {
-      // 加载所有插件配置
-      final pluginNames = ['AGE', 'DM84'];
-
-      for (final name in pluginNames) {
-        try {
-          final jsonString = await rootBundle.loadString(
-            'assets/plugins/$name.json',
-          );
-          final jsonData = json.decode(jsonString);
-          final plugin = VideoPlugin.fromJson(jsonData);
-          _plugins.add(plugin);
-        } catch (e) {
-          debugPrint('加载插件 $name 失败: $e');
-        }
-      }
-
-      _initialized = true;
-      debugPrint('视频插件加载完成，共 ${_plugins.length} 个');
-    } catch (e) {
-      debugPrint('初始化视频插件失败: $e');
+    if (!_pluginManager.isInitialized) {
+      await _pluginManager.init();
+      debugPrint('视频插件加载完成，共 ${plugins.length} 个');
     }
   }
 
   VideoPlugin? getPluginByName(String name) {
-    try {
-      return _plugins.firstWhere((plugin) => plugin.name == name);
-    } catch (e) {
-      return null;
-    }
+    return _pluginManager.getPluginByName(name);
   }
 }

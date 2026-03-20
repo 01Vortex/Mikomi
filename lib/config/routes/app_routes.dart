@@ -4,7 +4,11 @@ import '../../features/anime/ui/pages/anime_page.dart';
 import '../../features/home/ui/pages/schedule_page.dart';
 import '../../features/home/ui/pages/ranking_page.dart';
 import '../../features/home/ui/pages/category_page.dart';
+import '../../features/settings/video_settings/pages/plugin_manage_page.dart';
+import '../../features/settings/video_settings/pages/plugin_editor_page.dart';
+import '../../features/settings/video_settings/pages/plugin_test_page.dart';
 import '../../core/models/bangumi_item.dart';
+import '../../features/video/data/models/video_plugin.dart';
 
 class AppRoutes {
   static const String main = '/';
@@ -12,6 +16,9 @@ class AppRoutes {
   static const String schedule = '/schedule';
   static const String ranking = '/ranking';
   static const String category = '/category';
+  static const String pluginManage = '/plugin_manage';
+  static const String pluginEditor = '/plugin_editor';
+  static const String pluginTest = '/plugin_test';
 
   static Map<String, WidgetBuilder> get routes {
     return {
@@ -19,6 +26,7 @@ class AppRoutes {
       schedule: (context) => const SchedulePage(),
       ranking: (context) => const RankingPage(),
       category: (context) => const CategoryPage(),
+      pluginManage: (context) => const PluginManagePage(),
     };
   }
 
@@ -28,6 +36,16 @@ class AppRoutes {
         final bangumiItem = settings.arguments as BangumiItem;
         return MaterialPageRoute(
           builder: (context) => BangumiDetailPage(bangumiItem: bangumiItem),
+        );
+      case pluginEditor:
+        final plugin = settings.arguments as VideoPlugin?;
+        return MaterialPageRoute(
+          builder: (context) => PluginEditorPage(plugin: plugin),
+        );
+      case pluginTest:
+        final plugin = settings.arguments as VideoPlugin;
+        return MaterialPageRoute(
+          builder: (context) => PluginTestPage(plugin: plugin),
         );
       default:
         return null;

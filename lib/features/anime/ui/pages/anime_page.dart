@@ -8,6 +8,7 @@ import 'package:mikomi/features/anime/ui/widgets/anime_tucao_tab.dart';
 import 'package:mikomi/features/anime/ui/widgets/collection_status_selector.dart';
 import 'package:mikomi/features/anime/ui/widgets/play_button.dart';
 import 'package:mikomi/features/anime/ui/widgets/video_source_selector.dart';
+import 'package:mikomi/features/settings/video_settings/service/plugin_manager_service.dart';
 import 'package:mikomi/shared/utils/theme_extensions.dart';
 
 class BangumiDetailPage extends StatefulWidget {
@@ -24,6 +25,7 @@ class _BangumiDetailPageState extends State<BangumiDetailPage>
   late TabController _tabController;
   final ScrollController _scrollController = ScrollController();
   final BangumiDetailService _detailService = BangumiDetailService();
+  final VideoPluginManager _pluginManager = VideoPluginManager();
 
   bool _showTitle = false;
   late BangumiItem _bangumiItem;
@@ -31,10 +33,7 @@ class _BangumiDetailPageState extends State<BangumiDetailPage>
   CollectionStatus _collectionStatus = CollectionStatus.notCollected;
 
   // 视频源列表（从插件动态加载）
-  final List<VideoSource> _videoSources = [
-    VideoSource(name: 'DM84'),
-    VideoSource(name: 'AGE'),
-  ];
+  List<VideoSource> _videoSources = [];
 
   @override
   void initState() {
@@ -43,7 +42,19 @@ class _BangumiDetailPageState extends State<BangumiDetailPage>
     _tabController = TabController(length: 4, vsync: this);
     _scrollController.addListener(_onScroll);
     _tabController.addListener(_onTabChanged);
+    _loadVideoSources();
     _loadDetailInfo();
+  }
+
+  Future<void> _loadVideoSources() async {
+    await _pluginManager.init();
+    if (mounted) {
+      setState(() {
+        _videoSources = _pluginManager.plugins
+            .map((plugin) => VideoSource(name: plugin.name))
+            .toList();
+      });
+    }
   }
 
   void _onTabChanged() {

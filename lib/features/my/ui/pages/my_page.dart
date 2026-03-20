@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:mikomi/features/my/ui/pages/settings_page.dart';
-import 'package:mikomi/features/my/ui/pages/theme_page.dart';
+import 'package:mikomi/features/settings/settings_page.dart';
+import 'package:mikomi/features/settings/theme_settings_page.dart';
 import 'package:mikomi/features/my/ui/pages/history_play_page.dart';
 import 'package:mikomi/core/services/watch_history_service.dart';
 import 'package:mikomi/core/services/history_notifier.dart';
