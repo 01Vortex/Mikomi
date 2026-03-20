@@ -17,7 +17,7 @@ class SearchResult {
 
 class VideoSourceRepository {
   final VideoPluginService _pluginService = VideoPluginService();
-  final WebViewVideoParser _webViewParser = WebViewVideoParser();
+  final VideoParserService _webViewParser = VideoParserService();
   final Dio _dio = Dio(
     BaseOptions(
       connectTimeout: const Duration(seconds: 15),
