@@ -3,8 +3,7 @@ import 'package:mikomi/config/themes/app_colors.dart';
 import 'package:mikomi/core/models/bangumi_item.dart';
 import 'package:mikomi/core/models/comment_item.dart';
 import 'package:mikomi/core/network/dio_client.dart';
-import 'package:mikomi/features/anime/data/datasources/teasing_datasource.dart';
-import 'package:mikomi/features/anime/data/repositories/comment_repository_impl.dart';
+import 'package:mikomi/features/anime/data/bangumi_teasing.dart';
 import 'package:mikomi/shared/widgets/cached_image.dart';
 import 'package:mikomi/shared/widgets/skeleton.dart';
 import 'package:intl/intl.dart';
@@ -19,7 +18,7 @@ class AnimeCommentsTab extends StatefulWidget {
 }
 
 class _AnimeCommentsTabState extends State<AnimeCommentsTab> {
-  late final CommentRepositoryImpl _repository;
+  late final BangumiTeasing _repository;
   List<CommentItem> _comments = [];
   bool _isLoading = false;
   bool _hasMore = true;
@@ -29,8 +28,7 @@ class _AnimeCommentsTabState extends State<AnimeCommentsTab> {
   @override
   void initState() {
     super.initState();
-    final dataSource = CommentRemoteDataSourceImpl(DioClient());
-    _repository = CommentRepositoryImpl(dataSource);
+    _repository = BangumiTeasing();
     // 不在initState中加载数据，改为懒加载
   }
 

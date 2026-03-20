@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:mikomi/features/home/data/repositories/home_repository_impl.dart';
+import 'package:mikomi/features/home/data/bangumi_basis.dart';
 import 'package:mikomi/core/models/bangumi_item.dart';
 import 'package:mikomi/config/routes/app_routes.dart';
 import 'package:mikomi/shared/utils/theme_extensions.dart';
@@ -15,7 +15,7 @@ class SchedulePage extends StatefulWidget {
 
 class _SchedulePageState extends State<SchedulePage>
     with SingleTickerProviderStateMixin {
-  final HomeRepositoryImpl _homeRepository = HomeRepositoryImpl();
+  final BangumiBasis _homeRepository = BangumiBasis();
   TabController? _tabController;
   PageController? _pageController;
   List<List<BangumiItem>> _weekSchedule = [];

@@ -3,8 +3,7 @@ import 'package:mikomi/config/themes/app_colors.dart';
 import 'package:mikomi/core/models/bangumi_item.dart';
 import 'package:mikomi/core/models/comment_item.dart';
 import 'package:mikomi/core/network/dio_client.dart';
-import 'package:mikomi/features/anime/data/datasources/teasing_datasource.dart';
-import 'package:mikomi/features/anime/data/repositories/comment_repository_impl.dart';
+import 'package:mikomi/features/anime/data/bangumi_teasing.dart';
 import 'package:mikomi/shared/widgets/comment_card.dart';
 import 'package:mikomi/shared/widgets/skeleton.dart';
 
@@ -18,7 +17,7 @@ class AnimeTucaoTab extends StatefulWidget {
 }
 
 class _AnimeTucaoTabState extends State<AnimeTucaoTab> {
-  late final CommentRepositoryImpl _repository;
+  late final BangumiTeasing _repository;
   final ScrollController _scrollController = ScrollController();
   List<CommentItem> _comments = [];
   bool _isLoading = false;
@@ -29,8 +28,7 @@ class _AnimeTucaoTabState extends State<AnimeTucaoTab> {
   @override
   void initState() {
     super.initState();
-    final dataSource = CommentRemoteDataSourceImpl(DioClient());
-    _repository = CommentRepositoryImpl(dataSource);
+    _repository = BangumiTeasing();
     _loadComments();
     _scrollController.addListener(_onScroll);
   }

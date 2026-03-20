@@ -1,25 +1,27 @@
+import 'package:mikomi/core/network/dio_client.dart';
+import 'package:mikomi/core/network/api_constants.dart';
 import 'package:mikomi/core/models/comment_item.dart';
-import 'package:mikomi/features/anime/data/datasources/teasing_datasource.dart';
-import 'package:mikomi/features/anime/domain/repositories/teasing_repository.dart';
 
-class CommentRepositoryImpl implements CommentRepository {
-  final CommentRemoteDataSource _remoteDataSource;
+class BangumiTeasing {
+  final DioClient _dioClient = DioClient();
 
-  CommentRepositoryImpl(this._remoteDataSource);
-
-  @override
   Future<List<CommentItem>> getBangumiComments(
     int id, {
     int limit = 20,
     int offset = 0,
   }) async {
     try {
-      final data = await _remoteDataSource.getBangumiComments(
-        id,
-        limit: limit,
-        offset: offset,
+      final url = ApiConstants.formatUrl(
+        '${ApiConstants.bangumiApiNextDomain}/p1/subjects/{0}/comments',
+        [id],
       );
 
+      final response = await _dioClient.get(
+        url,
+        queryParameters: {'limit': limit, 'offset': offset},
+      );
+
+      final data = response.data as Map<String, dynamic>;
       final commentsList = data['data'] as List?;
       if (commentsList == null || commentsList.isEmpty) {
         return [];

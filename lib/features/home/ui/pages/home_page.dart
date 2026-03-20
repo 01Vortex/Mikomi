@@ -3,7 +3,7 @@ import 'package:mikomi/features/home/ui/widgets/home_header_bar.dart';
 import 'package:mikomi/features/home/ui/widgets/home_slider_image.dart';
 import 'package:mikomi/features/home/ui/widgets/home_button_tab.dart';
 import 'package:mikomi/features/home/ui/widgets/home_recommend.dart';
-import 'package:mikomi/features/home/data/repositories/home_repository_impl.dart';
+import 'package:mikomi/features/home/data/bangumi_basis.dart';
 import 'package:mikomi/core/models/bangumi_item.dart';
 import 'package:mikomi/shared/widgets/skeleton.dart';
 import 'package:mikomi/config/themes/app_colors.dart';
@@ -19,7 +19,7 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage>
     with AutomaticKeepAliveClientMixin {
-  final HomeRepositoryImpl _homeRepository = HomeRepositoryImpl();
+  final BangumiBasis _homeRepository = BangumiBasis();
   final ScrollController _scrollController = ScrollController();
 
   List<BangumiItem> _trendsList = [];

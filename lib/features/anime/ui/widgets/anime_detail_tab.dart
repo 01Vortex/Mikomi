@@ -4,8 +4,7 @@ import 'package:mikomi/core/models/bangumi_item.dart';
 import 'package:mikomi/core/models/character_item.dart';
 import 'package:mikomi/core/models/staff_item.dart';
 import 'package:mikomi/core/network/dio_client.dart';
-import 'package:mikomi/features/anime/data/datasources/detail_datasource.dart';
-import 'package:mikomi/features/anime/data/repositories/detail_repository_impl.dart';
+import 'package:mikomi/features/anime/data/bangumi_detail.dart';
 import 'package:mikomi/features/anime/ui/pages/anime_detail_more.dart';
 import 'package:mikomi/shared/widgets/scrolling_text.dart';
 import 'package:mikomi/shared/widgets/skeleton.dart';
@@ -20,7 +19,7 @@ class AnimeDetailTab extends StatefulWidget {
 }
 
 class _AnimeDetailTabState extends State<AnimeDetailTab> {
-  late final DetailRepositoryImpl _repository;
+  late final BangumiDetail _repository;
   List<CharacterItem> _characters = [];
   List<StaffItem> _staff = [];
   bool _isLoadingCharacters = false;
@@ -29,8 +28,7 @@ class _AnimeDetailTabState extends State<AnimeDetailTab> {
   @override
   void initState() {
     super.initState();
-    final dataSource = DetailRemoteDataSourceImpl(DioClient());
-    _repository = DetailRepositoryImpl(dataSource);
+    _repository = BangumiDetail();
     // 不在initState中加载数据，改为懒加载
   }
 

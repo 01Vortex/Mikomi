@@ -5,8 +5,7 @@ import 'package:mikomi/core/models/character_comment.dart';
 import 'package:mikomi/core/models/person_detail.dart';
 import 'package:mikomi/core/models/person_comment.dart';
 import 'package:mikomi/core/network/dio_client.dart';
-import 'package:mikomi/features/anime/data/datasources/detail_datasource.dart';
-import 'package:mikomi/features/anime/data/repositories/detail_repository_impl.dart';
+import 'package:mikomi/features/anime/data/bangumi_detail.dart';
 import 'package:mikomi/features/anime/ui/widgets/comment_list_widget.dart';
 import 'package:mikomi/features/anime/ui/widgets/person_info_widget.dart';
 
@@ -24,7 +23,7 @@ class AnimeMoreInfo extends StatefulWidget {
 
 class _AnimeMoreInfoState extends State<AnimeMoreInfo>
     with SingleTickerProviderStateMixin {
-  late final DetailRepositoryImpl _repository;
+  late final BangumiDetail _repository;
   late final TabController _tabController;
 
   CharacterDetail? _character;
@@ -37,8 +36,7 @@ class _AnimeMoreInfoState extends State<AnimeMoreInfo>
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
-    final dataSource = DetailRemoteDataSourceImpl(DioClient());
-    _repository = DetailRepositoryImpl(dataSource);
+    _repository = BangumiDetail();
     _loadInfo();
     _loadComments();
   }
