@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
-import 'package:mikomi/features/video/data/services/video_webview_controller.dart';
+import 'package:mikomi/features/video/controller/video_webview_controller.dart';
 
 class VideoWebviewAndroidImpl
     extends VideoWebviewController<InAppWebViewController> {

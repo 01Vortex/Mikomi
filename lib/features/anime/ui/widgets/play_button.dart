@@ -4,8 +4,8 @@ import 'package:mikomi/features/anime/ui/widgets/video_source_selector.dart';
 import 'package:mikomi/features/video/ui/pages/video_page.dart';
 import 'package:mikomi/core/models/episode.dart';
 import 'package:mikomi/core/services/bangumi_episodes_service.dart';
-import 'package:mikomi/features/video/data/repositories/video_source_repository.dart';
-import 'package:mikomi/features/video/data/services/video_plugin_service.dart';
+import 'package:mikomi/features/video/data/video_source_repository.dart';
+import 'package:mikomi/features/video/services/video_plugin_service.dart';
 import 'package:mikomi/shared/widgets/message_dialog.dart';
 
 class PlayButton extends StatefulWidget {

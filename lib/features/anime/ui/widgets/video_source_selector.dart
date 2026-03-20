@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:mikomi/features/video/data/repositories/video_source_repository.dart';
+import 'package:mikomi/features/video/data/video_source_repository.dart';
 import 'package:mikomi/features/settings/video_settings/service/plugin_manager_service.dart';
 
 class VideoSource {

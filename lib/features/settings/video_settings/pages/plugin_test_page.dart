@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:mikomi/features/video/data/models/video_plugin.dart';
-import 'package:mikomi/features/video/data/datasources/video_source_datasource.dart';
+import 'package:mikomi/core/models/video_plugin.dart';
+import 'package:mikomi/features/video/data/video_source_repository.dart';
 import 'package:mikomi/core/models/road.dart';
 import 'package:mikomi/shared/utils/theme_extensions.dart';
 import 'package:mikomi/shared/widgets/message_dialog.dart';
@@ -20,7 +20,7 @@ class PluginTestPage extends StatefulWidget {
 
 class _PluginTestPageState extends State<PluginTestPage> {
   final TextEditingController _searchController = TextEditingController();
-  final VideoSourceDatasource _datasource = VideoSourceDatasourceImpl();
+  final VideoSourceRepository _repository = VideoSourceRepository();
   final ScrollController _htmlScrollController = ScrollController();
   final ScrollController _chapterScrollController = ScrollController();
 
@@ -120,7 +120,7 @@ class _PluginTestPageState extends State<PluginTestPage> {
       if (_cancelToken?.isCancelled ?? true) return;
 
       // 阶段2: 搜索解析测试
-      _searchResults = await _datasource.search(keyword, widget.plugin);
+      _searchResults = await _repository.search(keyword, widget.plugin);
 
       // 检查是否已取消
       if (_cancelToken?.isCancelled ?? true) return;
@@ -129,7 +129,7 @@ class _PluginTestPageState extends State<PluginTestPage> {
       if (_hasSearchData && _needChapterParse) {
         final firstItem = _searchResults.first;
         if (firstItem.url.isNotEmpty) {
-          _chapters = await _datasource.getRoads(firstItem.url, widget.plugin);
+          _chapters = await _repository.getRoads(firstItem.url, widget.plugin);
         }
       }
 

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:mikomi/features/video/data/models/video_plugin.dart';
+import 'package:mikomi/core/models/video_plugin.dart';
 import 'package:mikomi/features/settings/video_settings/service/plugin_manager_service.dart';
 import 'package:mikomi/shared/utils/theme_extensions.dart';
 

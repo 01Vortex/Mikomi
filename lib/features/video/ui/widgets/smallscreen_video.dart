@@ -2,8 +2,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 import 'package:canvas_danmaku/canvas_danmaku.dart';
-import 'package:mikomi/features/video/controllers/video_controller.dart';
-import 'package:mikomi/features/video/controllers/danmaku_controller.dart';
+import 'package:mikomi/features/video/controller/video_controller.dart';
+import 'package:mikomi/features/video/controller/danmaku_controller.dart';
 import 'package:mikomi/features/video/ui/pages/fullscreen_video_page.dart';
 import 'package:mikomi/core/models/episode.dart';
 

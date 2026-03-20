@@ -2,7 +2,7 @@ import 'dart:io';
 import 'dart:convert';
 import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:mikomi/features/video/data/models/video_plugin.dart';
+import 'package:mikomi/core/models/video_plugin.dart';
 
 /// 视频源(规则)管理器
 /// 负责视频源的增删改查和持久化

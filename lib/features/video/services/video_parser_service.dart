@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
-import 'package:mikomi/features/video/data/services/video_webview_android_impl.dart';
+import 'package:mikomi/features/video/services/video_webview_service.dart';
 
 /// WebView 视频地址解析器
 /// 完整参考 Kazumi 实现，支持多层防御机制

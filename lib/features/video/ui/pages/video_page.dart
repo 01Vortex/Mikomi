@@ -10,8 +10,8 @@ import 'package:mikomi/features/anime/ui/widgets/video_source_selector.dart';
 import 'package:mikomi/shared/widgets/skeleton.dart';
 import 'package:mikomi/core/models/episode.dart';
 import 'package:mikomi/core/services/bangumi_episodes_service.dart';
-import 'package:mikomi/features/video/data/repositories/video_source_repository.dart';
-import 'package:mikomi/features/video/controllers/video_controller.dart';
+import 'package:mikomi/features/video/data/video_source_repository.dart';
+import 'package:mikomi/features/video/controller/video_controller.dart';
 import 'package:mikomi/core/services/watch_history_service.dart';
 import 'package:mikomi/core/models/watch_history.dart';
 

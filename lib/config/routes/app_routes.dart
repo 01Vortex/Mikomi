@@ -8,7 +8,7 @@ import '../../features/settings/video_settings/pages/plugin_manage_page.dart';
 import '../../features/settings/video_settings/pages/plugin_editor_page.dart';
 import '../../features/settings/video_settings/pages/plugin_test_page.dart';
 import '../../core/models/bangumi_item.dart';
-import '../../features/video/data/models/video_plugin.dart';
+import '../../core/models/video_plugin.dart';
 
 class AppRoutes {
   static const String main = '/';
