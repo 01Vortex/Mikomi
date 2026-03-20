@@ -29,7 +29,7 @@ class HistoryTabContent extends StatelessWidget {
       margin: const EdgeInsets.symmetric(horizontal: 24),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: context.colors.surfaceVariant,
+        color: context.colors.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
@@ -95,7 +95,12 @@ class HistoryTabContent extends StatelessWidget {
           else
             Column(
               children: histories
-                  .map((history) => _HistoryItem(history: history))
+                  .map(
+                    (history) => _HistoryItem(
+                      key: ValueKey(history.bangumiId),
+                      history: history,
+                    ),
+                  )
                   .toList(),
             ),
         ],
@@ -108,7 +113,7 @@ class HistoryTabContent extends StatelessWidget {
 class _HistoryItem extends StatefulWidget {
   final WatchHistory history;
 
-  const _HistoryItem({required this.history});
+  const _HistoryItem({super.key, required this.history});
 
   @override
   State<_HistoryItem> createState() => _HistoryItemState();
@@ -213,50 +218,47 @@ class _HistoryItemState extends State<_HistoryItem> {
             const SizedBox(width: 12),
             // 信息
             Expanded(
-              child: SizedBox(
-                height: 80,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      widget.history.displayName,
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w500,
-                        color: context.colors.onSurface,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    widget.history.displayName,
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w500,
+                      color: context.colors.onSurface,
                     ),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          '视频源:${widget.history.pluginName}',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: context.colors.textSecondary,
-                          ),
-                        ),
-                        Text(
-                          '第${widget.history.lastWatchEpisode}集 · 播放到${widget.history.progressPercent.toStringAsFixed(0)}%',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: context.colors.textSecondary,
-                          ),
-                        ),
-                        Text(
-                          _formatTime(widget.history.lastWatchTime),
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: context.colors.textSecondary,
-                          ),
-                        ),
-                      ],
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '视频源:${widget.history.pluginName}',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: context.colors.textSecondary,
                     ),
-                  ],
-                ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  Text(
+                    '第${widget.history.lastWatchEpisode}集 · 播放到${widget.history.progressPercent.toStringAsFixed(0)}%',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: context.colors.textSecondary,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  Text(
+                    _formatTime(widget.history.lastWatchTime),
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: context.colors.textSecondary,
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
@@ -266,6 +268,19 @@ class _HistoryItemState extends State<_HistoryItem> {
   }
 
   String _formatTime(DateTime time) {
-    return '${time.year}-${time.month}-${time.day}';
+    final now = DateTime.now();
+    final diff = now.difference(time);
+
+    if (diff.inDays > 3) {
+      return '${time.year}-${time.month.toString().padLeft(2, '0')}-${time.day.toString().padLeft(2, '0')}';
+    } else if (diff.inDays > 0) {
+      return '${diff.inDays}天前';
+    } else if (diff.inHours > 0) {
+      return '${diff.inHours}小时前';
+    } else if (diff.inMinutes > 0) {
+      return '${diff.inMinutes}分钟前';
+    } else {
+      return '刚刚';
+    }
   }
 }
