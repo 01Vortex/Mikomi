@@ -40,8 +40,7 @@ class _BannerSectionState extends State<BannerSection> {
           autoplay: true,
           autoplayDelay: 4000,
           duration: 600,
-          viewportFraction: 0.92,
-          scale: 0.94,
+          viewportFraction: 1.0,
           itemBuilder: (context, index) {
             final item = widget.bannerList[index];
             return GestureDetector(

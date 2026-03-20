@@ -15,7 +15,7 @@ class ProfileActionTabs extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 24),
-      padding: const EdgeInsets.symmetric(vertical: 20),
+      padding: const EdgeInsets.symmetric(vertical: 12),
       decoration: BoxDecoration(
         color: context.colors.surfaceVariant,
         borderRadius: BorderRadius.circular(12),
@@ -63,18 +63,18 @@ class ProfileActionTabs extends StatelessWidget {
       onTap: () => onTabSelected(index),
       borderRadius: BorderRadius.circular(8),
       child: Padding(
-        padding: const EdgeInsets.all(8),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
               icon,
-              size: 32,
+              size: 28,
               color: isSelected
                   ? context.colors.primary
                   : context.colors.onSurfaceVariant,
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 6),
             Text(
               label,
               style: TextStyle(

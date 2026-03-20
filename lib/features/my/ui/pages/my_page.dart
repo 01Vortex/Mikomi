@@ -88,15 +88,26 @@ class _MyPageState extends State<MyPage> {
                 child: Stack(
                   clipBehavior: Clip.none,
                   children: [
-                    // 背景（扩展高度以容纳头像和昵称）
+                    // 背景（添加渐变效果）
                     Container(
                       height: 240,
-                      color: context.colors.surfaceVariant,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            context.colors.surfaceVariant,
+                            context.colors.surfaceVariant.withValues(
+                              alpha: 0.8,
+                            ),
+                          ],
+                        ),
+                      ),
                       padding: const EdgeInsets.fromLTRB(24, 120, 24, 16),
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          // 头像
+                          // 头像（添加阴影）
                           Container(
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
@@ -104,6 +115,13 @@ class _MyPageState extends State<MyPage> {
                                 color: context.colors.surface,
                                 width: 4,
                               ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.1),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
                             ),
                             child: CircleAvatar(
                               radius: 40,
@@ -117,27 +135,31 @@ class _MyPageState extends State<MyPage> {
                           ),
                           const SizedBox(width: 16),
                           // 昵称和UID
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                '昵称',
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                  color: context.colors.onSurface,
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  '昵称',
+                                  style: TextStyle(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                    color: context.colors.onSurface,
+                                    letterSpacing: 0.5,
+                                  ),
                                 ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                'uid:88888888',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: context.colors.textSecondary,
+                                const SizedBox(height: 6),
+                                Text(
+                                  'uid:88888888',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: context.colors.textSecondary,
+                                    letterSpacing: 0.3,
+                                  ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
                         ],
                       ),
@@ -145,36 +167,77 @@ class _MyPageState extends State<MyPage> {
                   ],
                 ),
               ),
-              // 简介和性别标签（在背景外）
+              // 简介和性别标签（在背景外，添加卡片效果）
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        '这是简介',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: context.colors.onSurface,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
                       Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 4,
-                        ),
+                        padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: context.colors.surfaceVariant,
-                          borderRadius: BorderRadius.circular(4),
+                          color: context.colors.surface,
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.05),
+                              blurRadius: 4,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
                         ),
                         child: Text(
-                          '男',
+                          '这是简介',
                           style: TextStyle(
-                            fontSize: 12,
-                            color: context.colors.onSurfaceVariant,
+                            fontSize: 14,
+                            color: context.colors.onSurface,
+                            height: 1.5,
                           ),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              context.colors.surfaceVariant,
+                              context.colors.surfaceVariant.withValues(
+                                alpha: 0.7,
+                              ),
+                            ],
+                          ),
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.05),
+                              blurRadius: 4,
+                              offset: const Offset(0, 1),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.person_outline,
+                              size: 14,
+                              color: context.colors.onSurfaceVariant,
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              '男',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: context.colors.onSurfaceVariant,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ],

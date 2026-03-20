@@ -42,20 +42,15 @@ class HistoryTabContent extends StatelessWidget {
                 onTap: onSortToggle,
                 borderRadius: BorderRadius.circular(8),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
-                  ),
+                  padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
                     color: context.colors.surface,
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: Text(
-                    '排序',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: context.colors.onSurface,
-                    ),
+                  child: Icon(
+                    Icons.sort,
+                    size: 20,
+                    color: context.colors.onSurface,
                   ),
                 ),
               ),
@@ -64,8 +59,8 @@ class HistoryTabContent extends StatelessWidget {
                 borderRadius: BorderRadius.circular(8),
                 child: Container(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
+                    horizontal: 12,
+                    vertical: 6,
                   ),
                   decoration: BoxDecoration(
                     color: context.colors.surface,
@@ -74,7 +69,7 @@ class HistoryTabContent extends StatelessWidget {
                   child: Text(
                     '更多',
                     style: TextStyle(
-                      fontSize: 14,
+                      fontSize: 13,
                       color: context.colors.onSurface,
                     ),
                   ),
