@@ -3,18 +3,10 @@ import 'package:mikomi/core/models/bangumi_item.dart';
 import 'package:mikomi/core/network/dio_client.dart';
 import 'package:mikomi/core/network/api_constants.dart';
 import 'package:mikomi/core/utils/search_algorithm.dart';
-import 'package:mikomi/features/search/data/datasources/search_datasource.dart';
 
-class BangumiSearchDatasource implements SearchDatasource {
+class BangumiSearch {
   final DioClient _dioClient = DioClient();
 
-  @override
-  String get sourceName => 'Bangumi';
-
-  @override
-  int get priority => 1;
-
-  @override
   Future<List<BangumiItem>> search(String keyword) async {
     try {
       final response = await _dioClient
@@ -44,7 +36,7 @@ class BangumiSearchDatasource implements SearchDatasource {
 
       return filteredItems.take(20).toList();
     } catch (e) {
-      debugPrint('[$sourceName] 搜索失败: $e');
+      debugPrint('[Bangumi搜索] 失败: $e');
       rethrow;
     }
   }
