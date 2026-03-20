@@ -3,6 +3,7 @@ import 'package:mikomi/core/services/watch_history_service.dart';
 import 'package:mikomi/core/models/watch_history.dart';
 import 'package:mikomi/features/video/ui/pages/video_page.dart';
 import 'package:mikomi/shared/widgets/cached_image.dart';
+import 'package:mikomi/shared/widgets/skeleton.dart';
 import 'package:mikomi/core/services/bangumi_service.dart';
 
 class WatchHistoryPage extends StatefulWidget {
@@ -15,8 +16,9 @@ class WatchHistoryPage extends StatefulWidget {
 class _WatchHistoryPageState extends State<WatchHistoryPage> {
   final WatchHistoryService _historyService = WatchHistoryService();
   List<WatchHistory> _histories = [];
+  final Set<int> _selectedIds = {};
   bool _isLoading = true;
-  bool _showDelete = false;
+  bool _isSelectionMode = false;
 
   @override
   void initState() {
@@ -35,9 +37,75 @@ class _WatchHistoryPageState extends State<WatchHistoryPage> {
     }
   }
 
-  Future<void> _deleteHistory(int bangumiId) async {
-    await _historyService.deleteHistory(bangumiId);
-    _loadHistories();
+  Future<void> _deleteSelected() async {
+    if (_selectedIds.isEmpty) return;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('删除历史记录'),
+        content: Text('确认删除选中的 ${_selectedIds.length} 条记录吗?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(
+              '取消',
+              style: TextStyle(color: Theme.of(context).colorScheme.outline),
+            ),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('确认'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      for (final id in _selectedIds) {
+        await _historyService.deleteHistory(id);
+      }
+      setState(() {
+        _selectedIds.clear();
+        _isSelectionMode = false;
+      });
+      _loadHistories();
+    }
+  }
+
+  void _toggleSelection(int bangumiId) {
+    setState(() {
+      if (_selectedIds.contains(bangumiId)) {
+        _selectedIds.remove(bangumiId);
+        if (_selectedIds.isEmpty) {
+          _isSelectionMode = false;
+        }
+      } else {
+        _selectedIds.add(bangumiId);
+      }
+    });
+  }
+
+  void _toggleSelectionMode() {
+    setState(() {
+      _isSelectionMode = !_isSelectionMode;
+      if (!_isSelectionMode) {
+        _selectedIds.clear();
+      }
+    });
+  }
+
+  void _selectAll() {
+    setState(() {
+      if (_selectedIds.length == _histories.length) {
+        _selectedIds.clear();
+      } else {
+        _selectedIds.clear();
+        for (var history in _histories) {
+          _selectedIds.add(history.bangumiId);
+        }
+      }
+    });
   }
 
   Future<void> _clearAll() async {
@@ -100,13 +168,15 @@ class _WatchHistoryPageState extends State<WatchHistoryPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('最近在看'),
+        centerTitle: true,
+        title: const Text('观看历史', style: TextStyle(fontSize: 16)),
         actions: [
-          IconButton(
-            onPressed: () {
-              setState(() => _showDelete = !_showDelete);
-            },
-            icon: Icon(_showDelete ? Icons.edit_outlined : Icons.edit),
+          TextButton(
+            onPressed: _toggleSelectionMode,
+            child: Text(
+              _isSelectionMode ? '取消' : '编辑',
+              style: const TextStyle(fontSize: 14),
+            ),
           ),
         ],
       ),
@@ -179,13 +249,14 @@ class _WatchHistoryPageState extends State<WatchHistoryPage> {
                             Expanded(
                               child: _WatchHistoryCard(
                                 history: history,
-                                showDelete: _showDelete,
+                                isSelected: _selectedIds.contains(
+                                  history.bangumiId,
+                                ),
+                                isSelectionMode: _isSelectionMode,
                                 cardHeight: 110,
                                 onTap: () {
-                                  if (_showDelete) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(content: Text('编辑模式')),
-                                    );
+                                  if (_isSelectionMode) {
+                                    _toggleSelection(history.bangumiId);
                                   } else {
                                     Navigator.push(
                                       context,
@@ -228,8 +299,14 @@ class _WatchHistoryPageState extends State<WatchHistoryPage> {
                                     );
                                   }
                                 },
-                                onDelete: () =>
-                                    _deleteHistory(history.bangumiId),
+                                onLongPress: () {
+                                  if (!_isSelectionMode) {
+                                    setState(() {
+                                      _isSelectionMode = true;
+                                      _selectedIds.add(history.bangumiId);
+                                    });
+                                  }
+                                },
                               ),
                             ),
                           ],
@@ -242,10 +319,41 @@ class _WatchHistoryPageState extends State<WatchHistoryPage> {
                 );
               },
             ),
-      floatingActionButton: _histories.isNotEmpty
-          ? FloatingActionButton(
-              onPressed: _clearAll,
-              child: const Icon(Icons.clear_all),
+      bottomNavigationBar: _isSelectionMode
+          ? Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surface,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.05),
+                    blurRadius: 4,
+                    offset: const Offset(0, -2),
+                  ),
+                ],
+              ),
+              child: SafeArea(
+                child: Row(
+                  children: [
+                    TextButton(
+                      onPressed: _selectAll,
+                      child: Text(
+                        _selectedIds.length == _histories.length
+                            ? '取消全选'
+                            : '全选',
+                      ),
+                    ),
+                    const Spacer(),
+                    TextButton(
+                      onPressed: _selectedIds.isEmpty ? null : _deleteSelected,
+                      style: TextButton.styleFrom(
+                        foregroundColor: Theme.of(context).colorScheme.error,
+                      ),
+                      child: const Text('删除'),
+                    ),
+                  ],
+                ),
+              ),
             )
           : null,
     );
@@ -255,15 +363,17 @@ class _WatchHistoryPageState extends State<WatchHistoryPage> {
 class _WatchHistoryCard extends StatefulWidget {
   final WatchHistory history;
   final VoidCallback onTap;
-  final VoidCallback? onDelete;
-  final bool showDelete;
+  final VoidCallback? onLongPress;
+  final bool isSelected;
+  final bool isSelectionMode;
   final double cardHeight;
 
   const _WatchHistoryCard({
     required this.history,
     required this.onTap,
-    this.onDelete,
-    this.showDelete = false,
+    this.onLongPress,
+    this.isSelected = false,
+    this.isSelectionMode = false,
     this.cardHeight = 120,
   });
 
@@ -273,7 +383,8 @@ class _WatchHistoryCard extends StatefulWidget {
 
 class _WatchHistoryCardState extends State<_WatchHistoryCard> {
   final BangumiService _bangumiService = BangumiService();
-  String _coverUrl = '';
+  String? _coverUrl;
+  bool _isLoading = true;
 
   @override
   void initState() {
@@ -285,9 +396,12 @@ class _WatchHistoryCardState extends State<_WatchHistoryCard> {
     final bangumi = await _bangumiService.getBangumiById(
       widget.history.bangumiId,
     );
-    if (mounted && bangumi != null) {
+    if (mounted) {
       setState(() {
-        _coverUrl = bangumi.coverUrl;
+        if (bangumi != null) {
+          _coverUrl = bangumi.coverUrl;
+        }
+        _isLoading = false;
       });
     }
   }
@@ -299,75 +413,109 @@ class _WatchHistoryCardState extends State<_WatchHistoryCard> {
 
     return Card(
       elevation: 1,
-      margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 6),
+      margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 0),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: widget.onTap,
-        child: SizedBox(
-          height: widget.cardHeight,
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: CachedImage(
-                  imageUrl: _coverUrl,
-                  width: imageWidth,
-                  height: widget.cardHeight,
-                  fit: BoxFit.cover,
-                ),
-              ),
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    vertical: 8,
-                    horizontal: 12,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        widget.history.displayName,
-                        style: theme.textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 8),
-                      Wrap(
-                        spacing: 4,
-                        runSpacing: 4,
-                        children: [
-                          _buildChip(
-                            context,
-                            '来源: ${widget.history.pluginName}',
+        onLongPress: widget.onLongPress,
+        child: Stack(
+          children: [
+            SizedBox(
+              height: widget.cardHeight,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: _isLoading
+                        ? SkeletonLoader(
+                            width: imageWidth,
+                            height: widget.cardHeight,
+                            borderRadius: BorderRadius.circular(8),
+                          )
+                        : CachedImage(
+                            imageUrl: _coverUrl ?? '',
+                            width: imageWidth,
+                            height: widget.cardHeight,
+                            fit: BoxFit.cover,
                           ),
-                          _buildChip(
-                            context,
-                            '看到: 第${widget.history.lastWatchEpisode}集 ${widget.history.progressPercent.toStringAsFixed(0)}%',
+                  ),
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 8,
+                        horizontal: 12,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            widget.history.displayName,
+                            style: theme.textTheme.titleSmall?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 8),
+                          Wrap(
+                            spacing: 4,
+                            runSpacing: 4,
+                            children: [
+                              _buildChip(
+                                context,
+                                '来源: ${widget.history.pluginName}',
+                              ),
+                              _buildChip(
+                                context,
+                                '看到: 第${widget.history.lastWatchEpisode}集 ${widget.history.progressPercent.toStringAsFixed(0)}%',
+                              ),
+                            ],
+                          ),
+                          const Spacer(),
+                          Text(
+                            _formatTime(widget.history.lastWatchTime),
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
                           ),
                         ],
                       ),
-                      const Spacer(),
-                      Text(
-                        _formatTime(widget.history.lastWatchTime),
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
+                ],
+              ),
+            ),
+            if (widget.isSelectionMode)
+              Positioned(
+                top: 8,
+                right: 8,
+                child: Container(
+                  width: 24,
+                  height: 24,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: widget.isSelected
+                        ? theme.colorScheme.primary
+                        : theme.colorScheme.surface,
+                    border: Border.all(
+                      color: widget.isSelected
+                          ? theme.colorScheme.primary
+                          : theme.colorScheme.outline,
+                      width: 2,
+                    ),
+                  ),
+                  child: widget.isSelected
+                      ? Icon(
+                          Icons.check,
+                          size: 16,
+                          color: theme.colorScheme.onPrimary,
+                        )
+                      : null,
                 ),
               ),
-              if (widget.showDelete && widget.onDelete != null)
-                IconButton(
-                  icon: Icon(Icons.delete, color: theme.colorScheme.error),
-                  onPressed: widget.onDelete,
-                ),
-            ],
-          ),
+          ],
         ),
       ),
     );

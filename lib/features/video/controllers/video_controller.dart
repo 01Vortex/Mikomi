@@ -1,12 +1,14 @@
 import 'package:flutter/foundation.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
+import 'package:mikomi/core/services/settings/play_service.dart';
 
 class VideoPlayerController {
   Player? _player;
   VideoController? _videoController;
   bool _isInitialized = false;
   bool _isDisposing = false;
+  final PlayService _playService = PlayService();
 
   bool get isInitialized => _isInitialized;
   Player? get player => _player;
@@ -27,6 +29,10 @@ class VideoPlayerController {
     try {
       debugPrint('VideoPlayerController: 创建新播放器实例');
 
+      // 读取硬件解码设置
+      final hardwareDecoding = await _playService.getHardwareDecoding();
+      debugPrint('VideoPlayerController: 硬件解码设置 = $hardwareDecoding');
+
       _player = Player(
         configuration: const PlayerConfiguration(
           bufferSize: 50 * 1024 * 1024,
@@ -34,7 +40,14 @@ class VideoPlayerController {
         ),
       );
 
-      _videoController = VideoController(_player!);
+      _videoController = VideoController(
+        _player!,
+        configuration: VideoControllerConfiguration(
+          enableHardwareAcceleration: hardwareDecoding,
+          hwdec: hardwareDecoding ? 'auto-safe' : 'no',
+        ),
+      );
+
       _isInitialized = true;
 
       debugPrint('VideoPlayerController: 播放器初始化成功');

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:card_settings_ui/card_settings_ui.dart';
+import 'package:mikomi/core/services/settings/play_service.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -9,15 +10,45 @@ class SettingsPage extends StatefulWidget {
 }
 
 class _SettingsPageState extends State<SettingsPage> {
+  final PlayService _playService = PlayService();
+
   bool _autoPlayNext = true;
   bool _privateMode = false;
   bool _wifiOnlyDownload = true;
   bool _hardwareDecoding = true;
   bool _showDanmaku = true;
   double _playSpeed = 1.0;
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSettings();
+  }
+
+  Future<void> _loadSettings() async {
+    final hardwareDecoding = await _playService.getHardwareDecoding();
+    final autoPlayNext = await _playService.getAutoPlayNext();
+    final playSpeed = await _playService.getPlaySpeed();
+
+    if (mounted) {
+      setState(() {
+        _hardwareDecoding = hardwareDecoding;
+        _autoPlayNext = autoPlayNext;
+        _playSpeed = playSpeed;
+        _isLoading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('设置'), centerTitle: true),
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
     return Scaffold(
       appBar: AppBar(title: const Text('设置'), centerTitle: true),
       body: SettingsList(
@@ -32,9 +63,11 @@ class _SettingsPageState extends State<SettingsPage> {
                 description: const Text('管理视频数据源'),
               ),
               SettingsTile.switchTile(
-                onToggle: (value) {
+                onToggle: (value) async {
+                  final newValue = value ?? !_hardwareDecoding;
+                  await _playService.setHardwareDecoding(newValue);
                   setState(() {
-                    _hardwareDecoding = value ?? !_hardwareDecoding;
+                    _hardwareDecoding = newValue;
                   });
                 },
                 leading: const Icon(Icons.hardware_outlined),
@@ -43,9 +76,11 @@ class _SettingsPageState extends State<SettingsPage> {
                 initialValue: _hardwareDecoding,
               ),
               SettingsTile.switchTile(
-                onToggle: (value) {
+                onToggle: (value) async {
+                  final newValue = value ?? !_autoPlayNext;
+                  await _playService.setAutoPlayNext(newValue);
                   setState(() {
-                    _autoPlayNext = value ?? !_autoPlayNext;
+                    _autoPlayNext = newValue;
                   });
                 },
                 leading: const Icon(Icons.skip_next_outlined),
@@ -66,6 +101,9 @@ class _SettingsPageState extends State<SettingsPage> {
                     setState(() {
                       _playSpeed = value;
                     });
+                  },
+                  onChangeEnd: (value) async {
+                    await _playService.setPlaySpeed(value);
                   },
                 ),
               ),
