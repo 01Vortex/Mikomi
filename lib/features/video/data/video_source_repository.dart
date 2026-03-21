@@ -6,7 +6,7 @@ import 'package:mikomi/core/models/episode.dart';
 import 'package:mikomi/core/models/road.dart';
 import 'package:mikomi/core/models/video_plugin.dart';
 import 'package:mikomi/features/video/services/video_plugin_service.dart';
-import 'package:mikomi/features/video/services/video_parser_service.dart';
+import 'package:mikomi/features/video/services/webview_video_parser.dart';
 
 class SearchResult {
   final String name;

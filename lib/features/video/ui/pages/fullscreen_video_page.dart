@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mikomi/config/themes/app_colors.dart';
-import 'package:mikomi/features/video/controller/video_controller.dart';
+import 'package:mikomi/features/video/services/video_playback_service.dart';
 import 'package:mikomi/features/video/ui/widgets/fullscreen_video.dart';
 import 'package:mikomi/core/models/episode.dart';
 import 'package:media_kit_video/media_kit_video.dart';
