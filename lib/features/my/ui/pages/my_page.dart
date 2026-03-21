@@ -8,6 +8,7 @@ import 'package:mikomi/core/models/watch_history.dart';
 import 'package:mikomi/shared/utils/theme_extensions.dart';
 import 'package:mikomi/features/my/ui/widgets/profile_action_tabs.dart';
 import 'package:mikomi/features/my/ui/widgets/history_tab_content.dart';
+import 'package:mikomi/features/my/ui/widgets/login_reminder.dart';
 
 class MyPage extends StatefulWidget {
   const MyPage({super.key});
@@ -23,6 +24,7 @@ class _MyPageState extends State<MyPage> {
   bool _isLoading = true;
   bool _isDescending = true;
   int _selectedTab = 0;
+  bool _isLoggedIn = false; // 登录状态
 
   @override
   void initState() {
@@ -83,144 +85,84 @@ class _MyPageState extends State<MyPage> {
         children: [
           CustomScrollView(
             slivers: [
-              // 背景区和个人信息区（合并使用Stack）
-              SliverToBoxAdapter(
-                child: Stack(
-                  clipBehavior: Clip.none,
-                  children: [
-                    // 背景（添加渐变效果）
-                    Container(
-                      height: 240,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [
-                            context.colors.surfaceVariant,
-                            context.colors.surfaceVariant.withValues(
-                              alpha: 0.8,
-                            ),
-                          ],
-                        ),
-                      ),
-                      padding: const EdgeInsets.fromLTRB(24, 120, 24, 16),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          // 头像（添加阴影）
-                          Container(
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: context.colors.surface,
-                                width: 4,
-                              ),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.1),
-                                  blurRadius: 8,
-                                  offset: const Offset(0, 2),
-                                ),
-                              ],
-                            ),
-                            child: CircleAvatar(
-                              radius: 40,
-                              backgroundColor: context.colors.primaryContainer,
-                              child: Icon(
-                                Icons.person,
-                                size: 40,
-                                color: context.colors.onPrimaryContainer,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          // 昵称和UID
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  '昵称',
-                                  style: TextStyle(
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.bold,
-                                    color: context.colors.onSurface,
-                                    letterSpacing: 0.5,
-                                  ),
-                                ),
-                                const SizedBox(height: 6),
-                                Text(
-                                  'uid:88888888',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: context.colors.textSecondary,
-                                    letterSpacing: 0.3,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              // 简介和性别标签（在背景外，添加卡片效果）
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+              // 背景区和个人信息区（仅登录时显示）
+              if (_isLoggedIn)
+                SliverToBoxAdapter(
+                  child: Stack(
+                    clipBehavior: Clip.none,
                     children: [
-                      Text(
-                        '这是简介',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: context.colors.onSurface,
-                          height: 1.5,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
+                      // 背景（添加渐变效果）
                       Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 6,
-                        ),
+                        height: 240,
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
                             colors: [
                               context.colors.surfaceVariant,
                               context.colors.surfaceVariant.withValues(
-                                alpha: 0.7,
+                                alpha: 0.8,
                               ),
                             ],
                           ),
-                          borderRadius: BorderRadius.circular(20),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.05),
-                              blurRadius: 4,
-                              offset: const Offset(0, 1),
-                            ),
-                          ],
                         ),
+                        padding: const EdgeInsets.fromLTRB(24, 80, 24, 16),
                         child: Row(
-                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
-                            Icon(
-                              Icons.person_outline,
-                              size: 14,
-                              color: context.colors.onSurfaceVariant,
+                            // 头像（添加阴影）
+                            Container(
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: context.colors.surface,
+                                  width: 4,
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withValues(alpha: 0.1),
+                                    blurRadius: 8,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
+                              ),
+                              child: CircleAvatar(
+                                radius: 40,
+                                backgroundColor:
+                                    context.colors.primaryContainer,
+                                child: Icon(
+                                  Icons.person,
+                                  size: 40,
+                                  color: context.colors.onPrimaryContainer,
+                                ),
+                              ),
                             ),
-                            const SizedBox(width: 6),
-                            Text(
-                              '男',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: context.colors.onSurfaceVariant,
-                                fontWeight: FontWeight.w500,
+                            const SizedBox(width: 16),
+                            // 昵称和UID
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    '昵称',
+                                    style: TextStyle(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.bold,
+                                      color: context.colors.onSurface,
+                                      letterSpacing: 0.5,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    'uid:88888888',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color: context.colors.textSecondary,
+                                      letterSpacing: 0.3,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                           ],
@@ -229,7 +171,80 @@ class _MyPageState extends State<MyPage> {
                     ],
                   ),
                 ),
-              ),
+              // 未登录时显示登录提示
+              if (!_isLoggedIn)
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: EdgeInsets.only(
+                      top: MediaQuery.of(context).padding.top + 80,
+                    ),
+                    child: const LoginReminder(),
+                  ),
+                ),
+              // 简介和性别标签（在背景外，添加卡片效果）
+              if (_isLoggedIn)
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '这是简介',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: context.colors.onSurface,
+                            height: 1.5,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [
+                                context.colors.surfaceVariant,
+                                context.colors.surfaceVariant.withValues(
+                                  alpha: 0.7,
+                                ),
+                              ],
+                            ),
+                            borderRadius: BorderRadius.circular(20),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.05),
+                                blurRadius: 4,
+                                offset: const Offset(0, 1),
+                              ),
+                            ],
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.person_outline,
+                                size: 14,
+                                color: context.colors.onSurfaceVariant,
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                '男',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: context.colors.onSurfaceVariant,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
               const SliverToBoxAdapter(child: SizedBox(height: 24)),
               // 按钮tab区
               SliverToBoxAdapter(

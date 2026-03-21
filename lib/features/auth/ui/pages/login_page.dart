@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mikomi/shared/utils/theme_extensions.dart';
+import 'package:mikomi/features/auth/service/bangumi_login_service.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -13,6 +14,7 @@ class _LoginPageState extends State<LoginPage> {
   final TextEditingController _passwordController = TextEditingController();
   final FocusNode _usernameFocus = FocusNode();
   final FocusNode _passwordFocus = FocusNode();
+  final BangumiLoginService _bangumiService = BangumiLoginService();
   bool _obscurePassword = true;
   bool _isLoading = false;
 
@@ -50,32 +52,50 @@ class _LoginPageState extends State<LoginPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const SizedBox(height: 60),
-              _buildLogo(),
-              const SizedBox(height: 48),
-              _buildWelcomeText(),
-              const SizedBox(height: 40),
-              _buildUsernameField(),
-              const SizedBox(height: 16),
-              _buildPasswordField(),
-              const SizedBox(height: 12),
-              _buildForgotPassword(),
-              const SizedBox(height: 32),
-              _buildLoginButton(),
-              const SizedBox(height: 24),
-              _buildDivider(),
-              const SizedBox(height: 24),
-              _buildSocialLogin(),
-              const SizedBox(height: 32),
-              _buildSignUpPrompt(),
-              const SizedBox(height: 24),
-            ],
-          ),
+        child: Stack(
+          children: [
+            SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const SizedBox(height: 60),
+                  _buildLogo(),
+                  const SizedBox(height: 48),
+                  _buildWelcomeText(),
+                  const SizedBox(height: 40),
+                  _buildUsernameField(),
+                  const SizedBox(height: 16),
+                  _buildPasswordField(),
+                  const SizedBox(height: 12),
+                  _buildForgotPassword(),
+                  const SizedBox(height: 32),
+                  _buildLoginButton(),
+                  const SizedBox(height: 24),
+                  _buildDivider(),
+                  const SizedBox(height: 24),
+                  _buildSocialLogin(),
+                  const SizedBox(height: 32),
+                  _buildSignUpPrompt(),
+                  const SizedBox(height: 24),
+                ],
+              ),
+            ),
+            Positioned(
+              top: 8,
+              left: 8,
+              child: IconButton(
+                onPressed: () => Navigator.pop(context),
+                icon: const Icon(Icons.arrow_back),
+                style: IconButton.styleFrom(
+                  backgroundColor: context.colors.surface.withValues(
+                    alpha: 0.9,
+                  ),
+                  foregroundColor: context.colors.onSurface,
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -232,6 +252,12 @@ class _LoginPageState extends State<LoginPage> {
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         _buildSocialButton(
+          icon: Icons.tv,
+          label: 'Bangumi',
+          onTap: _handleBangumiLogin,
+        ),
+        const SizedBox(width: 16),
+        _buildSocialButton(
           icon: Icons.g_mobiledata,
           label: 'Google',
           onTap: () {
@@ -240,18 +266,36 @@ class _LoginPageState extends State<LoginPage> {
             ).showSnackBar(const SnackBar(content: Text('Google登录开发中')));
           },
         ),
-        const SizedBox(width: 16),
-        _buildSocialButton(
-          icon: Icons.apple,
-          label: 'Apple',
-          onTap: () {
-            ScaffoldMessenger.of(
-              context,
-            ).showSnackBar(const SnackBar(content: Text('Apple登录开发中')));
-          },
-        ),
       ],
     );
+  }
+
+  Future<void> _handleBangumiLogin() async {
+    try {
+      // 生成随机state用于防止CSRF攻击
+      final state = DateTime.now().millisecondsSinceEpoch.toString();
+
+      // 启动OAuth授权流程
+      final success = await _bangumiService.startAuthorization(state: state);
+
+      if (!success && mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('无法打开Bangumi授权页面')));
+      }
+
+      // TODO: 需要实现回调处理逻辑
+      // 1. 配置Deep Link接收回调
+      // 2. 从回调URL中提取code
+      // 3. 调用exchangeToken获取access token
+      // 4. 保存token并更新登录状态
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Bangumi登录失败: $e')));
+      }
+    }
   }
 
   Widget _buildSocialButton({

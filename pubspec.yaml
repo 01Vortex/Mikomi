@@ -76,6 +76,9 @@ dependencies:
   
   # 弹幕
   canvas_danmaku: ^0.3.1
+  
+  # URL启动器
+  url_launcher: ^6.3.1
 
 dev_dependencies:
   flutter_test:
