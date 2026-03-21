@@ -79,6 +79,9 @@ dependencies:
   
   # URL启动器
   url_launcher: ^6.3.1
+  
+  # Deep Link处理
+  app_links: ^6.3.2
 
 dev_dependencies:
   flutter_test:

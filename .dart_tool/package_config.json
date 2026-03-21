@@ -2,6 +2,30 @@
   "configVersion": 2,
   "packages": [
     {
+      "name": "app_links",
+      "rootUri": "file:///D:/CodeApp/Data/Android/Flutter_Cache/hosted/pub.flutter-io.cn/app_links-6.4.1",
+      "packageUri": "lib/",
+      "languageVersion": "3.5"
+    },
+    {
+      "name": "app_links_linux",
+      "rootUri": "file:///D:/CodeApp/Data/Android/Flutter_Cache/hosted/pub.flutter-io.cn/app_links_linux-1.0.3",
+      "packageUri": "lib/",
+      "languageVersion": "3.2"
+    },
+    {
+      "name": "app_links_platform_interface",
+      "rootUri": "file:///D:/CodeApp/Data/Android/Flutter_Cache/hosted/pub.flutter-io.cn/app_links_platform_interface-2.0.2",
+      "packageUri": "lib/",
+      "languageVersion": "3.2"
+    },
+    {
+      "name": "app_links_web",
+      "rootUri": "file:///D:/CodeApp/Data/Android/Flutter_Cache/hosted/pub.flutter-io.cn/app_links_web-1.0.4",
+      "packageUri": "lib/",
+      "languageVersion": "3.2"
+    },
+    {
       "name": "archive",
       "rootUri": "file:///D:/CodeApp/Data/Android/Flutter_Cache/hosted/pub.flutter-io.cn/archive-4.0.9",
       "packageUri": "lib/",
@@ -264,6 +288,12 @@
       "rootUri": "file:///D:/CodeApp/Data/Android/Flutter_Cache/hosted/pub.flutter-io.cn/glob-2.1.3",
       "packageUri": "lib/",
       "languageVersion": "3.3"
+    },
+    {
+      "name": "gtk",
+      "rootUri": "file:///D:/CodeApp/Data/Android/Flutter_Cache/hosted/pub.flutter-io.cn/gtk-2.1.0",
+      "packageUri": "lib/",
+      "languageVersion": "3.0"
     },
     {
       "name": "hooks",

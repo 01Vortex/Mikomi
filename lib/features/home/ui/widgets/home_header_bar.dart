@@ -1,12 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:mikomi/config/themes/app_colors.dart';
 import 'package:mikomi/features/search/ui/pages/search_page.dart';
+import 'package:mikomi/core/services/auth_service.dart';
 
 class HomeAppBar extends StatelessWidget {
   const HomeAppBar({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final userInfo = context.select<AuthService, dynamic>(
+      (service) => service.userInfo,
+    );
+
     return Container(
       color: AppColors.surface,
       padding: EdgeInsets.fromLTRB(
@@ -17,11 +23,19 @@ class HomeAppBar extends StatelessWidget {
       ),
       child: Row(
         children: [
-          CircleAvatar(
-            radius: 20,
-            backgroundColor: AppColors.placeholder,
-            child: const Icon(Icons.person, color: AppColors.placeholderIcon),
-          ),
+          userInfo?.avatarUrl.isNotEmpty == true
+              ? CircleAvatar(
+                  radius: 20,
+                  backgroundImage: NetworkImage(userInfo!.avatarUrl),
+                )
+              : CircleAvatar(
+                  radius: 20,
+                  backgroundColor: AppColors.placeholder,
+                  child: const Icon(
+                    Icons.person,
+                    color: AppColors.placeholderIcon,
+                  ),
+                ),
           const SizedBox(width: 12),
           Expanded(
             child: GestureDetector(

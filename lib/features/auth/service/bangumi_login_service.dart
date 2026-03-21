@@ -28,11 +28,7 @@ class BangumiLoginService {
     );
 
     try {
-      final canLaunch = await canLaunchUrl(authUrl);
-      if (canLaunch) {
-        return await launchUrl(authUrl, mode: LaunchMode.externalApplication);
-      }
-      return false;
+      return await launchUrl(authUrl, mode: LaunchMode.externalApplication);
     } catch (e) {
       debugPrint('启动授权失败: $e');
       return false;
@@ -137,6 +133,28 @@ class BangumiLoginService {
       return null;
     }
   }
+
+  /// 获取当前用户信息
+  /// [accessToken] 访问令牌
+  Future<BangumiUser?> getCurrentUser(String accessToken) async {
+    try {
+      final response = await http.get(
+        Uri.parse('https://api.bgm.tv/v0/me'),
+        headers: {'Authorization': 'Bearer $accessToken'},
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        return BangumiUser.fromJson(data);
+      } else {
+        debugPrint('获取用户信息失败: ${response.statusCode} ${response.body}');
+        return null;
+      }
+    } catch (e) {
+      debugPrint('获取用户信息异常: $e');
+      return null;
+    }
+  }
 }
 
 /// Bangumi授权令牌
@@ -210,5 +228,51 @@ class BangumiTokenStatus {
   bool get isExpired {
     final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
     return now >= expires;
+  }
+}
+
+/// Bangumi用户信息
+class BangumiUser {
+  final int id;
+  final String username;
+  final String nickname;
+  final Map<String, String> avatar;
+  final String? sign;
+  final int? userGroup;
+
+  BangumiUser({
+    required this.id,
+    required this.username,
+    required this.nickname,
+    required this.avatar,
+    this.sign,
+    this.userGroup,
+  });
+
+  factory BangumiUser.fromJson(Map<String, dynamic> json) {
+    return BangumiUser(
+      id: json['id'] as int,
+      username: json['username'] as String,
+      nickname: json['nickname'] as String,
+      avatar: Map<String, String>.from(json['avatar'] as Map),
+      sign: json['sign'] as String?,
+      userGroup: json['user_group'] as int?,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'username': username,
+      'nickname': nickname,
+      'avatar': avatar,
+      'sign': sign,
+      'user_group': userGroup,
+    };
+  }
+
+  /// 获取头像URL（优先使用large，其次medium，最后small）
+  String get avatarUrl {
+    return avatar['large'] ?? avatar['medium'] ?? avatar['small'] ?? '';
   }
 }

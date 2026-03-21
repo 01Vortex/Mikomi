@@ -5,6 +5,8 @@ import 'config/routes/app_routes.dart';
 import 'config/themes/app_theme.dart';
 import 'config/localization/app_localizations.dart';
 import 'core/services/locale_service.dart';
+import 'core/services/auth_service.dart';
+import 'core/services/navigation_service.dart';
 import 'core/providers/theme_color_provider.dart';
 import 'core/providers/theme_font_provider.dart';
 import 'core/providers/theme_animation_provider.dart';
@@ -19,6 +21,8 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => ColorProvider()),
         ChangeNotifierProvider(create: (_) => FontProvider()),
         ChangeNotifierProvider(create: (_) => AnimationProvider()),
+        ChangeNotifierProvider(create: (_) => AuthService()..init()),
+        ChangeNotifierProvider(create: (_) => NavigationService()),
       ],
       child: Consumer2<ColorProvider, FontProvider>(
         builder: (context, colorProvider, fontProvider, _) {

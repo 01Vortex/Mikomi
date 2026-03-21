@@ -1,6 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:mikomi/shared/utils/theme_extensions.dart';
 import 'package:mikomi/features/auth/service/bangumi_login_service.dart';
+import 'package:mikomi/core/services/auth_service.dart';
+import 'package:mikomi/core/services/navigation_service.dart';
+import 'package:mikomi/shared/widgets/message_dialog.dart';
+import 'package:app_links/app_links.dart';
+import 'package:provider/provider.dart';
+import 'dart:async';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -15,11 +21,86 @@ class _LoginPageState extends State<LoginPage> {
   final FocusNode _usernameFocus = FocusNode();
   final FocusNode _passwordFocus = FocusNode();
   final BangumiLoginService _bangumiService = BangumiLoginService();
+  late AppLinks _appLinks;
+  StreamSubscription<Uri>? _linkSubscription;
   bool _obscurePassword = true;
   bool _isLoading = false;
 
   @override
+  void initState() {
+    super.initState();
+    _initDeepLinks();
+  }
+
+  void _initDeepLinks() {
+    _appLinks = AppLinks();
+
+    // 监听Deep Link
+    _linkSubscription = _appLinks.uriLinkStream.listen((uri) {
+      _handleDeepLink(uri);
+    });
+  }
+
+  Future<void> _handleDeepLink(Uri uri) async {
+    debugPrint('收到Deep Link: $uri');
+
+    // 检查是否是Bangumi OAuth回调
+    if (uri.scheme == 'mikomi' &&
+        uri.host == 'auth' &&
+        uri.path == '/bangumi') {
+      final code = uri.queryParameters['code'];
+      final state = uri.queryParameters['state'];
+
+      if (code != null) {
+        await _exchangeBangumiToken(code, state);
+      }
+    }
+  }
+
+  Future<void> _exchangeBangumiToken(String code, String? state) async {
+    try {
+      setState(() => _isLoading = true);
+
+      final token = await _bangumiService.exchangeToken(code, state: state);
+
+      if (token != null && mounted) {
+        // 保存登录信息
+        final authService = context.read<AuthService>();
+        await authService.saveLoginInfo(token);
+
+        debugPrint('登录成功! User ID: ${token.userId}');
+
+        if (mounted) {
+          MessageDialog.success(context, '登录成功! 用户ID: ${token.userId}');
+
+          // 切换到个人页tab
+          context.read<NavigationService>().switchToMyPage();
+
+          // 返回到主页
+          Navigator.of(context).popUntil((route) => route.isFirst);
+        }
+      } else if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('登录失败，请重试')));
+      }
+    } catch (e) {
+      debugPrint('换取Token失败: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('登录失败: $e')));
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  @override
   void dispose() {
+    _linkSubscription?.cancel();
     _usernameController.dispose();
     _passwordController.dispose();
     _usernameFocus.dispose();

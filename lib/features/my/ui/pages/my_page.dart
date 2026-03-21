@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:mikomi/features/settings/settings_page.dart';
 import 'package:mikomi/features/settings/theme_settings_page.dart';
 import 'package:mikomi/features/my/ui/pages/history_play_page.dart';
 import 'package:mikomi/core/services/watch_history_service.dart';
 import 'package:mikomi/core/services/history_notifier.dart';
+import 'package:mikomi/core/services/auth_service.dart';
 import 'package:mikomi/core/models/watch_history.dart';
 import 'package:mikomi/shared/utils/theme_extensions.dart';
 import 'package:mikomi/features/my/ui/widgets/profile_action_tabs.dart';
@@ -24,7 +26,6 @@ class _MyPageState extends State<MyPage> {
   bool _isLoading = true;
   bool _isDescending = true;
   int _selectedTab = 0;
-  bool _isLoggedIn = false; // 登录状态
 
   @override
   void initState() {
@@ -79,14 +80,17 @@ class _MyPageState extends State<MyPage> {
 
   @override
   Widget build(BuildContext context) {
+    final authService = context.watch<AuthService>();
+    final isLoggedIn = authService.isLoggedIn;
+
     return Scaffold(
-      backgroundColor: context.colors.background,
+      backgroundColor: context.colors.surface,
       body: Stack(
         children: [
           CustomScrollView(
             slivers: [
               // 背景区和个人信息区（仅登录时显示）
-              if (_isLoggedIn)
+              if (isLoggedIn)
                 SliverToBoxAdapter(
                   child: Stack(
                     clipBehavior: Clip.none,
@@ -126,16 +130,26 @@ class _MyPageState extends State<MyPage> {
                                   ),
                                 ],
                               ),
-                              child: CircleAvatar(
-                                radius: 40,
-                                backgroundColor:
-                                    context.colors.primaryContainer,
-                                child: Icon(
-                                  Icons.person,
-                                  size: 40,
-                                  color: context.colors.onPrimaryContainer,
-                                ),
-                              ),
+                              child:
+                                  authService.userInfo?.avatarUrl.isNotEmpty ==
+                                      true
+                                  ? CircleAvatar(
+                                      radius: 40,
+                                      backgroundImage: NetworkImage(
+                                        authService.userInfo!.avatarUrl,
+                                      ),
+                                    )
+                                  : CircleAvatar(
+                                      radius: 40,
+                                      backgroundColor:
+                                          context.colors.primaryContainer,
+                                      child: Icon(
+                                        Icons.person,
+                                        size: 40,
+                                        color:
+                                            context.colors.onPrimaryContainer,
+                                      ),
+                                    ),
                             ),
                             const SizedBox(width: 16),
                             // 昵称和UID
@@ -145,7 +159,7 @@ class _MyPageState extends State<MyPage> {
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   Text(
-                                    '昵称',
+                                    authService.userInfo?.nickname ?? '用户',
                                     style: TextStyle(
                                       fontSize: 20,
                                       fontWeight: FontWeight.bold,
@@ -155,7 +169,7 @@ class _MyPageState extends State<MyPage> {
                                   ),
                                   const SizedBox(height: 6),
                                   Text(
-                                    'uid:88888888',
+                                    'uid:${authService.userId ?? ''}',
                                     style: TextStyle(
                                       fontSize: 14,
                                       color: context.colors.textSecondary,
@@ -172,7 +186,7 @@ class _MyPageState extends State<MyPage> {
                   ),
                 ),
               // 未登录时显示登录提示
-              if (!_isLoggedIn)
+              if (!isLoggedIn)
                 SliverToBoxAdapter(
                   child: Padding(
                     padding: EdgeInsets.only(
@@ -182,7 +196,7 @@ class _MyPageState extends State<MyPage> {
                   ),
                 ),
               // 简介和性别标签（在背景外，添加卡片效果）
-              if (_isLoggedIn)
+              if (isLoggedIn)
                 SliverToBoxAdapter(
                   child: Padding(
                     padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
@@ -190,55 +204,11 @@ class _MyPageState extends State<MyPage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          '这是简介',
+                          authService.userInfo?.sign ?? '这是简介',
                           style: TextStyle(
                             fontSize: 14,
                             color: context.colors.onSurface,
                             height: 1.5,
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 6,
-                          ),
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: [
-                                context.colors.surfaceVariant,
-                                context.colors.surfaceVariant.withValues(
-                                  alpha: 0.7,
-                                ),
-                              ],
-                            ),
-                            borderRadius: BorderRadius.circular(20),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.05),
-                                blurRadius: 4,
-                                offset: const Offset(0, 1),
-                              ),
-                            ],
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                Icons.person_outline,
-                                size: 14,
-                                color: context.colors.onSurfaceVariant,
-                              ),
-                              const SizedBox(width: 6),
-                              Text(
-                                '男',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: context.colors.onSurfaceVariant,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ],
                           ),
                         ),
                       ],
