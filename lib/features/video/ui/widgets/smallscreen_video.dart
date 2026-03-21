@@ -7,12 +7,12 @@ import 'package:mikomi/features/video/services/danmaku_manager_service.dart';
 import 'package:mikomi/features/video/ui/pages/fullscreen_video_page.dart';
 import 'package:mikomi/core/models/episode.dart';
 
-class MediaKitPlayerWidget extends StatefulWidget {
+class SmallscreenVideo extends StatefulWidget {
   final String videoUrl;
   final String title;
   final int currentEpisode;
   final int totalEpisodes;
-  final VideoPlayerController playerController;
+  final VideoPlaybackService playerController;
   final String? episodeTitle;
   final VoidCallback? onBack;
   final VoidCallback? onOpenMenu;
@@ -30,7 +30,7 @@ class MediaKitPlayerWidget extends StatefulWidget {
   final String? animeTitle;
   final int? bangumiId;
 
-  const MediaKitPlayerWidget({
+  const SmallscreenVideo({
     super.key,
     required this.videoUrl,
     required this.title,
@@ -56,10 +56,10 @@ class MediaKitPlayerWidget extends StatefulWidget {
   });
 
   @override
-  State<MediaKitPlayerWidget> createState() => _MediaKitPlayerWidgetState();
+  State<SmallscreenVideo> createState() => _SmallscreenVideoState();
 }
 
-class _MediaKitPlayerWidgetState extends State<MediaKitPlayerWidget> {
+class _SmallscreenVideoState extends State<SmallscreenVideo> {
   bool _isLoading = true;
   bool _isBuffering = false;
   bool _showControls = true;
@@ -81,7 +81,7 @@ class _MediaKitPlayerWidgetState extends State<MediaKitPlayerWidget> {
   Timer? _doubleTapTimer;
 
   // 弹幕控制
-  final DanmakuPlayerController _danmakuController = DanmakuPlayerController();
+  final DanmakuManagerService _danmakuController = DanmakuManagerService();
   int _lastDanmakuSecond = -1;
   DanmakuController? _canvasController;
 
@@ -94,7 +94,7 @@ class _MediaKitPlayerWidgetState extends State<MediaKitPlayerWidget> {
   }
 
   @override
-  void didUpdateWidget(MediaKitPlayerWidget oldWidget) {
+  void didUpdateWidget(SmallscreenVideo oldWidget) {
     super.didUpdateWidget(oldWidget);
 
     // 监听弹幕开关变化

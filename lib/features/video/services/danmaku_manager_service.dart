@@ -2,7 +2,7 @@ import 'package:canvas_danmaku/canvas_danmaku.dart';
 import 'package:mikomi/core/models/danmaku.dart';
 import 'package:mikomi/core/services/danmaku_service.dart';
 
-class DanmakuPlayerController {
+class DanmakuManagerService {
   final DanmakuService _danmakuService = DanmakuService();
   DanmakuController? canvasController;
 

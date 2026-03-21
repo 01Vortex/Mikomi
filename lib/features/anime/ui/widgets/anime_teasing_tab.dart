@@ -7,16 +7,16 @@ import 'package:mikomi/features/anime/data/bangumi_teasing.dart';
 import 'package:mikomi/shared/widgets/comment_card.dart';
 import 'package:mikomi/shared/widgets/skeleton.dart';
 
-class AnimeTucaoTab extends StatefulWidget {
+class AnimeTeasingTab extends StatefulWidget {
   final BangumiItem bangumiItem;
 
-  const AnimeTucaoTab({super.key, required this.bangumiItem});
+  const AnimeTeasingTab({super.key, required this.bangumiItem});
 
   @override
-  State<AnimeTucaoTab> createState() => _AnimeTucaoTabState();
+  State<AnimeTeasingTab> createState() => _AnimeTeasingTabState();
 }
 
-class _AnimeTucaoTabState extends State<AnimeTucaoTab> {
+class _AnimeTeasingTabState extends State<AnimeTeasingTab> {
   late final BangumiTeasing _repository;
   final ScrollController _scrollController = ScrollController();
   List<CommentItem> _comments = [];

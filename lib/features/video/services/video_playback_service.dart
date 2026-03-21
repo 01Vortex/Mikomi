@@ -3,7 +3,7 @@ import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 import 'package:mikomi/features/settings/video_settings/service/play_settings_service.dart';
 
-class VideoPlayerController {
+class VideoPlaybackService {
   Player? _player;
   VideoController? _videoController;
   bool _isInitialized = false;

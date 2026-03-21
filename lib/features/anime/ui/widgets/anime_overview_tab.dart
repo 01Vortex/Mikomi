@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:mikomi/config/themes/app_colors.dart';
 import 'package:mikomi/core/models/bangumi_item.dart';
 import 'package:mikomi/shared/widgets/skeleton.dart';
+import 'package:mikomi/shared/utils/theme_extensions.dart';
 
 class AnimeOverviewTab extends StatefulWidget {
   final BangumiItem bangumiItem;
@@ -198,9 +199,9 @@ class _AnimeOverviewTabState extends State<AnimeOverviewTab> {
                     _isExpanded = !_isExpanded;
                   });
                 },
-                child: const Text(
+                child: Text(
                   '加载更多',
-                  style: TextStyle(fontSize: 14, color: AppColors.primary),
+                  style: TextStyle(fontSize: 14, color: context.colors.primary),
                 ),
               ),
             ],

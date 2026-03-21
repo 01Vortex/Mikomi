@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 
 class AppColors {
   // 主题色
-  static const Color primary = Colors.deepPurple;
-  static const Color secondary = Colors.purpleAccent;
+  static const Color primary = Colors.blue;
+  static const Color secondary = Colors.lightBlueAccent;
 
   // 状态色
   static const Color error = Colors.red;

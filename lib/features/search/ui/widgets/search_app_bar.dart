@@ -46,26 +46,20 @@ class _SearchAppBarState extends State<SearchAppBar> {
     return Container(
       color: AppColors.surface,
       padding: EdgeInsets.fromLTRB(
-        16,
+        4,
         MediaQuery.of(context).padding.top + 8,
-        16,
+        4,
         12,
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          SizedBox(
-            width: 40,
-            height: 40,
-            child: IconButton(
-              icon: const Icon(Icons.arrow_back),
-              onPressed: () {
-                Navigator.pop(context);
-              },
-              padding: EdgeInsets.zero,
-            ),
+          IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () {
+              Navigator.pop(context);
+            },
           ),
-          const SizedBox(width: 12),
           Expanded(
             child: Container(
               height: 40,
@@ -74,6 +68,7 @@ class _SearchAppBarState extends State<SearchAppBar> {
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   const Padding(
                     padding: EdgeInsets.only(left: 16, right: 8),
@@ -94,7 +89,8 @@ class _SearchAppBarState extends State<SearchAppBar> {
                           fontSize: 14,
                         ),
                         border: InputBorder.none,
-                        contentPadding: const EdgeInsets.only(bottom: 12),
+                        contentPadding: EdgeInsets.zero,
+                        isDense: true,
                       ),
                       onChanged: widget.onChanged,
                       onSubmitted: widget.onSubmitted,
@@ -113,18 +109,9 @@ class _SearchAppBarState extends State<SearchAppBar> {
               ),
             ),
           ),
-          const SizedBox(width: 8),
-          SizedBox(
-            height: 40,
-            child: TextButton(
-              onPressed: widget.onSearch,
-              style: TextButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                minimumSize: const Size(48, 40),
-                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              ),
-              child: Text(AppLocalizations.of(context).search),
-            ),
+          TextButton(
+            onPressed: widget.onSearch,
+            child: Text(AppLocalizations.of(context).search),
           ),
         ],
       ),

@@ -4,23 +4,23 @@ import 'package:mikomi/core/services/bangumi_detail_service.dart';
 import 'package:mikomi/features/anime/ui/widgets/anime_header.dart';
 import 'package:mikomi/features/anime/ui/widgets/anime_overview_tab.dart';
 import 'package:mikomi/features/anime/ui/widgets/anime_detail_tab.dart';
-import 'package:mikomi/features/anime/ui/widgets/anime_tucao_tab.dart';
+import 'package:mikomi/features/anime/ui/widgets/anime_teasing_tab.dart';
 import 'package:mikomi/features/anime/selector/collection_status_selector.dart';
 import 'package:mikomi/features/anime/ui/widgets/play_button.dart';
 import 'package:mikomi/features/anime/selector/video_source_selector.dart';
 import 'package:mikomi/features/settings/video_settings/service/plugin_manager_service.dart';
 import 'package:mikomi/shared/utils/theme_extensions.dart';
 
-class BangumiDetailPage extends StatefulWidget {
+class AnimePage extends StatefulWidget {
   final BangumiItem bangumiItem;
 
-  const BangumiDetailPage({super.key, required this.bangumiItem});
+  const AnimePage({super.key, required this.bangumiItem});
 
   @override
-  State<BangumiDetailPage> createState() => _BangumiDetailPageState();
+  State<AnimePage> createState() => _AnimePageState();
 }
 
-class _BangumiDetailPageState extends State<BangumiDetailPage>
+class _AnimePageState extends State<AnimePage>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   final ScrollController _scrollController = ScrollController();
@@ -29,7 +29,6 @@ class _BangumiDetailPageState extends State<BangumiDetailPage>
 
   bool _showTitle = false;
   late BangumiItem _bangumiItem;
-  bool _commentsLoaded = false;
   CollectionStatus _collectionStatus = CollectionStatus.notCollected;
 
   // 视频源列表（从插件动态加载）
@@ -41,7 +40,6 @@ class _BangumiDetailPageState extends State<BangumiDetailPage>
     _bangumiItem = widget.bangumiItem;
     _tabController = TabController(length: 4, vsync: this);
     _scrollController.addListener(_onScroll);
-    _tabController.addListener(_onTabChanged);
     _loadVideoSources();
     _loadDetailInfo();
   }
@@ -53,15 +51,6 @@ class _BangumiDetailPageState extends State<BangumiDetailPage>
         _videoSources = _pluginManager.plugins
             .map((plugin) => VideoSource(name: plugin.name))
             .toList();
-      });
-    }
-  }
-
-  void _onTabChanged() {
-    // 当切换到吐槽tab时标记为已加载
-    if (_tabController.index == 2) {
-      setState(() {
-        _commentsLoaded = true;
       });
     }
   }
@@ -163,9 +152,7 @@ class _BangumiDetailPageState extends State<BangumiDetailPage>
           children: [
             AnimeOverviewTab(bangumiItem: _bangumiItem),
             AnimeDetailTab(bangumiItem: _bangumiItem),
-            _commentsLoaded
-                ? AnimeTucaoTab(bangumiItem: _bangumiItem)
-                : const Center(child: Text('切换到此标签页加载评论')),
+            AnimeTeasingTab(bangumiItem: _bangumiItem),
             const Center(
               child: Padding(
                 padding: EdgeInsets.all(32),

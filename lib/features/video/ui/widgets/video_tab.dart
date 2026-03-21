@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:mikomi/shared/utils/theme_extensions.dart';
 
-class VideoTabBar extends StatelessWidget {
+class VideoTab extends StatelessWidget {
   final TabController tabController;
   final bool isDanmakuEnabled;
   final bool isDanmakuInputExpanded;
@@ -11,7 +11,7 @@ class VideoTabBar extends StatelessWidget {
   final VoidCallback onVideoSourceTap;
   final String? currentPluginName;
 
-  const VideoTabBar({
+  const VideoTab({
     super.key,
     required this.tabController,
     required this.isDanmakuEnabled,

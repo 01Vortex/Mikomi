@@ -35,7 +35,7 @@ class AppRoutes {
       case bangumiDetail:
         final bangumiItem = settings.arguments as BangumiItem;
         return MaterialPageRoute(
-          builder: (context) => BangumiDetailPage(bangumiItem: bangumiItem),
+          builder: (context) => AnimePage(bangumiItem: bangumiItem),
         );
       case pluginEditor:
         final plugin = settings.arguments as VideoPlugin?;

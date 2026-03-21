@@ -177,11 +177,14 @@ class _SearchPageState extends State<SearchPage> {
       return SingleChildScrollView(
         child: Column(
           children: [
-            SearchHistoryView(
-              history: _searchHistory,
-              onTap: _handleHistoryTap,
-              onClear: _clearHistory,
-            ),
+            if (_searchHistory.isNotEmpty)
+              SearchHistoryView(
+                history: _searchHistory,
+                onTap: _handleHistoryTap,
+                onClear: _clearHistory,
+              )
+            else
+              const SizedBox(height: 16),
             PopularityRankingView(
               rankings: _popularityRankings,
               onTap: _handleRankingTap,

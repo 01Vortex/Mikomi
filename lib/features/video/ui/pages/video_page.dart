@@ -62,7 +62,7 @@ class _VideoPageState extends State<VideoPage>
   final VideoSourceRepository _videoSourceRepo = VideoSourceRepository();
   final WatchHistoryService _historyService = WatchHistoryService();
 
-  late final VideoPlayerController _playerController;
+  late final VideoPlaybackService _playerController;
   Future<String>? _currentVideoUrlFuture;
   bool _showTimeoutHint = false;
   Timer? _timeoutTimer;
@@ -88,7 +88,7 @@ class _VideoPageState extends State<VideoPage>
     );
 
     // 初始化播放器
-    _playerController = VideoPlayerController();
+    _playerController = VideoPlaybackService();
 
     // 立即开始解析视频
     _currentVideoUrlFuture = _getCurrentVideoUrl();
@@ -550,7 +550,7 @@ class _VideoPageState extends State<VideoPage>
                           child: Stack(
                             children: [
                               if (videoUrl.isNotEmpty && !isLoading)
-                                MediaKitPlayerWidget(
+                                SmallscreenVideo(
                                   videoUrl: videoUrl,
                                   title: widget.title,
                                   currentEpisode: _currentEpisode,
@@ -759,7 +759,7 @@ class _VideoPageState extends State<VideoPage>
                             ),
                             child: Column(
                               children: [
-                                VideoTabBar(
+                                VideoTab(
                                   tabController: _tabController,
                                   isDanmakuEnabled: _isDanmakuEnabled,
                                   isDanmakuInputExpanded:
@@ -789,7 +789,7 @@ class _VideoPageState extends State<VideoPage>
                                         : null,
                                     children: [
                                       _buildEpisodeTab(),
-                                      const CommentTabWidget(),
+                                      const CommentTabWidget.VideoComment(),
                                     ],
                                   ),
                                 ),
@@ -997,7 +997,7 @@ class _VideoPageState extends State<VideoPage>
             itemBuilder: (context, index) {
               final episode = _sortedEpisodes[index];
               final isCurrent = episode.number == _currentEpisode;
-              return EpisodeCard(
+              return SmallscreenEpisode(
                 episode: episode,
                 isCurrent: isCurrent,
                 onTap: () async {

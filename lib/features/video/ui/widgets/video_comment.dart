@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:mikomi/shared/utils/theme_extensions.dart';
 
 class CommentTabWidget extends StatelessWidget {
-  const CommentTabWidget({super.key});
+  const CommentTabWidget.VideoComment({super.key});
 
   @override
   Widget build(BuildContext context) {

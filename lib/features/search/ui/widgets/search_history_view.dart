@@ -67,21 +67,7 @@ class _SearchHistoryViewState extends State<SearchHistoryView> {
             ],
           ),
         ),
-        if (widget.history.isEmpty)
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 32),
-            child: Center(
-              child: Text(
-                AppLocalizations.of(context).noSearchHistory,
-                style: const TextStyle(
-                  fontSize: 14,
-                  color: AppColors.textSecondary,
-                ),
-              ),
-            ),
-          )
-        else
-          _buildHistoryTags(),
+        _buildHistoryTags(),
         const SizedBox(height: 24),
       ],
     );

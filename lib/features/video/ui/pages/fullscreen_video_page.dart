@@ -7,7 +7,7 @@ import 'package:mikomi/core/models/episode.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 
 class FullscreenVideoPage extends StatefulWidget {
-  final VideoPlayerController playerController;
+  final VideoPlaybackService playerController;
   final String title;
   final int currentEpisode;
   final String? episodeTitle;

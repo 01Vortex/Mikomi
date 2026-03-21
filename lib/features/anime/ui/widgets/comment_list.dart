@@ -4,7 +4,7 @@ import 'package:mikomi/shared/widgets/cached_image.dart';
 import 'package:mikomi/shared/widgets/skeleton.dart';
 import 'package:intl/intl.dart';
 
-class CommentListWidget<T> extends StatefulWidget {
+class CommentList<T> extends StatefulWidget {
   final List<T> comments;
   final bool isLoading;
   final VoidCallback onRetry;
@@ -14,7 +14,7 @@ class CommentListWidget<T> extends StatefulWidget {
   final int Function(T) getCreatedAt;
   final List<T> Function(T) getReplies;
 
-  const CommentListWidget({
+  const CommentList({
     super.key,
     required this.comments,
     required this.isLoading,
@@ -27,10 +27,10 @@ class CommentListWidget<T> extends StatefulWidget {
   });
 
   @override
-  State<CommentListWidget<T>> createState() => _CommentListWidgetState<T>();
+  State<CommentList<T>> createState() => _CommentListState<T>();
 }
 
-class _CommentListWidgetState<T> extends State<CommentListWidget<T>> {
+class _CommentListState<T> extends State<CommentList<T>> {
   final Set<int> _expandedComments = {};
 
   String _formatDate(int timestamp) {

@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:mikomi/core/models/episode.dart';
 import 'package:mikomi/shared/utils/theme_extensions.dart';
 
-class EpisodeCard extends StatelessWidget {
+class SmallscreenEpisode extends StatelessWidget {
   final Episode episode;
   final bool isCurrent;
   final VoidCallback onTap;
 
-  const EpisodeCard({
+  const SmallscreenEpisode({
     super.key,
     required this.episode,
     required this.isCurrent,

@@ -11,17 +11,17 @@ import 'package:mikomi/features/anime/ui/widgets/anime_detail_person_info.dart';
 
 enum InfoType { character, person }
 
-class AnimeMoreInfo extends StatefulWidget {
+class AnimeDetailPopover extends StatefulWidget {
   final int id;
   final InfoType type;
 
-  const AnimeMoreInfo({super.key, required this.id, required this.type});
+  const AnimeDetailPopover({super.key, required this.id, required this.type});
 
   @override
-  State<AnimeMoreInfo> createState() => _AnimeMoreInfoState();
+  State<AnimeDetailPopover> createState() => _AnimeDetailPopoverState();
 }
 
-class _AnimeMoreInfoState extends State<AnimeMoreInfo>
+class _AnimeDetailPopoverState extends State<AnimeDetailPopover>
     with SingleTickerProviderStateMixin {
   late final BangumiDetail _repository;
   late final TabController _tabController;
@@ -129,7 +129,7 @@ class _AnimeMoreInfoState extends State<AnimeMoreInfo>
 
   Widget _buildInfo() {
     if (widget.type == InfoType.character) {
-      return PersonInfoWidget(
+      return AnimeDetailPersonInfo(
         imageUrl: _character?.image ?? '',
         name: _character?.name ?? '',
         nameCN: _character?.nameCN ?? '',
@@ -140,7 +140,7 @@ class _AnimeMoreInfoState extends State<AnimeMoreInfo>
         onRetry: _loadInfo,
       );
     } else {
-      return PersonInfoWidget(
+      return AnimeDetailPersonInfo(
         imageUrl: _person?.image ?? '',
         name: _person?.name ?? '',
         nameCN: _person?.nameCN ?? '',
@@ -155,7 +155,7 @@ class _AnimeMoreInfoState extends State<AnimeMoreInfo>
 
   Widget _buildComments() {
     if (widget.type == InfoType.character) {
-      return CommentListWidget<CharacterComment>(
+      return CommentList<CharacterComment>(
         comments: _comments.cast<CharacterComment>(),
         isLoading: _isLoadingComments,
         onRetry: _loadComments,
@@ -166,7 +166,7 @@ class _AnimeMoreInfoState extends State<AnimeMoreInfo>
         getReplies: (comment) => comment.replies,
       );
     } else {
-      return CommentListWidget<PersonComment>(
+      return CommentList<PersonComment>(
         comments: _comments.cast<PersonComment>(),
         isLoading: _isLoadingComments,
         onRetry: _loadComments,

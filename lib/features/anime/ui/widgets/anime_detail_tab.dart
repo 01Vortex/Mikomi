@@ -435,7 +435,7 @@ void _showCharacterDetail(BuildContext context, int characterId) {
     backgroundColor: Colors.transparent,
     builder: (context) => SizedBox(
       height: MediaQuery.of(context).size.height * 0.75,
-      child: AnimeMoreInfo(id: characterId, type: InfoType.character),
+      child: AnimeDetailPopover(id: characterId, type: InfoType.character),
     ),
   );
 }
@@ -447,7 +447,7 @@ void _showPersonDetail(BuildContext context, int personId) {
     backgroundColor: Colors.transparent,
     builder: (context) => SizedBox(
       height: MediaQuery.of(context).size.height * 0.75,
-      child: AnimeMoreInfo(id: personId, type: InfoType.person),
+      child: AnimeDetailPopover(id: personId, type: InfoType.person),
     ),
   );
 }

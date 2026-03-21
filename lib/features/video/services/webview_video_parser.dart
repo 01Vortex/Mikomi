@@ -4,7 +4,7 @@ import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 
 /// 全能视频地址解析服务
 /// 支持多种视频源格式和解析策略
-class VideoParserService {
+class WebviewVideoParser {
   HeadlessInAppWebView? _headlessWebView;
   InAppWebViewController? _webviewController;
   bool _hasInjectedScripts = false;
