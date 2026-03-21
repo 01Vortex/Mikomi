@@ -52,6 +52,7 @@ class RecommendSection extends StatelessWidget {
                 return AnimeGridCard(
                   title: item.displayName,
                   imageUrl: item.coverUrl,
+                  heroTag: 'bangumi_${item.id}',
                   onTap: () {
                     Navigator.pushNamed(
                       context,

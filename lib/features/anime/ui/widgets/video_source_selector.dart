@@ -189,6 +189,18 @@ class _VideoSourceSelectorState extends State<VideoSourceSelector>
                     color: Theme.of(context).textTheme.bodyLarge?.color,
                   ),
                 ),
+                const Spacer(),
+                GestureDetector(
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    Navigator.of(context).pushNamed('/plugin_manage');
+                  },
+                  child: Icon(
+                    Icons.settings_outlined,
+                    size: 20,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                ),
               ],
             ),
           ),

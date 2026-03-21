@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mikomi/config/themes/app_colors.dart';
 import 'package:mikomi/core/models/bangumi_item.dart';
+import 'package:mikomi/shared/widgets/skeleton.dart';
 
 class AnimeOverviewTab extends StatefulWidget {
   final BangumiItem bangumiItem;
@@ -25,6 +26,11 @@ class _AnimeOverviewTabState extends State<AnimeOverviewTab> {
         ? widget.bangumiItem.tags
         : widget.bangumiItem.tags.take(_maxVisibleTags).toList();
 
+    // 判断是否正在加载
+    final isLoading =
+        widget.bangumiItem.summary.isEmpty &&
+        widget.bangumiItem.ratingCount == 0;
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -37,72 +43,11 @@ class _AnimeOverviewTabState extends State<AnimeOverviewTab> {
           ),
           const SizedBox(height: 12),
           // 简介内容
-          LayoutBuilder(
-            builder: (context, constraints) {
-              final textSpan = TextSpan(
-                text: widget.bangumiItem.summary.isEmpty
-                    ? '暂无简介'
-                    : widget.bangumiItem.summary,
-                style: const TextStyle(
-                  fontSize: 14,
-                  height: 1.6,
-                  color: AppColors.textSecondary,
-                ),
-              );
-
-              final textPainter = TextPainter(
-                text: textSpan,
-                maxLines: _maxLines,
-                textDirection: TextDirection.ltr,
-              )..layout(maxWidth: constraints.maxWidth);
-
-              WidgetsBinding.instance.addPostFrameCallback((_) {
-                if (mounted &&
-                    textPainter.didExceedMaxLines != _showExpandButton) {
-                  setState(() {
-                    _showExpandButton = textPainter.didExceedMaxLines;
-                  });
-                }
-              });
-
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    widget.bangumiItem.summary.isEmpty
-                        ? '暂无简介'
-                        : widget.bangumiItem.summary,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      height: 1.6,
-                      color: AppColors.textSecondary,
-                    ),
-                    maxLines: _isExpanded ? null : _maxLines,
-                    overflow: _isExpanded ? null : TextOverflow.ellipsis,
-                  ),
-                  if (_showExpandButton) ...[
-                    const SizedBox(height: 8),
-                    GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          _isExpanded = !_isExpanded;
-                        });
-                      },
-                      child: Text(
-                        _isExpanded ? '收起' : '加载更多',
-                        style: const TextStyle(
-                          fontSize: 14,
-                          color: AppColors.primary,
-                        ),
-                      ),
-                    ),
-                  ],
-                ],
-              );
-            },
-          ),
+          if (isLoading) _buildSummarySkeleton() else _buildSummaryContent(),
           // 标签
-          if (widget.bangumiItem.tags.isNotEmpty) ...[
+          if (isLoading)
+            _buildTagsSkeleton()
+          else if (widget.bangumiItem.tags.isNotEmpty) ...[
             const SizedBox(height: 24),
             const Text(
               '标签',
@@ -155,6 +100,113 @@ class _AnimeOverviewTabState extends State<AnimeOverviewTab> {
           ],
         ],
       ),
+    );
+  }
+
+  Widget _buildSummarySkeleton() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SkeletonText(width: double.infinity, height: 14),
+        const SizedBox(height: 8),
+        const SkeletonText(width: double.infinity, height: 14),
+        const SizedBox(height: 8),
+        const SkeletonText(width: double.infinity, height: 14),
+        const SizedBox(height: 8),
+        SkeletonText(
+          width: MediaQuery.of(context).size.width * 0.6,
+          height: 14,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTagsSkeleton() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: 24),
+        const Text(
+          '标签',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 12),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: List.generate(
+            6,
+            (index) => SkeletonLoader(
+              width: 80 + (index % 3) * 20,
+              height: 32,
+              borderRadius: BorderRadius.circular(20),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSummaryContent() {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final textSpan = TextSpan(
+          text: widget.bangumiItem.summary.isEmpty
+              ? '暂无简介'
+              : widget.bangumiItem.summary,
+          style: const TextStyle(
+            fontSize: 14,
+            height: 1.6,
+            color: AppColors.textSecondary,
+          ),
+        );
+
+        final textPainter = TextPainter(
+          text: textSpan,
+          maxLines: _maxLines,
+          textDirection: TextDirection.ltr,
+        )..layout(maxWidth: constraints.maxWidth);
+
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted && textPainter.didExceedMaxLines != _showExpandButton) {
+            setState(() {
+              _showExpandButton = textPainter.didExceedMaxLines;
+            });
+          }
+        });
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              widget.bangumiItem.summary.isEmpty
+                  ? '暂无简介'
+                  : widget.bangumiItem.summary,
+              style: const TextStyle(
+                fontSize: 14,
+                height: 1.6,
+                color: AppColors.textSecondary,
+              ),
+              maxLines: _isExpanded ? null : _maxLines,
+              overflow: _isExpanded ? null : TextOverflow.ellipsis,
+            ),
+            if (_showExpandButton) ...[
+              const SizedBox(height: 8),
+              GestureDetector(
+                onTap: () {
+                  setState(() {
+                    _isExpanded = !_isExpanded;
+                  });
+                },
+                child: const Text(
+                  '加载更多',
+                  style: TextStyle(fontSize: 14, color: AppColors.primary),
+                ),
+              ),
+            ],
+          ],
+        );
+      },
     );
   }
 

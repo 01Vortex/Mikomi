@@ -5,6 +5,7 @@ import 'package:mikomi/config/routes/app_routes.dart';
 import 'package:mikomi/shared/utils/theme_extensions.dart';
 import 'package:mikomi/shared/widgets/cached_image.dart';
 import 'package:mikomi/shared/widgets/scrolling_text.dart';
+import 'package:mikomi/core/providers/animation_provider.dart';
 
 class SchedulePage extends StatefulWidget {
   const SchedulePage({super.key});
@@ -194,11 +195,17 @@ class _SchedulePageState extends State<SchedulePage>
             children: [
               ClipRRect(
                 borderRadius: BorderRadius.circular(8),
-                child: CachedImage(
-                  imageUrl: bangumiItem.coverUrl,
-                  width: imageWidth,
-                  height: cardHeight,
-                  fit: BoxFit.cover,
+                child: Hero(
+                  tag: 'bangumi_${bangumiItem.id}',
+                  transitionOnUserGestures: true,
+                  flightShuttleBuilder:
+                      AnimationProvider.buildHeroFlightShuttle,
+                  child: CachedImage(
+                    imageUrl: bangumiItem.coverUrl,
+                    width: imageWidth,
+                    height: cardHeight,
+                    fit: BoxFit.cover,
+                  ),
                 ),
               ),
               Expanded(

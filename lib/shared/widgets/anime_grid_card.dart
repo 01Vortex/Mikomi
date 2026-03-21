@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:mikomi/shared/widgets/scrolling_text.dart';
 import 'package:mikomi/shared/widgets/cached_image.dart';
+import 'package:mikomi/core/providers/animation_provider.dart';
 
 class AnimeGridCard extends StatelessWidget {
   final String title;
   final String? subtitle;
   final String? imageUrl;
   final VoidCallback? onTap;
+  final String? heroTag;
 
   const AnimeGridCard({
     super.key,
@@ -14,6 +16,7 @@ class AnimeGridCard extends StatelessWidget {
     this.subtitle,
     this.imageUrl,
     this.onTap,
+    this.heroTag,
   });
 
   @override
@@ -27,11 +30,23 @@ class AnimeGridCard extends StatelessWidget {
           Expanded(
             child: ClipRRect(
               borderRadius: BorderRadius.circular(8),
-              child: CachedImage(
-                imageUrl: imageUrl ?? '',
-                width: double.infinity,
-                fit: BoxFit.cover,
-              ),
+              child: heroTag != null
+                  ? Hero(
+                      tag: heroTag!,
+                      transitionOnUserGestures: true,
+                      flightShuttleBuilder:
+                          AnimationProvider.buildHeroFlightShuttle,
+                      child: CachedImage(
+                        imageUrl: imageUrl ?? '',
+                        width: double.infinity,
+                        fit: BoxFit.cover,
+                      ),
+                    )
+                  : CachedImage(
+                      imageUrl: imageUrl ?? '',
+                      width: double.infinity,
+                      fit: BoxFit.cover,
+                    ),
             ),
           ),
           const SizedBox(height: 6),

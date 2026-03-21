@@ -2,6 +2,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:mikomi/core/models/bangumi_item.dart';
 import 'package:mikomi/shared/widgets/cached_image.dart';
+import 'package:mikomi/core/providers/animation_provider.dart';
 
 class AnimeHeader extends StatelessWidget {
   final BangumiItem bangumiItem;
@@ -67,6 +68,9 @@ class AnimeHeader extends StatelessWidget {
                       Expanded(
                         child: Hero(
                           tag: 'bangumi_${bangumiItem.id}',
+                          transitionOnUserGestures: true,
+                          flightShuttleBuilder:
+                              AnimationProvider.buildHeroFlightShuttle,
                           child: Container(
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(12),
@@ -93,7 +97,7 @@ class AnimeHeader extends StatelessWidget {
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisAlignment: MainAxisAlignment.center,
+                          mainAxisAlignment: MainAxisAlignment.start,
                           children: [
                             // 上映时间
                             if (bangumiItem.airDate.isNotEmpty) ...[

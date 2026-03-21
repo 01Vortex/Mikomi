@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:mikomi/shared/widgets/scrolling_text.dart';
 import 'package:mikomi/config/themes/app_colors.dart';
 import 'package:mikomi/shared/widgets/cached_image.dart';
+import 'package:mikomi/core/providers/animation_provider.dart';
 
 class AnimeCard extends StatelessWidget {
   final String title;
@@ -10,6 +11,7 @@ class AnimeCard extends StatelessWidget {
   final VoidCallback? onTap;
   final double width;
   final double height;
+  final String? heroTag;
 
   const AnimeCard({
     super.key,
@@ -19,6 +21,7 @@ class AnimeCard extends StatelessWidget {
     this.onTap,
     this.width = 120,
     this.height = 160,
+    this.heroTag,
   });
 
   @override
@@ -34,12 +37,25 @@ class AnimeCard extends StatelessWidget {
           children: [
             ClipRRect(
               borderRadius: BorderRadius.circular(8),
-              child: CachedImage(
-                imageUrl: imageUrl ?? '',
-                width: width,
-                height: height,
-                fit: BoxFit.cover,
-              ),
+              child: heroTag != null
+                  ? Hero(
+                      tag: heroTag!,
+                      transitionOnUserGestures: true,
+                      flightShuttleBuilder:
+                          AnimationProvider.buildHeroFlightShuttle,
+                      child: CachedImage(
+                        imageUrl: imageUrl ?? '',
+                        width: width,
+                        height: height,
+                        fit: BoxFit.cover,
+                      ),
+                    )
+                  : CachedImage(
+                      imageUrl: imageUrl ?? '',
+                      width: width,
+                      height: height,
+                      fit: BoxFit.cover,
+                    ),
             ),
             const SizedBox(height: 6),
             ScrollingText(

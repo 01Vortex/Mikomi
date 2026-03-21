@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:card_settings_ui/card_settings_ui.dart';
-import 'package:mikomi/core/providers/theme_provider.dart';
+import 'package:mikomi/core/providers/color_provider.dart';
+import 'package:mikomi/core/providers/font_provider.dart';
 import 'package:mikomi/features/my/ui/widgets/color_palette_card.dart';
+import 'package:mikomi/core/providers/animation_provider.dart';
 import 'package:provider/provider.dart';
 
 class ThemePage extends StatefulWidget {
@@ -13,6 +15,7 @@ class ThemePage extends StatefulWidget {
 
 class _ThemePageState extends State<ThemePage> {
   final MenuController _fontMenuController = MenuController();
+  final MenuController _animationMenuController = MenuController();
 
   final List<Map<String, dynamic>> _colorThemes = [
     {'name': '默认蓝', 'color': Colors.blue},
@@ -29,7 +32,7 @@ class _ThemePageState extends State<ThemePage> {
 
   final Map<String, String> _fontMap = {'system': '系统默认', 'lxgw': '霞鹜文楷'};
 
-  void _showColorPicker(BuildContext context, ThemeProvider themeProvider) {
+  void _showColorPicker(BuildContext context, ColorProvider colorProvider) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -41,8 +44,8 @@ class _ThemePageState extends State<ThemePage> {
             runSpacing: 12,
             children: _colorThemes.map((theme) {
               final isSelected =
-                  !themeProvider.useDynamicColor &&
-                  themeProvider.themeColor?.value == theme['color'].value;
+                  !colorProvider.useDynamicColor &&
+                  colorProvider.themeColor?.value == theme['color'].value;
               return Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -50,7 +53,7 @@ class _ThemePageState extends State<ThemePage> {
                     color: theme['color'],
                     selected: isSelected,
                     onTap: () {
-                      themeProvider.setThemeColor(theme['color']);
+                      colorProvider.setThemeColor(theme['color']);
                       Navigator.pop(context);
                     },
                   ),
@@ -72,13 +75,23 @@ class _ThemePageState extends State<ThemePage> {
   }
 
   void _updateFont(String font) {
-    final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
-    themeProvider.setFontFamily(font);
+    final fontProvider = Provider.of<FontProvider>(context, listen: false);
+    fontProvider.setFontFamily(font);
+  }
+
+  void _updateAnimationStyle(HeroAnimationStyle style) {
+    final animationProvider = Provider.of<AnimationProvider>(
+      context,
+      listen: false,
+    );
+    animationProvider.setHeroAnimationStyle(style);
   }
 
   @override
   Widget build(BuildContext context) {
-    final themeProvider = Provider.of<ThemeProvider>(context);
+    final colorProvider = Provider.of<ColorProvider>(context);
+    final fontProvider = Provider.of<FontProvider>(context);
+    final animationProvider = Provider.of<AnimationProvider>(context);
 
     return Scaffold(
       appBar: AppBar(title: const Text('主题设置'), centerTitle: true),
@@ -88,7 +101,7 @@ class _ThemePageState extends State<ThemePage> {
             title: const Text('主题'),
             tiles: [
               SettingsTile.navigation(
-                onPressed: (_) => _showColorPicker(context, themeProvider),
+                onPressed: (_) => _showColorPicker(context, colorProvider),
                 leading: const Icon(Icons.color_lens_outlined),
                 title: const Text('配色方案'),
                 description: const Text('选择应用主题颜色'),
@@ -96,9 +109,9 @@ class _ThemePageState extends State<ThemePage> {
                   width: 24,
                   height: 24,
                   decoration: BoxDecoration(
-                    color: themeProvider.useDynamicColor
+                    color: colorProvider.useDynamicColor
                         ? Theme.of(context).colorScheme.primary
-                        : (themeProvider.themeColor ?? Colors.blue),
+                        : (colorProvider.themeColor ?? Colors.blue),
                     shape: BoxShape.circle,
                     border: Border.all(color: Colors.grey.shade300, width: 1),
                   ),
@@ -106,12 +119,12 @@ class _ThemePageState extends State<ThemePage> {
               ),
               SettingsTile.switchTile(
                 onToggle: (value) {
-                  themeProvider.setUseDynamicColor(value ?? false);
+                  colorProvider.setUseDynamicColor(value ?? false);
                 },
                 leading: const Icon(Icons.palette_outlined),
                 title: const Text('动态配色'),
                 description: const Text('使用系统壁纸颜色'),
-                initialValue: themeProvider.useDynamicColor,
+                initialValue: colorProvider.useDynamicColor,
               ),
             ],
           ),
@@ -132,7 +145,7 @@ class _ThemePageState extends State<ThemePage> {
                   consumeOutsideTap: true,
                   controller: _fontMenuController,
                   builder: (context, controller, child) {
-                    return Text(_fontMap[themeProvider.fontFamily] ?? '系统默认');
+                    return Text(_fontMap[fontProvider.fontFamily] ?? '系统默认');
                   },
                   menuChildren: [
                     MenuItemButton(
@@ -145,7 +158,7 @@ class _ThemePageState extends State<ThemePage> {
                           child: Text(
                             '系统默认',
                             style: TextStyle(
-                              color: themeProvider.fontFamily == 'system'
+                              color: fontProvider.fontFamily == 'system'
                                   ? Theme.of(context).colorScheme.primary
                                   : null,
                             ),
@@ -164,7 +177,7 @@ class _ThemePageState extends State<ThemePage> {
                             '霞鹜文楷',
                             style: TextStyle(
                               fontFamily: 'LXGWWenKai',
-                              color: themeProvider.fontFamily == 'lxgw'
+                              color: fontProvider.fontFamily == 'lxgw'
                                   ? Theme.of(context).colorScheme.primary
                                   : null,
                             ),
@@ -173,6 +186,55 @@ class _ThemePageState extends State<ThemePage> {
                       ),
                     ),
                   ],
+                ),
+              ),
+            ],
+          ),
+          SettingsSection(
+            title: const Text('动画'),
+            tiles: [
+              SettingsTile.navigation(
+                onPressed: (_) {
+                  if (_animationMenuController.isOpen) {
+                    _animationMenuController.close();
+                  } else {
+                    _animationMenuController.open();
+                  }
+                },
+                leading: const Icon(Icons.animation_outlined),
+                title: const Text('页面过渡动画'),
+                description: const Text('选择页面切换时的动画效果'),
+                value: MenuAnchor(
+                  consumeOutsideTap: true,
+                  controller: _animationMenuController,
+                  builder: (context, controller, child) {
+                    return Text(
+                      AnimationProvider.getAnimationStyleName(
+                        animationProvider.heroAnimationStyle,
+                      ),
+                    );
+                  },
+                  menuChildren: HeroAnimationStyle.values.map((style) {
+                    return MenuItemButton(
+                      onPressed: () => _updateAnimationStyle(style),
+                      child: SizedBox(
+                        height: 48,
+                        width: 120,
+                        child: Align(
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            AnimationProvider.getAnimationStyleName(style),
+                            style: TextStyle(
+                              color:
+                                  animationProvider.heroAnimationStyle == style
+                                  ? Theme.of(context).colorScheme.primary
+                                  : null,
+                            ),
+                          ),
+                        ),
+                      ),
+                    );
+                  }).toList(),
                 ),
               ),
             ],

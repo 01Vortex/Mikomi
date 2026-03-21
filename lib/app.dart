@@ -5,21 +5,27 @@ import 'config/routes/app_routes.dart';
 import 'config/themes/app_theme.dart';
 import 'config/localization/app_localizations.dart';
 import 'core/services/locale_service.dart';
-import 'core/providers/theme_provider.dart';
+import 'core/providers/color_provider.dart';
+import 'core/providers/font_provider.dart';
+import 'core/providers/animation_provider.dart';
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (_) => ThemeProvider(),
-      child: Consumer<ThemeProvider>(
-        builder: (context, themeProvider, _) {
-          final effectiveColor = themeProvider.useDynamicColor
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => ColorProvider()),
+        ChangeNotifierProvider(create: (_) => FontProvider()),
+        ChangeNotifierProvider(create: (_) => AnimationProvider()),
+      ],
+      child: Consumer2<ColorProvider, FontProvider>(
+        builder: (context, colorProvider, fontProvider, _) {
+          final effectiveColor = colorProvider.useDynamicColor
               ? null
-              : themeProvider.themeColor;
-          final effectiveFontFamily = themeProvider.getEffectiveFontFamily();
+              : colorProvider.themeColor;
+          final effectiveFontFamily = fontProvider.getEffectiveFontFamily();
 
           return MaterialApp(
             key: ValueKey('${effectiveColor}_${effectiveFontFamily}'),
