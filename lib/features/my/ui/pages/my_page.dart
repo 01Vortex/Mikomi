@@ -103,8 +103,8 @@ class _MyPageState extends State<MyPage> {
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
                             colors: [
-                              context.colors.surfaceVariant,
-                              context.colors.surfaceVariant.withValues(
+                              context.colors.surfaceContainerHighest,
+                              context.colors.surfaceContainerHighest.withValues(
                                 alpha: 0.8,
                               ),
                             ],
@@ -130,13 +130,16 @@ class _MyPageState extends State<MyPage> {
                                   ),
                                 ],
                               ),
-                              child:
-                                  authService.userInfo?.avatarUrl.isNotEmpty ==
-                                      true
+                              child: authService.mikomiUserInfo != null
                                   ? CircleAvatar(
                                       radius: 40,
-                                      backgroundImage: NetworkImage(
-                                        authService.userInfo!.avatarUrl,
+                                      backgroundColor:
+                                          context.colors.primaryContainer,
+                                      child: Icon(
+                                        Icons.person,
+                                        size: 40,
+                                        color:
+                                            context.colors.onPrimaryContainer,
                                       ),
                                     )
                                   : CircleAvatar(
@@ -159,7 +162,7 @@ class _MyPageState extends State<MyPage> {
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   Text(
-                                    authService.userInfo?.nickname ?? '用户',
+                                    authService.nickname ?? '用户',
                                     style: TextStyle(
                                       fontSize: 20,
                                       fontWeight: FontWeight.bold,
@@ -169,7 +172,7 @@ class _MyPageState extends State<MyPage> {
                                   ),
                                   const SizedBox(height: 6),
                                   Text(
-                                    'uid:${authService.userId ?? ''}',
+                                    'uid:${authService.mikomiUserInfo?.account ?? ''}',
                                     style: TextStyle(
                                       fontSize: 14,
                                       color: context.colors.textSecondary,
@@ -204,7 +207,7 @@ class _MyPageState extends State<MyPage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          authService.userInfo?.sign ?? '这是简介',
+                          '暂无简介',
                           style: TextStyle(
                             fontSize: 14,
                             color: context.colors.onSurface,
@@ -296,7 +299,7 @@ class _MyPageState extends State<MyPage> {
       margin: const EdgeInsets.symmetric(horizontal: 24),
       padding: const EdgeInsets.all(48),
       decoration: BoxDecoration(
-        color: context.colors.surfaceVariant,
+        color: context.colors.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(16),
       ),
       child: Center(

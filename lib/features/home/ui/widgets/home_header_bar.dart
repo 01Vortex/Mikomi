@@ -9,9 +9,8 @@ class HomeAppBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final userInfo = context.select<AuthService, dynamic>(
-      (service) => service.userInfo,
-    );
+    final authService = context.watch<AuthService>();
+    final isLoggedIn = authService.isLoggedIn;
 
     return Container(
       color: AppColors.surface,
@@ -23,10 +22,14 @@ class HomeAppBar extends StatelessWidget {
       ),
       child: Row(
         children: [
-          userInfo?.avatarUrl.isNotEmpty == true
+          isLoggedIn
               ? CircleAvatar(
                   radius: 20,
-                  backgroundImage: NetworkImage(userInfo!.avatarUrl),
+                  backgroundColor: AppColors.placeholder,
+                  child: const Icon(
+                    Icons.person,
+                    color: AppColors.placeholderIcon,
+                  ),
                 )
               : CircleAvatar(
                   radius: 20,

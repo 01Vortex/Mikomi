@@ -10,7 +10,7 @@ class AccountSettingsPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final authService = context.watch<AuthService>();
     final isLoggedIn = authService.isLoggedIn;
-    final userInfo = authService.userInfo;
+    final userInfo = authService.mikomiUserInfo;
 
     return Scaffold(
       appBar: AppBar(title: const Text('账号管理')),
@@ -18,70 +18,7 @@ class AccountSettingsPage extends StatelessWidget {
         children: [
           if (isLoggedIn && userInfo != null) ...[
             // 用户信息卡片
-            Container(
-              margin: const EdgeInsets.all(16),
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: context.colors.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Row(
-                children: [
-                  // 头像
-                  CircleAvatar(
-                    radius: 32,
-                    backgroundImage: userInfo.avatarUrl.isNotEmpty
-                        ? NetworkImage(userInfo.avatarUrl)
-                        : null,
-                    backgroundColor: context.colors.primaryContainer,
-                    child: userInfo.avatarUrl.isEmpty
-                        ? Icon(
-                            Icons.person,
-                            size: 32,
-                            color: context.colors.onPrimaryContainer,
-                          )
-                        : null,
-                  ),
-                  const SizedBox(width: 16),
-                  // 用户信息
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          userInfo.nickname,
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: context.colors.onSurface,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          '@${userInfo.username}',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: context.colors.textSecondary,
-                          ),
-                        ),
-                        if (userInfo.sign?.isNotEmpty == true) ...[
-                          const SizedBox(height: 4),
-                          Text(
-                            userInfo.sign!,
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: context.colors.textSecondary,
-                            ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            _buildUserCard(context, authService, userInfo),
             const Divider(height: 1),
             // 账号信息
             ListTile(
@@ -134,6 +71,60 @@ class AccountSettingsPage extends StatelessWidget {
               ),
             ),
           ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildUserCard(
+    BuildContext context,
+    AuthService authService,
+    MikomiUser userInfo,
+  ) {
+    return Container(
+      margin: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: context.colors.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          // 头像
+          CircleAvatar(
+            radius: 32,
+            backgroundColor: context.colors.primaryContainer,
+            child: Icon(
+              Icons.person,
+              size: 32,
+              color: context.colors.onPrimaryContainer,
+            ),
+          ),
+          const SizedBox(width: 16),
+          // 用户信息
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  userInfo.nickname,
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: context.colors.onSurface,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  userInfo.email,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: context.colors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );

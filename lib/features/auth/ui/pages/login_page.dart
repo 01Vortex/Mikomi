@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:mikomi/shared/utils/theme_extensions.dart';
 import 'package:mikomi/features/auth/service/bangumi_login_service.dart';
+import 'package:mikomi/features/auth/service/mikomi_login_service.dart';
+import 'package:mikomi/features/auth/service/mikomi_oauth_service.dart';
+import 'package:mikomi/features/auth/ui/pages/register_page.dart';
 import 'package:mikomi/core/services/auth_service.dart';
 import 'package:mikomi/core/services/navigation_service.dart';
 import 'package:mikomi/shared/widgets/message_dialog.dart';
@@ -16,11 +19,13 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  final TextEditingController _usernameController = TextEditingController();
+  final TextEditingController _accountController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  final FocusNode _usernameFocus = FocusNode();
+  final FocusNode _accountFocus = FocusNode();
   final FocusNode _passwordFocus = FocusNode();
   final BangumiLoginService _bangumiService = BangumiLoginService();
+  final MikomiLoginService _mikomiLoginService = MikomiLoginService();
+  final MikomiOAuthService _mikomiOAuthService = MikomiOAuthService();
   late AppLinks _appLinks;
   StreamSubscription<Uri>? _linkSubscription;
   bool _obscurePassword = true;
@@ -64,20 +69,51 @@ class _LoginPageState extends State<LoginPage> {
       final token = await _bangumiService.exchangeToken(code, state: state);
 
       if (token != null && mounted) {
-        // 保存登录信息
-        final authService = context.read<AuthService>();
-        await authService.saveLoginInfo(token);
+        // 获取Bangumi用户信息
+        final bangumiUser = await _bangumiService.getCurrentUser(
+          token.accessToken,
+        );
 
-        debugPrint('登录成功! User ID: ${token.userId}');
+        if (bangumiUser != null && mounted) {
+          // 调用后端OAuth登录接口
+          final response = await _mikomiOAuthService.oauthLogin(
+            provider: 'bangumi',
+            providerUserId: bangumiUser.id.toString(),
+            providerUsername: bangumiUser.username,
+            accessToken: token.accessToken,
+            refreshToken: token.refreshToken,
+            expiresIn: token.expiresIn,
+            nickname: bangumiUser.nickname,
+            avatarUrl: bangumiUser.avatarUrl,
+            bio: bangumiUser.sign,
+          );
 
-        if (mounted) {
-          MessageDialog.success(context, '登录成功! 用户ID: ${token.userId}');
+          if (response != null && mounted) {
+            // 保存Mikomi登录信息
+            final authService = context.read<AuthService>();
+            await authService.saveMikomiLoginInfo(
+              token: response.token,
+              userId: response.user.id,
+              account: response.user.account,
+              nickname: response.user.nickname,
+              email: response.user.email,
+            );
 
-          // 切换到个人页tab
-          context.read<NavigationService>().switchToMyPage();
+            if (mounted) {
+              String message = '登录成功！欢迎 ${response.user.nickname}';
+              if (response.isNewUser && response.mikomiAccount != null) {
+                message += '\n您的Mikomi账号：${response.mikomiAccount}';
+              }
 
-          // 返回到主页
-          Navigator.of(context).popUntil((route) => route.isFirst);
+              MessageDialog.success(context, message);
+
+              // 切换到个人页tab
+              context.read<NavigationService>().switchToMyPage();
+
+              // 返回到主页
+              Navigator.of(context).popUntil((route) => route.isFirst);
+            }
+          }
         }
       } else if (mounted) {
         ScaffoldMessenger.of(
@@ -85,7 +121,7 @@ class _LoginPageState extends State<LoginPage> {
         ).showSnackBar(const SnackBar(content: Text('登录失败，请重试')));
       }
     } catch (e) {
-      debugPrint('换取Token失败: $e');
+      debugPrint('Bangumi登录失败: $e');
       if (mounted) {
         ScaffoldMessenger.of(
           context,
@@ -101,31 +137,62 @@ class _LoginPageState extends State<LoginPage> {
   @override
   void dispose() {
     _linkSubscription?.cancel();
-    _usernameController.dispose();
+    _accountController.dispose();
     _passwordController.dispose();
-    _usernameFocus.dispose();
+    _accountFocus.dispose();
     _passwordFocus.dispose();
     super.dispose();
   }
 
   Future<void> _handleLogin() async {
-    if (_usernameController.text.isEmpty || _passwordController.text.isEmpty) {
+    if (_accountController.text.isEmpty || _passwordController.text.isEmpty) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('请输入用户名和密码')));
+      ).showSnackBar(const SnackBar(content: Text('请输入账号和密码')));
       return;
     }
 
     setState(() => _isLoading = true);
 
-    // TODO: 实现登录逻辑
-    await Future.delayed(const Duration(seconds: 2));
+    try {
+      final response = await _mikomiLoginService.login(
+        account: _accountController.text,
+        password: _passwordController.text,
+      );
 
-    if (mounted) {
-      setState(() => _isLoading = false);
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('登录功能开发中')));
+      if (mounted && response != null) {
+        // 保存Mikomi登录信息到AuthService
+        final authService = context.read<AuthService>();
+        await authService.saveMikomiLoginInfo(
+          token: response.token,
+          userId: response.user.id,
+          account: response.user.account,
+          nickname: response.user.nickname,
+          email: response.user.email,
+        );
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('登录成功！欢迎 ${response.user.nickname}')),
+          );
+
+          // 切换到个人页tab
+          context.read<NavigationService>().switchToMyPage();
+
+          // 返回到主页
+          Navigator.of(context).popUntil((route) => route.isFirst);
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
@@ -234,15 +301,17 @@ class _LoginPageState extends State<LoginPage> {
 
   Widget _buildUsernameField() {
     return TextField(
-      controller: _usernameController,
-      focusNode: _usernameFocus,
+      controller: _accountController,
+      focusNode: _accountFocus,
       decoration: InputDecoration(
-        labelText: '用户名',
-        hintText: '请输入用户名',
+        labelText: '账号/邮箱',
+        hintText: '请输入账号或邮箱',
         prefixIcon: const Icon(Icons.person_outline),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
         filled: true,
-        fillColor: context.colors.surfaceContainerHighest.withOpacity(0.3),
+        fillColor: context.colors.surfaceContainerHighest.withValues(
+          alpha: 0.3,
+        ),
       ),
       textInputAction: TextInputAction.next,
       onSubmitted: (_) => _passwordFocus.requestFocus(),
@@ -268,7 +337,9 @@ class _LoginPageState extends State<LoginPage> {
         ),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
         filled: true,
-        fillColor: context.colors.surfaceContainerHighest.withOpacity(0.3),
+        fillColor: context.colors.surfaceContainerHighest.withValues(
+          alpha: 0.3,
+        ),
       ),
       textInputAction: TextInputAction.done,
       onSubmitted: (_) => _handleLogin(),
@@ -416,9 +487,10 @@ class _LoginPageState extends State<LoginPage> {
         ),
         TextButton(
           onPressed: () {
-            ScaffoldMessenger.of(
+            Navigator.push(
               context,
-            ).showSnackBar(const SnackBar(content: Text('注册功能开发中')));
+              MaterialPageRoute(builder: (context) => const RegisterPage()),
+            );
           },
           child: Text(
             '立即注册',
