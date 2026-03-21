@@ -87,52 +87,66 @@ class PopularityRankingView extends StatelessWidget {
   }
 
   Widget _buildRankingItem(BangumiItem item, int rank) {
-    return InkWell(
-      onTap: () => onTap(item),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8),
-        child: Row(
-          children: [
-            _buildRankBadge(rank),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    item.displayName,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      color: AppColors.textPrimary,
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0.0, end: 1.0),
+      duration: Duration(milliseconds: 300 + (rank * 50)),
+      curve: Curves.easeOutCubic,
+      builder: (context, value, child) {
+        return Opacity(
+          opacity: value,
+          child: Transform.translate(
+            offset: Offset(0, 20 * (1 - value)),
+            child: child,
+          ),
+        );
+      },
+      child: InkWell(
+        onTap: () => onTap(item),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Row(
+            children: [
+              _buildRankBadge(rank),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      item.displayName,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: AppColors.textPrimary,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      if (item.ratingScore > 0) ...[
-                        const Icon(Icons.star, size: 14, color: Colors.amber),
-                        const SizedBox(width: 4),
-                        Text(
-                          item.ratingScore.toStringAsFixed(1),
-                          style: const TextStyle(
-                            fontSize: 12,
-                            color: AppColors.textSecondary,
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        if (item.ratingScore > 0) ...[
+                          const Icon(Icons.star, size: 14, color: Colors.amber),
+                          const SizedBox(width: 4),
+                          Text(
+                            item.ratingScore.toStringAsFixed(1),
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: AppColors.textSecondary,
+                            ),
                           ),
-                        ),
+                        ],
                       ],
-                    ],
-                  ),
-                ],
+                    ),
+                  ],
+                ),
               ),
-            ),
-            const Icon(
-              Icons.chevron_right,
-              size: 20,
-              color: AppColors.textHint,
-            ),
-          ],
+              const Icon(
+                Icons.chevron_right,
+                size: 20,
+                color: AppColors.textHint,
+              ),
+            ],
+          ),
         ),
       ),
     );

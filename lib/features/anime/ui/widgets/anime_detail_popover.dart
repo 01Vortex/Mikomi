@@ -6,8 +6,8 @@ import 'package:mikomi/core/models/person_detail.dart';
 import 'package:mikomi/core/models/person_comment.dart';
 import 'package:mikomi/core/network/dio_client.dart';
 import 'package:mikomi/features/anime/data/bangumi_detail.dart';
-import 'package:mikomi/features/anime/ui/widgets/comment_list_widget.dart';
-import 'package:mikomi/features/anime/ui/widgets/person_info_widget.dart';
+import 'package:mikomi/features/anime/ui/widgets/comment_list.dart';
+import 'package:mikomi/features/anime/ui/widgets/anime_detail_person_info.dart';
 
 enum InfoType { character, person }
 

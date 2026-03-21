@@ -5,7 +5,7 @@ import 'package:mikomi/config/routes/app_routes.dart';
 import 'package:mikomi/shared/utils/theme_extensions.dart';
 import 'package:mikomi/shared/widgets/cached_image.dart';
 import 'package:mikomi/shared/widgets/scrolling_text.dart';
-import 'package:mikomi/core/providers/animation_provider.dart';
+import 'package:mikomi/core/providers/theme_animation_provider.dart';
 
 class SchedulePage extends StatefulWidget {
   const SchedulePage({super.key});

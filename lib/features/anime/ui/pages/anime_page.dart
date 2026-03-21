@@ -5,9 +5,9 @@ import 'package:mikomi/features/anime/ui/widgets/anime_header.dart';
 import 'package:mikomi/features/anime/ui/widgets/anime_overview_tab.dart';
 import 'package:mikomi/features/anime/ui/widgets/anime_detail_tab.dart';
 import 'package:mikomi/features/anime/ui/widgets/anime_tucao_tab.dart';
-import 'package:mikomi/features/anime/ui/widgets/collection_status_selector.dart';
+import 'package:mikomi/features/anime/selector/collection_status_selector.dart';
 import 'package:mikomi/features/anime/ui/widgets/play_button.dart';
-import 'package:mikomi/features/anime/ui/widgets/video_source_selector.dart';
+import 'package:mikomi/features/anime/selector/video_source_selector.dart';
 import 'package:mikomi/features/settings/video_settings/service/plugin_manager_service.dart';
 import 'package:mikomi/shared/utils/theme_extensions.dart';
 

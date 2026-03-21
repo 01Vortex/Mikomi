@@ -5,7 +5,7 @@ import 'package:mikomi/core/models/character_item.dart';
 import 'package:mikomi/core/models/staff_item.dart';
 import 'package:mikomi/core/network/dio_client.dart';
 import 'package:mikomi/features/anime/data/bangumi_detail.dart';
-import 'package:mikomi/features/anime/ui/pages/anime_detail_more.dart';
+import 'package:mikomi/features/anime/ui/widgets/anime_detail_popover.dart';
 import 'package:mikomi/shared/widgets/scrolling_text.dart';
 import 'package:mikomi/shared/widgets/skeleton.dart';
 

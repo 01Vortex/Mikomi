@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:card_settings_ui/card_settings_ui.dart';
-import 'package:mikomi/core/providers/color_provider.dart';
-import 'package:mikomi/core/providers/font_provider.dart';
+import 'package:mikomi/core/providers/theme_color_provider.dart';
+import 'package:mikomi/core/providers/theme_font_provider.dart';
 import 'package:mikomi/features/my/ui/widgets/color_palette_card.dart';
-import 'package:mikomi/core/providers/animation_provider.dart';
+import 'package:mikomi/core/providers/theme_animation_provider.dart';
 import 'package:provider/provider.dart';
 
 class ThemePage extends StatefulWidget {

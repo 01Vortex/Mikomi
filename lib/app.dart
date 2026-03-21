@@ -5,9 +5,9 @@ import 'config/routes/app_routes.dart';
 import 'config/themes/app_theme.dart';
 import 'config/localization/app_localizations.dart';
 import 'core/services/locale_service.dart';
-import 'core/providers/color_provider.dart';
-import 'core/providers/font_provider.dart';
-import 'core/providers/animation_provider.dart';
+import 'core/providers/theme_color_provider.dart';
+import 'core/providers/theme_font_provider.dart';
+import 'core/providers/theme_animation_provider.dart';
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});

@@ -6,7 +6,7 @@ import 'package:mikomi/features/video/ui/widgets/video_comment.dart';
 import 'package:mikomi/features/video/ui/widgets/video_tab.dart';
 import 'package:mikomi/features/video/ui/widgets/smallscreen_episcode.dart';
 import 'package:mikomi/features/video/ui/widgets/danmaku_input.dart';
-import 'package:mikomi/features/anime/ui/widgets/video_source_selector.dart';
+import 'package:mikomi/features/anime/selector/video_source_selector.dart';
 import 'package:mikomi/shared/widgets/skeleton.dart';
 import 'package:mikomi/core/models/episode.dart';
 import 'package:mikomi/core/services/bangumi_episodes_service.dart';

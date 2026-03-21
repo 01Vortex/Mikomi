@@ -10,6 +10,7 @@ import 'package:mikomi/features/search/ui/widgets/search_history_view.dart';
 import 'package:mikomi/features/search/ui/widgets/search_suggestions_view.dart';
 import 'package:mikomi/features/search/ui/widgets/popularity_ranking_view.dart';
 import 'package:mikomi/features/search/ui/pages/search_results_page.dart';
+import 'package:mikomi/config/routes/app_routes.dart';
 
 class SearchPage extends StatefulWidget {
   const SearchPage({super.key});
@@ -141,8 +142,7 @@ class _SearchPageState extends State<SearchPage> {
   }
 
   void _handleRankingTap(BangumiItem item) {
-    _searchController.text = item.displayName;
-    _performSearch(item.displayName);
+    Navigator.pushNamed(context, AppRoutes.bangumiDetail, arguments: item);
   }
 
   @override

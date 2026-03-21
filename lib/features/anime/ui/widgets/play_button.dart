@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:mikomi/features/anime/ui/widgets/video_source_selector.dart';
+import 'package:mikomi/features/anime/selector/video_source_selector.dart';
 import 'package:mikomi/features/video/ui/pages/video_page.dart';
 import 'package:mikomi/core/models/episode.dart';
 import 'package:mikomi/core/services/bangumi_episodes_service.dart';
