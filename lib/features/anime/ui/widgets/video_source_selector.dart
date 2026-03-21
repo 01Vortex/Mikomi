@@ -99,50 +99,54 @@ class _VideoSourceSelectorState extends State<VideoSourceSelector>
       _sourceEpisodeCount[source.name] = 0;
     }
 
-    // 并发检查所有视频源
-    final futures = _sources.map((source) async {
-      try {
-        debugPrint('[${source.name}] 开始检查视频源');
-        final episodes = await _videoSourceRepo
-            .searchAndGetEpisodes(widget.animeTitle!, source.name)
-            .timeout(
-              const Duration(seconds: 45),
-              onTimeout: () {
-                debugPrint('[${source.name}] 检查超时');
-                return [];
-              },
-            );
+    // 异步检查所有视频源，每个资源独立检查，互不影响
+    for (var source in _sources) {
+      _checkSingleSource(source);
+    }
 
-        debugPrint('[${source.name}] 检查完成: ${episodes.length} 集');
+    setState(() => _isChecking = false);
+  }
 
-        if (mounted) {
-          setState(() {
-            _sourceAvailability[source.name] = episodes.isNotEmpty;
-            _sourceEpisodeCount[source.name] = episodes.length;
-            debugPrint(
-              '[${source.name}] 状态已更新: hasResource=${episodes.isNotEmpty}, count=${episodes.length}',
-            );
-          });
-        }
-      } catch (e, stackTrace) {
-        debugPrint('[${source.name}] 检查失败: $e');
-        debugPrint('[${source.name}] 堆栈: $stackTrace');
-        if (mounted) {
-          setState(() {
-            _sourceAvailability[source.name] = false;
-            _sourceEpisodeCount[source.name] = 0;
-          });
-        }
+  /// 检查单个视频源的可用性
+  Future<void> _checkSingleSource(VideoSource source) async {
+    try {
+      debugPrint('========================================');
+      debugPrint('[${source.name}] 开始检查视频源');
+      debugPrint('[${source.name}] 搜索关键词: ${widget.animeTitle}');
+      debugPrint('========================================');
+
+      final episodes = await _videoSourceRepo
+          .searchAndGetEpisodes(widget.animeTitle!, source.name)
+          .timeout(
+            const Duration(seconds: 60), // 增加到60秒
+            onTimeout: () {
+              debugPrint('[${source.name}] ⏱️ 检查超时(60秒)');
+              return [];
+            },
+          );
+
+      debugPrint('========================================');
+      debugPrint('[${source.name}] ✅ 检查完成: ${episodes.length} 集');
+      debugPrint('========================================');
+
+      if (mounted) {
+        setState(() {
+          _sourceAvailability[source.name] = episodes.isNotEmpty;
+          _sourceEpisodeCount[source.name] = episodes.length;
+        });
       }
-    });
+    } catch (e, stackTrace) {
+      debugPrint('========================================');
+      debugPrint('[${source.name}] ❌ 检查失败: $e');
+      debugPrint('[${source.name}] 堆栈: $stackTrace');
+      debugPrint('========================================');
 
-    // 等待所有检查完成
-    await Future.wait(futures);
-
-    if (mounted) {
-      setState(() {
-        _isChecking = false;
-      });
+      if (mounted) {
+        setState(() {
+          _sourceAvailability[source.name] = false;
+          _sourceEpisodeCount[source.name] = 0;
+        });
+      }
     }
   }
 
@@ -395,40 +399,6 @@ class _VideoSourceSelectorState extends State<VideoSourceSelector>
               ),
             ),
           ),
-          if (!isChecking && !hasResource) ...[
-            const SizedBox(height: 12),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.red.withValues(alpha: 0.05),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(
-                  color: Colors.red.withValues(alpha: 0.2),
-                  width: 1,
-                ),
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.info_outline,
-                    size: 16,
-                    color: Colors.red.withValues(alpha: 0.8),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      '该视频源暂无此番剧资源',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: Colors.red.withValues(alpha: 0.8),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
         ],
       ),
     );

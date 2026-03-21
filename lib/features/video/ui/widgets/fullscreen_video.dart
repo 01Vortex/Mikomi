@@ -62,8 +62,20 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
   @override
   void initState() {
     super.initState();
+    _initializePlayerState();
     _setupListeners();
     _startHideTimer();
+  }
+
+  void _initializePlayerState() {
+    final player = widget.playerController.player;
+    if (player != null) {
+      // 获取播放器当前状态
+      _isPlaying = player.state.playing;
+      _position = player.state.position;
+      _duration = player.state.duration;
+      _isBuffering = player.state.buffering;
+    }
   }
 
   @override
@@ -229,35 +241,38 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: _toggleControls,
-      child: Container(
-        color: Colors.transparent,
-        child: Stack(
-          children: [
-            // 缓冲指示器
-            if (_isBuffering) _buildBufferingIndicator(),
-
-            // 顶部渐变
-            if (_showControls && !_isLocked) _buildTopGradient(),
-
-            // 底部渐变
-            if (_showControls && !_isLocked) _buildBottomGradient(),
-
-            // 顶部控制栏
-            if (_showControls && !_isLocked) _buildTopBar(),
-
-            // 中间播放控制
-            if (_showControls && !_isLocked) _buildCenterControls(),
-
-            // 底部控制栏
-            if (_showControls && !_isLocked) _buildBottomControls(),
-
-            // 锁定按钮
-            _buildLockButton(),
-          ],
+    return Stack(
+      children: [
+        // 主内容区域 - 可以点击切换控制栏
+        Positioned.fill(
+          child: GestureDetector(
+            onTap: _toggleControls,
+            behavior: HitTestBehavior.opaque,
+            child: Container(color: Colors.transparent),
+          ),
         ),
-      ),
+
+        // 缓冲指示器
+        if (_isBuffering) _buildBufferingIndicator(),
+
+        // 顶部渐变
+        if (_showControls && !_isLocked) _buildTopGradient(),
+
+        // 底部渐变
+        if (_showControls && !_isLocked) _buildBottomGradient(),
+
+        // 顶部控制栏
+        if (_showControls && !_isLocked) _buildTopBar(),
+
+        // 中间播放控制
+        if (_showControls && !_isLocked) _buildCenterControls(),
+
+        // 底部控制栏
+        if (_showControls && !_isLocked) _buildBottomControls(),
+
+        // 锁定按钮
+        _buildLockButton(),
+      ],
     );
   }
 
@@ -377,29 +392,21 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
 
   Widget _buildCenterControls() {
     return Center(
-      child: _buildControlButton(
-        icon: _isPlaying ? Icons.pause : Icons.play_arrow,
+      child: GestureDetector(
         onTap: _togglePlayPause,
-        size: 64,
-      ),
-    );
-  }
-
-  Widget _buildControlButton({
-    required IconData icon,
-    required VoidCallback onTap,
-    double size = 48,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: size,
-        height: size,
-        decoration: BoxDecoration(
-          color: Colors.black.withValues(alpha: 0.5),
-          shape: BoxShape.circle,
+        child: Container(
+          width: 64,
+          height: 64,
+          decoration: BoxDecoration(
+            color: Colors.black.withValues(alpha: 0.5),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(
+            _isPlaying ? Icons.pause : Icons.play_arrow,
+            color: Colors.white,
+            size: 38,
+          ),
         ),
-        child: Icon(icon, color: Colors.white, size: size * 0.6),
       ),
     );
   }
@@ -416,54 +423,66 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
             mainAxisSize: MainAxisSize.min,
             children: [
               // 进度条
-              Row(
-                children: [
-                  Text(
-                    _formatDuration(_position),
-                    style: const TextStyle(color: Colors.white, fontSize: 12),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: SliderTheme(
-                      data: SliderThemeData(
-                        trackHeight: 3,
-                        thumbShape: const RoundSliderThumbShape(
-                          enabledThumbRadius: 6,
+              GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                child: Row(
+                  children: [
+                    Text(
+                      _formatDuration(_position),
+                      style: const TextStyle(color: Colors.white, fontSize: 12),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: SliderTheme(
+                        data: SliderThemeData(
+                          trackHeight: 3,
+                          thumbShape: const RoundSliderThumbShape(
+                            enabledThumbRadius: 6,
+                          ),
+                          overlayShape: const RoundSliderOverlayShape(
+                            overlayRadius: 12,
+                          ),
+                          activeTrackColor: Theme.of(
+                            context,
+                          ).colorScheme.primary,
+                          inactiveTrackColor: Colors.white.withValues(
+                            alpha: 0.3,
+                          ),
+                          thumbColor: Theme.of(context).colorScheme.primary,
                         ),
-                        overlayShape: const RoundSliderOverlayShape(
-                          overlayRadius: 12,
+                        child: Slider(
+                          value: _duration.inMilliseconds > 0
+                              ? (_position.inMilliseconds /
+                                        _duration.inMilliseconds)
+                                    .clamp(0.0, 1.0)
+                              : 0.0,
+                          onChanged: (value) {
+                            setState(() {
+                              _isDragging = true;
+                              _position = Duration(
+                                milliseconds: (value * _duration.inMilliseconds)
+                                    .toInt(),
+                              );
+                            });
+                          },
+                          onChangeEnd: (value) {
+                            setState(() => _isDragging = false);
+                            widget.playerController.player?.seek(_position);
+                            _startHideTimer();
+                          },
+                          onChangeStart: (value) {
+                            _hideTimer?.cancel();
+                          },
                         ),
-                        activeTrackColor: Theme.of(context).colorScheme.primary,
-                        inactiveTrackColor: Colors.white.withValues(alpha: 0.3),
-                        thumbColor: Theme.of(context).colorScheme.primary,
-                      ),
-                      child: Slider(
-                        value: _duration.inMilliseconds > 0
-                            ? _position.inMilliseconds /
-                                  _duration.inMilliseconds
-                            : 0.0,
-                        onChanged: (value) {
-                          setState(() {
-                            _isDragging = true;
-                            _position = Duration(
-                              milliseconds: (value * _duration.inMilliseconds)
-                                  .toInt(),
-                            );
-                          });
-                        },
-                        onChangeEnd: (value) {
-                          _isDragging = false;
-                          widget.playerController.player?.seek(_position);
-                        },
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    _formatDuration(_duration),
-                    style: const TextStyle(color: Colors.white, fontSize: 12),
-                  ),
-                ],
+                    const SizedBox(width: 8),
+                    Text(
+                      _formatDuration(_duration),
+                      style: const TextStyle(color: Colors.white, fontSize: 12),
+                    ),
+                  ],
+                ),
               ),
               const SizedBox(height: 8),
               // 底部按钮

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'dart:ui';
 
 enum MessageType { success, error, warning, info }
@@ -14,16 +13,14 @@ class MessageDialog {
     Duration? duration,
     VoidCallback? onDismiss,
   }) {
-    // 移除之前的消息
     _currentOverlay?.remove();
     _currentOverlay = null;
 
     final overlay = Overlay.of(context);
     late OverlayEntry overlayEntry;
 
-    // error和warning需要手动关闭，不自动消失
-    final shouldAutoDismiss =
-        type != MessageType.error && type != MessageType.warning;
+    // 只有error需要手动关闭，其他类型自动消失
+    final shouldAutoDismiss = type != MessageType.error;
     final effectiveDuration =
         duration ?? (shouldAutoDismiss ? const Duration(seconds: 3) : null);
 
@@ -86,7 +83,6 @@ class _MessageDialogWidget extends StatefulWidget {
 class _MessageDialogWidgetState extends State<_MessageDialogWidget>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
-  late Animation<double> _scaleAnimation;
   late Animation<double> _opacityAnimation;
   late Animation<Offset> _slideAnimation;
 
@@ -94,13 +90,8 @@ class _MessageDialogWidgetState extends State<_MessageDialogWidget>
   void initState() {
     super.initState();
     _controller = AnimationController(
-      duration: const Duration(milliseconds: 400),
+      duration: const Duration(milliseconds: 300),
       vsync: this,
-    );
-
-    _scaleAnimation = CurvedAnimation(
-      parent: _controller,
-      curve: Curves.elasticOut,
     );
 
     _opacityAnimation = Tween<double>(
@@ -109,13 +100,12 @@ class _MessageDialogWidgetState extends State<_MessageDialogWidget>
     ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
 
     _slideAnimation = Tween<Offset>(
-      begin: const Offset(0, -1),
+      begin: const Offset(0, -0.5),
       end: Offset.zero,
-    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutBack));
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic));
 
     _controller.forward();
 
-    // 只有设置了duration才自动消失
     if (widget.duration != null) {
       Future.delayed(widget.duration!, () {
         if (mounted) {
@@ -139,30 +129,40 @@ class _MessageDialogWidgetState extends State<_MessageDialogWidget>
   Color _getBackgroundColor() {
     switch (widget.type) {
       case MessageType.success:
-        return const Color(0xFF0CD373);
+        return const Color(0xFF00FF00).withValues(alpha: 0.15); // 浅绿色
       case MessageType.error:
-        return const Color(0xFFFF8B8B);
+        return const Color(0xFFFF0000).withValues(alpha: 0.15); // 浅红色
       case MessageType.warning:
-        return const Color(0xFFFDFF9A);
+        return const Color(0xFFFFFF00).withValues(alpha: 0.15); // 浅黄色
       case MessageType.info:
-        return const Color(0xFF97D2FF);
+        return const Color(0xFF00BFFF).withValues(alpha: 0.15); // 浅蓝色
     }
   }
 
   Color _getTextColor() {
-    // 黄色背景使用深色文字
-    if (widget.type == MessageType.warning) {
-      return Colors.black87;
+    switch (widget.type) {
+      case MessageType.success:
+        return const Color(0xFF00AA00); // 深绿色文字
+      case MessageType.error:
+        return const Color(0xFFCC0000); // 深红色文字
+      case MessageType.warning:
+        return const Color(0xFFCC9900); // 深黄色文字
+      case MessageType.info:
+        return const Color(0xFF0088CC); // 深蓝色文字
     }
-    return Colors.white;
   }
 
   Color _getIconBackgroundColor() {
-    // 黄色背景使用深色图标背景
-    if (widget.type == MessageType.warning) {
-      return Colors.black.withValues(alpha: 0.1);
+    switch (widget.type) {
+      case MessageType.success:
+        return const Color(0xFF00AA00).withValues(alpha: 0.15);
+      case MessageType.error:
+        return const Color(0xFFCC0000).withValues(alpha: 0.15);
+      case MessageType.warning:
+        return const Color(0xFFCC9900).withValues(alpha: 0.15);
+      case MessageType.info:
+        return const Color(0xFF0088CC).withValues(alpha: 0.15);
     }
-    return Colors.white.withValues(alpha: 0.2);
   }
 
   IconData _getIcon() {
@@ -180,8 +180,6 @@ class _MessageDialogWidgetState extends State<_MessageDialogWidget>
 
   @override
   Widget build(BuildContext context) {
-    final isErrorOrWarning =
-        widget.type == MessageType.error || widget.type == MessageType.warning;
     final textColor = _getTextColor();
 
     return Positioned(
@@ -192,119 +190,68 @@ class _MessageDialogWidgetState extends State<_MessageDialogWidget>
         position: _slideAnimation,
         child: FadeTransition(
           opacity: _opacityAnimation,
-          child: ScaleTransition(
-            scale: _scaleAnimation,
-            child: Material(
-              color: Colors.transparent,
-              child: GestureDetector(
-                onTap: isErrorOrWarning ? null : _dismiss,
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(16),
-                  child: BackdropFilter(
-                    filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 20,
-                        vertical: 16,
+          child: Material(
+            color: Colors.transparent,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(16),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 16,
+                  ),
+                  decoration: BoxDecoration(
+                    color: _getBackgroundColor(),
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.08),
+                        blurRadius: 12,
+                        offset: const Offset(0, 2),
                       ),
-                      decoration: BoxDecoration(
-                        color: _getBackgroundColor().withValues(alpha: 0.95),
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: [
-                          BoxShadow(
-                            color: _getBackgroundColor().withValues(alpha: 0.3),
-                            blurRadius: 20,
-                            offset: const Offset(0, 8),
-                          ),
-                        ],
+                    ],
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: _getIconBackgroundColor(),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(_getIcon(), color: textColor, size: 22),
                       ),
-                      child: Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: _getIconBackgroundColor(),
-                              shape: BoxShape.circle,
-                            ),
-                            child: Icon(_getIcon(), color: textColor, size: 24),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Text(
+                          widget.message,
+                          style: TextStyle(
+                            color: textColor,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                            height: 1.5,
                           ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                SelectableText(
-                                  widget.message,
-                                  style: TextStyle(
-                                    color: textColor,
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.w500,
-                                    height: 1.4,
-                                  ),
-                                ),
-                                if (isErrorOrWarning) ...[
-                                  const SizedBox(height: 8),
-                                  GestureDetector(
-                                    onTap: () {
-                                      Clipboard.setData(
-                                        ClipboardData(text: widget.message),
-                                      );
-                                      ScaffoldMessenger.of(
-                                        context,
-                                      ).showSnackBar(
-                                        SnackBar(
-                                          content: const Text('已复制到剪贴板'),
-                                          duration: const Duration(seconds: 1),
-                                          behavior: SnackBarBehavior.floating,
-                                        ),
-                                      );
-                                    },
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Icon(
-                                          Icons.copy,
-                                          size: 14,
-                                          color: textColor.withValues(
-                                            alpha: 0.7,
-                                          ),
-                                        ),
-                                        const SizedBox(width: 4),
-                                        Text(
-                                          '复制',
-                                          style: TextStyle(
-                                            color: textColor.withValues(
-                                              alpha: 0.7,
-                                            ),
-                                            fontSize: 12,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ],
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          GestureDetector(
-                            onTap: _dismiss,
-                            child: Container(
-                              padding: const EdgeInsets.all(4),
-                              decoration: BoxDecoration(
-                                color: _getIconBackgroundColor(),
-                                shape: BoxShape.circle,
-                              ),
-                              child: Icon(
-                                Icons.close,
-                                color: textColor,
-                                size: 18,
-                              ),
-                            ),
-                          ),
-                        ],
+                        ),
                       ),
-                    ),
+                      const SizedBox(width: 12),
+                      InkWell(
+                        onTap: _dismiss,
+                        borderRadius: BorderRadius.circular(20),
+                        child: Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                            color: _getIconBackgroundColor(),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            Icons.close_rounded,
+                            color: textColor,
+                            size: 16,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
