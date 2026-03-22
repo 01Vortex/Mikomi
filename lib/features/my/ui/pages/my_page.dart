@@ -10,7 +10,6 @@ import 'package:mikomi/core/models/watch_history.dart';
 import 'package:mikomi/shared/utils/theme_extensions.dart';
 import 'package:mikomi/features/my/ui/widgets/profile_action_tabs.dart';
 import 'package:mikomi/features/my/ui/widgets/history_tab_content.dart';
-import 'package:mikomi/features/my/ui/widgets/login_reminder.dart';
 
 class MyPage extends StatefulWidget {
   const MyPage({super.key});
@@ -188,42 +187,17 @@ class _MyPageState extends State<MyPage> {
                     ],
                   ),
                 ),
-              // 未登录时显示登录提示
-              if (!isLoggedIn)
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: EdgeInsets.only(
-                      top: MediaQuery.of(context).padding.top + 80,
-                    ),
-                    child: const LoginReminder(),
-                  ),
-                ),
-              // 简介和性别标签（在背景外，添加卡片效果）
-              if (isLoggedIn)
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          '暂无简介',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: context.colors.onSurface,
-                            height: 1.5,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
               const SliverToBoxAdapter(child: SizedBox(height: 24)),
               // 按钮tab区
               SliverToBoxAdapter(
-                child: ProfileActionTabs(
-                  selectedIndex: _selectedTab,
-                  onTabSelected: _onTabSelected,
+                child: Padding(
+                  padding: EdgeInsets.only(
+                    top: isLoggedIn ? MediaQuery.of(context).padding.top + 56 : MediaQuery.of(context).padding.top + 56,
+                  ),
+                  child: ProfileActionTabs(
+                    selectedIndex: _selectedTab,
+                    onTabSelected: _onTabSelected,
+                  ),
                 ),
               ),
               const SliverToBoxAdapter(child: SizedBox(height: 24)),

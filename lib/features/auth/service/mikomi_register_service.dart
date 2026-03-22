@@ -81,15 +81,22 @@ class RegisterResponse {
 
 class UserInfo {
   final int id;
-  final String username;
+  final String account;
+  final String nickname;
   final String email;
 
-  UserInfo({required this.id, required this.username, required this.email});
+  UserInfo({
+    required this.id,
+    required this.account,
+    required this.nickname,
+    required this.email,
+  });
 
   factory UserInfo.fromJson(Map<String, dynamic> json) {
     return UserInfo(
       id: json['id'] as int,
-      username: json['username'] as String,
+      account: json['account'] as String,
+      nickname: json['nickname'] as String,
       email: json['email'] as String,
     );
   }

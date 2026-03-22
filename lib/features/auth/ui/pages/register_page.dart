@@ -154,7 +154,7 @@ class _RegisterPageState extends State<RegisterPage> {
 
       if (mounted && response != null) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('注册成功！账号: ${response.user.username}')),
+          SnackBar(content: Text('注册成功！账号: ${response.user.account}')),
         );
         Navigator.pop(context);
       }
