@@ -1,42 +1,44 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
+import 'package:mikomi/features/video/services/parser/anti_anti_crawler.dart';
+import 'package:mikomi/features/video/services/parser/general_video_parser.dart';
+import 'package:mikomi/features/video/services/parser/special_video_parser.dart';
 
-/// 全能视频地址解析服务
-/// 支持多种视频源格式和解析策略
+/// 视频地址解析服务（编排层）
+///
+/// - 通用解析: `GeneralVideoParser`
+/// - 特殊解析: `SpecialVideoParser`
+/// - 反反爬: `AntiAntiCrawler`
 class WebviewVideoParser {
   HeadlessInAppWebView? _headlessWebView;
   InAppWebViewController? _webviewController;
+
   bool _hasInjectedScripts = false;
   bool _useLegacyParser = false;
-  Timer? _videoParserTimer;
   bool _isDisposed = false;
   bool _isInitializing = false;
+  bool _isVideoSourceLoaded = false;
+
   int _activeSessionId = 0;
+  int _offset = 0;
+
   String? _currentPageUrl;
   String? _previousPageUrl;
   String? _cookieHeader;
 
-  int _offset = 0;
-  bool _isIframeLoaded = false;
-  bool _isVideoSourceLoaded = false;
+  Timer? _videoParserTimer;
+  Timer? _timeoutTimer;
 
   final StreamController<String> _logEventController =
       StreamController<String>.broadcast();
   final StreamController<(String, int)> _videoParserEventController =
       StreamController<(String, int)>.broadcast();
 
-  StreamSubscription<(String, int)>? _videoUrlSubscription;
   StreamSubscription<String>? _logSubscription;
+  StreamSubscription<(String, int)>? _videoUrlSubscription;
   Completer<String>? _videoUrlCompleter;
-  Timer? _timeoutTimer;
 
-  /// 解析视频URL
-  ///
-  /// [pageUrl] 视频页面URL
-  /// [useLegacyParser] 是否使用Legacy模式(iframe解析)，false则使用标准模式(video标签解析)
-  /// [timeout] 解析超时时间
-  /// [maxDepth] 最大递归深度，用于处理多层嵌套的播放器页面
   Future<String?> parseVideoUrl(
     String pageUrl, {
     bool useLegacyParser = true,
@@ -64,63 +66,18 @@ class WebviewVideoParser {
       final sessionId = ++_activeSessionId;
       _videoUrlCompleter = Completer<String>();
 
-      debugPrint('========== WebView 视频解析 (深度: $currentDepth) ==========');
-      debugPrint('页面URL: $pageUrl');
-      debugPrint('使用Legacy模式: $useLegacyParser');
-      debugPrint('==================================');
+      _cookieHeader = await AntiAntiCrawler.readCookiesForUrl(pageUrl);
 
-      _cookieHeader = await _readCookiesForUrl(pageUrl);
-
-      // 初始化 WebView
       await _init();
-
-      // 订阅日志事件
-      _logSubscription = _logEventController.stream.listen((log) {
-        debugPrint('[WebView] $log');
-      });
-
-      // 订阅视频URL解析事件
-      _videoUrlSubscription = _videoParserEventController.stream.listen((
-        result,
-      ) {
-        final (videoUrl, offset) = result;
-        debugPrint('========== 视频URL解析成功 ==========');
-        debugPrint('视频URL: $videoUrl');
-        debugPrint('偏移: $offset');
-        debugPrint('==================================');
-
-        if (!_isDisposed &&
-            sessionId == _activeSessionId &&
-            _videoUrlCompleter != null &&
-            !_videoUrlCompleter!.isCompleted) {
-          _videoUrlCompleter!.complete(videoUrl);
-        }
-      });
-
-      // 设置超时
-      _timeoutTimer = Timer(timeout, () {
-        if (!_isDisposed &&
-            sessionId == _activeSessionId &&
-            _videoUrlCompleter != null &&
-            !_videoUrlCompleter!.isCompleted) {
-          debugPrint('WebView 解析超时');
-          _videoUrlCompleter!.completeError('解析超时');
-        }
-      });
-
-      // 加载URL
+      _registerListeners(sessionId, timeout);
       await _loadUrl(pageUrl, useLegacyParser);
 
-      // 等待解析完成
       final videoUrl = await _videoUrlCompleter!.future;
 
-      // 检查是否需要二次解析
-      if (_needsSecondaryParsing(videoUrl) && currentDepth < maxDepth) {
-        debugPrint('检测到二级页面,进行二次解析...');
+      if (GeneralVideoParser.needsSecondaryParsing(videoUrl) &&
+          currentDepth < maxDepth) {
         await dispose();
-
-        // 二次解析使用标准模式(非Legacy),因为要提取真实视频流
-        return await _parseVideoUrlRecursive(
+        return _parseVideoUrlRecursive(
           videoUrl,
           useLegacyParser: false,
           timeout: timeout,
@@ -138,34 +95,36 @@ class WebviewVideoParser {
     }
   }
 
-  /// 判断URL是否需要二次解析
-  bool _needsSecondaryParsing(String url) {
-    // 如果是真实的视频流地址,不需要二次解析
-    if (url.contains('.m3u8') ||
-        url.contains('.mp4') ||
-        url.contains('.flv') ||
-        url.contains('.ts') ||
-        url.contains('.mpd') ||
-        url.contains('.m4s')) {
-      return false;
-    }
+  void _registerListeners(int sessionId, Duration timeout) {
+    _logSubscription = _logEventController.stream.listen((log) {
+      debugPrint('[WebView] $log');
+    });
 
-    // 如果包含这些特征,说明是播放器页面,需要二次解析
-    if (url.contains('.html') ||
-        url.contains('.php') ||
-        url.contains('player') ||
-        url.contains('play') ||
-        url.contains('index.php')) {
-      return true;
-    }
+    _videoUrlSubscription = _videoParserEventController.stream.listen((result) {
+      final (videoUrl, offset) = result;
+      debugPrint('视频URL解析成功: $videoUrl, offset=$offset');
+      if (!_isDisposed &&
+          sessionId == _activeSessionId &&
+          _videoUrlCompleter != null &&
+          !_videoUrlCompleter!.isCompleted) {
+        _videoUrlCompleter!.complete(videoUrl);
+      }
+    });
 
-    return false;
+    _timeoutTimer = Timer(timeout, () {
+      if (!_isDisposed &&
+          sessionId == _activeSessionId &&
+          _videoUrlCompleter != null &&
+          !_videoUrlCompleter!.isCompleted) {
+        _videoUrlCompleter!.completeError('解析超时');
+      }
+    });
   }
 
   Future<void> _init() async {
     if (_isInitializing) return;
     _isInitializing = true;
-    _isDisposed = false;
+
     _headlessWebView ??= HeadlessInAppWebView(
       initialSettings: InAppWebViewSettings(
         userAgent:
@@ -185,7 +144,6 @@ class WebviewVideoParser {
       ),
       onWebViewCreated: (controller) {
         if (_isDisposed) return;
-        debugPrint('[WebView] Created');
         _webviewController = controller;
       },
       shouldInterceptRequest: (controller, request) async {
@@ -194,23 +152,12 @@ class WebviewVideoParser {
         }
 
         final url = request.url.toString();
-        final lower = url.toLowerCase();
+        if (AntiAntiCrawler.isAdUrl(url)) return null;
 
-        if (_isAdUrl(lower)) return null;
-
-        if (_looksLikePlayableMedia(lower) ||
-            _isM3U8Url(lower) ||
-            _isRangeVideoRequest(lower, request.headers)) {
-          if (!_isDisposed && !_isVideoSourceLoaded) {
-            _logEventController.add('原生拦截到视频URL: $url');
-            _isIframeLoaded = true;
-            _isVideoSourceLoaded = true;
-            unawaited(_unloadPage());
-            _videoParserEventController.add((
-              _normalizePossibleUrl(url, _currentPageUrl),
-              _offset,
-            ));
-          }
+        if (GeneralVideoParser.looksLikePlayableMedia(url) ||
+            GeneralVideoParser.isM3U8Url(url) ||
+            GeneralVideoParser.isRangeVideoRequest(url, request.headers)) {
+          _emitResolvedUrl(url);
         }
         return null;
       },
@@ -224,7 +171,6 @@ class WebviewVideoParser {
       },
       onLoadStop: (controller, url) async {
         if (_isDisposed) return;
-        _logEventController.add('loading completed: $url');
         if (url.toString() != 'about:blank') {
           _startVideoParserTimer();
         }
@@ -234,92 +180,26 @@ class WebviewVideoParser {
         _logEventController.add('Console: ${consoleMessage.message}');
       },
     );
+
     await _headlessWebView?.run();
     _isInitializing = false;
   }
 
-  bool _isAdUrl(String url) {
-    return url.contains('googleads') ||
-        url.contains('googlesyndication') ||
-        url.contains('adtrafficquality') ||
-        url.contains('doubleclick');
-  }
+  void _emitResolvedUrl(String rawUrl) {
+    if (_isDisposed || _isVideoSourceLoaded) return;
+    _isVideoSourceLoaded = true;
 
-  bool _isM3U8Url(String url) {
-    final uri = Uri.tryParse(url);
-    if (uri == null) return false;
-    final lower = uri.toString().toLowerCase();
-    return lower.contains('.m3u8') ||
-        lower.contains('type=m3u8') ||
-        lower.contains('format=m3u8') ||
-        lower.contains('playlist.m3u8');
-  }
+    final normalized = GeneralVideoParser.normalizePossibleUrl(
+      rawUrl,
+      _currentPageUrl,
+    );
 
-  bool _isRangeVideoRequest(String url, Map<String, String>? headers) {
-    if (headers == null) return false;
-
-    final hasRange = headers.keys.any((key) => key.toLowerCase() == 'range');
-
-    if (!hasRange) return false;
-
-    // 排除非视频资源
-    final lower = url.toLowerCase();
-    if (lower.endsWith('.js') ||
-        lower.endsWith('.css') ||
-        lower.endsWith('.html') ||
-        lower.endsWith('.json') ||
-        lower.endsWith('.png') ||
-        lower.endsWith('.jpg') ||
-        lower.endsWith('.gif') ||
-        lower.endsWith('.svg') ||
-        lower.endsWith('.woff') ||
-        lower.endsWith('.woff2') ||
-        lower.endsWith('.wasm')) {
-      return false;
-    }
-
-    return true;
-  }
-
-  bool _looksLikePlayableMedia(String url) {
-    final lower = url.toLowerCase();
-    if (_isAdUrl(lower)) return false;
-    if (lower.startsWith('blob:') || lower.startsWith('data:')) return false;
-
-    return lower.contains('.m3u8') ||
-        lower.contains('.mp4') ||
-        lower.contains('.flv') ||
-        lower.contains('.ts') ||
-        lower.contains('.m4s') ||
-        lower.contains('.mpd') ||
-        lower.contains('token=') ||
-        lower.contains('signature=') ||
-        lower.contains('expires=') ||
-        lower.contains('x-signature=');
-  }
-
-  String _normalizePossibleUrl(String raw, [String? baseUrl]) {
-    var value = raw.trim();
-    if (value.isEmpty) return value;
-    if (value.startsWith('//')) {
-      value = 'https:$value';
-    }
-
-    if (baseUrl != null && value.startsWith('/')) {
-      final base = Uri.tryParse(baseUrl);
-      if (base != null) {
-        value = base.resolve(value).toString();
-      }
-    }
-
-    return value;
+    unawaited(_unloadPage());
+    _videoParserEventController.add((normalized, _offset));
   }
 
   void _startVideoParserTimer() {
-    if (_isDisposed) return;
     _videoParserTimer?.cancel();
-    _logEventController.add('启动视频解析定时器');
-
     _videoParserTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (_isDisposed || _isVideoSourceLoaded) {
         timer.cancel();
@@ -336,33 +216,21 @@ class WebviewVideoParser {
     try {
       if (_useLegacyParser) {
         await _webviewController?.evaluateJavascript(
-          source: """
-          (function() {
-            var iframes = document.querySelectorAll('iframe');
-            window.flutter_inappwebview.callHandler('LogBridge', '定时扫描: 找到 ' + iframes.length + ' 个iframe');
-            for (var i = 0; i < iframes.length; i++) {
-              var src = iframes[i].getAttribute('src');
-              if (src) {
-                window.flutter_inappwebview.callHandler('JSBridgeDebug', src);
-              }
-            }
-          })();
-        """,
+          source: SpecialVideoParser.legacyIframeProbeScript,
         );
       } else {
         await _webviewController?.evaluateJavascript(
           source: """
           (function() {
-            var videos = document.querySelectorAll('video');
-            window.flutter_inappwebview.callHandler('LogBridge', '定时扫描: 找到 ' + videos.length + ' 个video');
-            for (var i = 0; i < videos.length; i++) {
-              var src = videos[i].currentSrc || videos[i].getAttribute('src');
+            const videos = document.querySelectorAll('video');
+            for (let i = 0; i < videos.length; i++) {
+              let src = videos[i].currentSrc || videos[i].getAttribute('src');
               if (src && src.trim() !== '' && !src.startsWith('blob:') && !src.startsWith('data:')) {
                 window.flutter_inappwebview.callHandler('VideoBridgeDebug', src);
                 return;
               }
-              var sources = videos[i].getElementsByTagName('source');
-              for (var j = 0; j < sources.length; j++) {
+              const sources = videos[i].getElementsByTagName('source');
+              for (let j = 0; j < sources.length; j++) {
                 src = sources[j].getAttribute('src');
                 if (src && src.trim() !== '' && !src.startsWith('blob:') && !src.startsWith('data:')) {
                   window.flutter_inappwebview.callHandler('VideoBridgeDebug', src);
@@ -374,9 +242,7 @@ class WebviewVideoParser {
         """,
         );
       }
-    } catch (e) {
-      // 忽略轮询错误
-    }
+    } catch (_) {}
   }
 
   Future<void> _scanPlayerConfigForMedia() async {
@@ -386,414 +252,98 @@ class WebviewVideoParser {
 
     try {
       final result = await _webviewController!.evaluateJavascript(
-        source: """
-        (function() {
-          function firstMedia(text) {
-            if (!text) return null;
-            const reg = /(https?:\\/\\/[^\"'\\s]+\\.(m3u8|mpd)(\\?[^\"'\\s]*)?)/ig;
-            const match = reg.exec(text);
-            return match && match[1] ? match[1] : null;
-          }
-
-          for (const script of document.querySelectorAll('script')) {
-            const url = firstMedia(script.textContent || '');
-            if (url) return url;
-          }
-
-          try {
-            return firstMedia(JSON.stringify(window.__INITIAL_STATE__ || {})) ||
-                   firstMedia(JSON.stringify(window.__PLAYINFO__ || {})) ||
-                   firstMedia(JSON.stringify(window.player_aaaa || {}));
-          } catch (_) {
-            return null;
-          }
-        })();
-      """,
+        source: SpecialVideoParser.playerConfigScanScript,
       );
-
       if (result is String && result.isNotEmpty) {
-        _videoParserEventController.add((
-          _normalizePossibleUrl(result, _currentPageUrl),
-          _offset,
-        ));
+        _emitResolvedUrl(result);
       }
     } catch (_) {}
-  }
-
-  Future<String?> _readCookiesForUrl(String url) async {
-    try {
-      final uri = WebUri(url);
-      final cookies = await CookieManager.instance().getCookies(url: uri);
-      if (cookies.isEmpty) return null;
-      return cookies.map((c) => '${c.name}=${c.value}').join('; ');
-    } catch (_) {
-      return null;
-    }
   }
 
   Future<void> _loadUrl(String url, bool useLegacyParser) async {
     if (_isDisposed) return;
 
     await _unloadPage();
+
     if (!_hasInjectedScripts) {
       _addJavaScriptHandlers(useLegacyParser);
       await _addUserScripts(useLegacyParser);
       _hasInjectedScripts = true;
     }
+
     _useLegacyParser = useLegacyParser;
-    _isIframeLoaded = false;
     _isVideoSourceLoaded = false;
 
-    if (!_isDisposed) {
-      await _webviewController?.loadUrl(
-        urlRequest: URLRequest(
-          url: WebUri(url),
-          headers: {
-            'Accept': '*/*',
-            'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
-            'Referer': _previousPageUrl ?? _currentPageUrl ?? url,
-            'Origin': Uri.tryParse(_currentPageUrl ?? url)?.origin ?? '',
-            if (_cookieHeader != null && _cookieHeader!.isNotEmpty)
-              'Cookie': _cookieHeader!,
-          },
+    await _webviewController?.loadUrl(
+      urlRequest: URLRequest(
+        url: WebUri(url),
+        headers: AntiAntiCrawler.buildRequestHeaders(
+          url,
+          currentPageUrl: _currentPageUrl,
+          previousPageUrl: _previousPageUrl,
+          cookieHeader: _cookieHeader,
         ),
-      );
-    }
+      ),
+    );
   }
 
   void _addJavaScriptHandlers(bool useLegacyParser) {
-    if (_isDisposed) return;
-
-    _logEventController.add('Adding LogBridge handler');
     _webviewController?.addJavaScriptHandler(
       handlerName: 'LogBridge',
       callback: (args) {
         if (_isDisposed) return;
-        String message = args[0].toString();
+        final message = args.isNotEmpty ? args[0].toString() : '';
         if (message.contains('about:blank')) return;
         _logEventController.add(message);
       },
     );
 
-    if (useLegacyParser) {
-      _logEventController.add('Adding JSBridgeDebug handler (Legacy模式)');
-      _webviewController?.addJavaScriptHandler(
-        handlerName: 'JSBridgeDebug',
-        callback: (args) {
-          if (_isDisposed || _isVideoSourceLoaded) return;
-          String message = args[0].toString();
-          if ((message.contains('http') || message.startsWith('//')) &&
-              !message.contains('googleads') &&
-              !message.contains('googlesyndication.com') &&
-              !message.contains('prestrain.html') &&
-              !message.contains('prestrain%2Ehtml') &&
-              !message.contains('adtrafficquality')) {
-            _logEventController.add('解析iframe源: $message');
-
-            // 从URL参数中提取视频地址
-            String videoUrl = _normalizePossibleUrl(
-              _decodeVideoSource(message),
-              _currentPageUrl,
-            );
-
-            _isIframeLoaded = true;
-            _isVideoSourceLoaded = true;
-            _logEventController.add('加载视频源: $videoUrl');
-            unawaited(_unloadPage());
-            _videoParserEventController.add((videoUrl, _offset));
-          }
-        },
-      );
-    } else {
-      _logEventController.add('Adding VideoBridgeDebug handler (标准模式)');
-      _webviewController?.addJavaScriptHandler(
-        handlerName: 'VideoBridgeDebug',
-        callback: (args) {
-          if (_isDisposed || _isVideoSourceLoaded) return;
-          String message = args[0].toString();
-          if (_looksLikePlayableMedia(message) ||
-              (message.contains('http') && !message.contains('googleads'))) {
-            _logEventController.add('加载视频源: $message');
-            _isIframeLoaded = true;
-            _isVideoSourceLoaded = true;
-            unawaited(_unloadPage());
-            _videoParserEventController.add((
-              _normalizePossibleUrl(message, _currentPageUrl),
-              _offset,
-            ));
-          }
-        },
-      );
-    }
-  }
-
-  /// 从URL参数中解析视频地址
-  /// 支持从URL参数中提取m3u8/mp4等视频地址
-  String _decodeVideoSource(String iframeUrl) {
-    final decodedUrl = Uri.decodeFull(iframeUrl);
-    RegExp regExp = RegExp(
-      r'(http[s]?://.*?\.(m3u8|mp4|mpd|m4s|flv|ts))',
-      caseSensitive: false,
+    _webviewController?.addJavaScriptHandler(
+      handlerName: 'JSBridgeDebug',
+      callback: (args) {
+        if (_isDisposed || _isVideoSourceLoaded || !useLegacyParser) return;
+        final message = args.isNotEmpty ? args[0].toString() : '';
+        if ((message.contains('http') || message.startsWith('//')) &&
+            !AntiAntiCrawler.isAdUrl(message)) {
+          final videoUrl = GeneralVideoParser.decodeVideoSource(message);
+          _emitResolvedUrl(videoUrl);
+        }
+      },
     );
 
-    Uri? uri = Uri.tryParse(decodedUrl);
-    if (uri == null) return Uri.encodeFull(decodedUrl);
-    Map<String, String> params = uri.queryParameters;
-
-    String matchedUrl = decodedUrl;
-    for (var entry in params.entries) {
-      if (regExp.hasMatch(entry.value)) {
-        matchedUrl = entry.value;
-        break;
-      }
-    }
-
-    return Uri.encodeFull(matchedUrl);
+    _webviewController?.addJavaScriptHandler(
+      handlerName: 'VideoBridgeDebug',
+      callback: (args) {
+        if (_isDisposed || _isVideoSourceLoaded || useLegacyParser) return;
+        final message = args.isNotEmpty ? args[0].toString() : '';
+        if (GeneralVideoParser.looksLikePlayableMedia(message) ||
+            message.contains('http')) {
+          _emitResolvedUrl(message);
+        }
+      },
+    );
   }
 
   Future<void> _addUserScripts(bool useLegacyParser) async {
-    if (_isDisposed) return;
-
-    final List<UserScript> scripts = [];
+    final scripts = <UserScript>[];
 
     if (useLegacyParser) {
-      // Legacy模式：监听iframe元素
-      const String jsBridgeDebugScript = """
-        window.flutter_inappwebview.callHandler('LogBridge', 'JSBridgeDebug script loaded');
-        
-        function processIframeElement(iframe) {
-          let src = iframe.getAttribute('src');
-          if (src) {
-            window.flutter_inappwebview.callHandler('JSBridgeDebug', src);
-          }
-        }
-
-        const _observer = new MutationObserver((mutations) => {
-          mutations.forEach(mutation => {
-            if (mutation.type === 'attributes' && mutation.target.nodeName === 'IFRAME') {
-              processIframeElement(mutation.target);
-            } else {
-              mutation.addedNodes.forEach(node => {
-                if (node.nodeName === 'IFRAME') processIframeElement(node);
-                if (node.querySelectorAll) {
-                  node.querySelectorAll('iframe').forEach(processIframeElement);
-                }
-              });
-            }
-          });  
-        });
-
-        if (document.readyState === 'loading') {
-          document.addEventListener('DOMContentLoaded', function() {
-            document.querySelectorAll('iframe').forEach(processIframeElement);
-            _observer.observe(document.documentElement, {
-              childList: true,
-              subtree: true,
-              attributes: true,
-              attributeFilter: ['src']
-            });
-          });
-        } else {
-          document.querySelectorAll('iframe').forEach(processIframeElement);
-          _observer.observe(document.documentElement, {
-            childList: true,
-            subtree: true,
-            attributes: true,
-            attributeFilter: ['src']
-          });
-        }
-      """;
       scripts.add(
         UserScript(
-          source: jsBridgeDebugScript,
+          source: SpecialVideoParser.legacyIframeObserverScript,
           injectionTime: UserScriptInjectionTime.AT_DOCUMENT_START,
         ),
       );
     } else {
-      // 标准模式：拦截Fetch/XHR请求中的M3U8
-      const String blobParserScript = """
-        window.flutter_inappwebview.callHandler('LogBridge', 'BlobParser script loaded');
-        
-        const _r_text = window.Response.prototype.text;
-        window.Response.prototype.text = function () {
-            return new Promise((resolve, reject) => {
-                _r_text.call(this).then((text) => {
-                    resolve(text);
-                    const trimmed = text.trim();
-                    if (trimmed.startsWith("#EXTM3U") || trimmed.startsWith("<MPD") || trimmed.includes('"m3u8"') || trimmed.includes('"mpd"')) {
-                        window.flutter_inappwebview.callHandler('LogBridge', 'M3U8 source found: ' + this.url);
-                        window.flutter_inappwebview.callHandler('VideoBridgeDebug', this.url);
-                    }
-                }).catch(reject);
-            });
-        }
-
-        const _open = window.XMLHttpRequest.prototype.open;
-        window.XMLHttpRequest.prototype.open = function (...args) {
-            this.addEventListener("load", () => {
-                try {
-                    let content = this.responseText;
-                    const trimmed = content.trim();
-                    if (trimmed.startsWith("#EXTM3U") || trimmed.startsWith("<MPD") || trimmed.includes('"m3u8"') || trimmed.includes('"mpd"')) {
-                        window.flutter_inappwebview.callHandler('LogBridge', 'M3U8 source found: ' + args[1]);
-                        window.flutter_inappwebview.callHandler('VideoBridgeDebug', args[1]);
-                    };
-                } catch {}
-            });
-            return _open.apply(this, args);
-        };
-
-        // 注入到iframe中
-        function injectIntoIframe(iframe) {
-          try {
-            const iframeWindow = iframe.contentWindow;
-            if (!iframeWindow) return;
-
-            const iframe_r_text = iframeWindow.Response.prototype.text;
-            iframeWindow.Response.prototype.text = function () {
-              return new Promise((resolve, reject) => {
-                iframe_r_text.call(this).then((text) => {
-                  resolve(text);
-                  if (text.trim().startsWith("#EXTM3U")) {
-                    window.flutter_inappwebview.callHandler('LogBridge', 'M3U8 source found in iframe: ' + this.url);
-                    window.flutter_inappwebview.callHandler('VideoBridgeDebug', this.url);
-                  }
-                }).catch(reject);
-              });
-            }
-
-            const iframe_open = iframeWindow.XMLHttpRequest.prototype.open;
-            iframeWindow.XMLHttpRequest.prototype.open = function (...args) {
-              this.addEventListener("load", () => {
-                try {
-                  let content = this.responseText;
-                  const trimmed = content.trim();
-                  if ((trimmed.startsWith("#EXTM3U") || trimmed.startsWith("<MPD") || trimmed.includes('"m3u8"') || trimmed.includes('"mpd"')) && args[1] !== null && args[1] !== undefined) {
-                    window.flutter_inappwebview.callHandler('LogBridge', 'M3U8 source found in iframe: ' + args[1]);
-                    window.flutter_inappwebview.callHandler('VideoBridgeDebug', args[1]);
-                  };
-                } catch {}
-              });
-              return iframe_open.apply(this, args);
-            }
-          } catch (e) {
-            console.error('iframe inject failed:', e);
-          }
-        }
-
-        function setupIframeListeners() {
-          document.querySelectorAll('iframe').forEach(iframe => {
-            if (iframe.contentDocument) {
-              injectIntoIframe(iframe);
-            }
-            iframe.addEventListener('load', () => injectIntoIframe(iframe));
-          });
-
-          const observer = new MutationObserver(mutations => {
-            mutations.forEach(mutation => {
-              if (mutation.type === 'childList') {
-                mutation.addedNodes.forEach(node => {
-                  if (node.nodeName === 'IFRAME') {
-                    node.addEventListener('load', () => injectIntoIframe(node));
-                  }
-                  if (node.querySelectorAll) {
-                    node.querySelectorAll('iframe').forEach(iframe => {
-                      iframe.addEventListener('load', () => injectIntoIframe(iframe));
-                    });
-                  }
-                });
-              }
-            });
-          });
-
-          if (document.body) {
-            observer.observe(document.body, { childList: true, subtree: true });
-          } else {
-            document.addEventListener('DOMContentLoaded', () => {
-              observer.observe(document.body, { childList: true, subtree: true });
-            });
-          }
-        }
-
-        if (document.readyState === 'loading') {
-          document.addEventListener('DOMContentLoaded', setupIframeListeners);
-        } else {
-          setupIframeListeners();
-        }
-      """;
-
-      // 标准模式：监听video标签
-      const String videoTagParserScript = """
-        window.flutter_inappwebview.callHandler('LogBridge', 'VideoTagParser script loaded');
-        
-        function processVideoElement(video) {
-          let src = video.getAttribute('src');
-          if (src && src.trim() !== '' && !src.startsWith('blob:') && !src.includes('googleads')) {
-            window.flutter_inappwebview.callHandler('LogBridge', 'VIDEO source found: ' + src);
-            window.flutter_inappwebview.callHandler('VideoBridgeDebug', src);
-            _observer.disconnect();
-            return true;
-          }
-          const sources = video.getElementsByTagName('source');
-          for (let source of sources) {
-            src = source.getAttribute('src');
-            if (src && src.trim() !== '' && !src.startsWith('blob:') && !src.startsWith('data:') && !src.includes('googleads')) {
-              window.flutter_inappwebview.callHandler('LogBridge', 'VIDEO source found (source tag): ' + src);
-              window.flutter_inappwebview.callHandler('VideoBridgeDebug', src);
-              _observer.disconnect();
-              return true;
-            }
-          }
-          return false;
-        }
-        
-        const _observer = new MutationObserver((mutations) => {
-          for (const mutation of mutations) {
-            if (mutation.type === "attributes" && mutation.target.nodeName === "VIDEO") {
-              if (processVideoElement(mutation.target)) return;
-              continue;
-            }
-            for (const node of mutation.addedNodes) {
-              if (node.nodeName === "VIDEO") {
-                if (processVideoElement(node)) return;
-              }
-              if (node.querySelectorAll) {
-                for (const video of node.querySelectorAll("video")) {
-                  if (processVideoElement(video)) return;
-                }
-              }
-            }
-          }
-        });
-
-        function setupVideoProcessing() {
-          for (const video of document.querySelectorAll("video")) {
-            if (processVideoElement(video)) return;
-          }
-          _observer.observe(document.body, {
-            childList: true,
-            subtree: true,
-            attributes: true,
-            attributeFilter: ['src']
-          });
-        }
-        
-        if (document.readyState === 'loading') {
-          document.addEventListener('DOMContentLoaded', setupVideoProcessing);
-        } else {
-          setupVideoProcessing();
-        }
-      """;
-
       scripts.add(
         UserScript(
-          source: blobParserScript,
+          source: AntiAntiCrawler.blobAndXhrHookScript,
           injectionTime: UserScriptInjectionTime.AT_DOCUMENT_START,
         ),
       );
       scripts.add(
         UserScript(
-          source: videoTagParserScript,
+          source: GeneralVideoParser.videoTagParserScript,
           injectionTime: UserScriptInjectionTime.AT_DOCUMENT_START,
         ),
       );
@@ -805,14 +355,13 @@ class WebviewVideoParser {
   Future<void> _unloadPage() async {
     _videoParserTimer?.cancel();
     _videoParserTimer = null;
-    if (!_isDisposed && _webviewController != null) {
+
+    if (_webviewController != null && !_isDisposed) {
       try {
         await _webviewController?.loadUrl(
-          urlRequest: URLRequest(url: WebUri("about:blank")),
+          urlRequest: URLRequest(url: WebUri('about:blank')),
         );
-      } catch (e) {
-        // 忽略unload错误
-      }
+      } catch (_) {}
     }
   }
 
@@ -820,6 +369,7 @@ class WebviewVideoParser {
     _activeSessionId++;
     _isDisposed = true;
     _isInitializing = false;
+
     _timeoutTimer?.cancel();
     _timeoutTimer = null;
 
