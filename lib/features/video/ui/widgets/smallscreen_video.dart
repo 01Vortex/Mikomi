@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 import 'package:canvas_danmaku/canvas_danmaku.dart';
 import 'package:mikomi/features/video/services/video_playback_service.dart';
-import 'package:mikomi/features/video/services/danmaku_manager_service.dart';
+import 'package:mikomi/features/video/services/Bangumi_danmaku_service.dart';
 import 'package:mikomi/features/video/ui/pages/fullscreen_video_page.dart';
 import 'package:mikomi/core/models/episode.dart';
 
@@ -81,7 +81,7 @@ class _SmallscreenVideoState extends State<SmallscreenVideo> {
   Timer? _doubleTapTimer;
 
   // 弹幕控制
-  final DanmakuManagerService _danmakuController = DanmakuManagerService();
+  final BangumiDanmakuService _danmakuController = BangumiDanmakuService();
   int _lastDanmakuSecond = -1;
   DanmakuController? _canvasController;
 

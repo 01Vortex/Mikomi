@@ -1,8 +1,9 @@
+import 'package:flutter/foundation.dart';
 import 'package:canvas_danmaku/canvas_danmaku.dart';
 import 'package:mikomi/core/models/danmaku.dart';
 import 'package:mikomi/core/services/danmaku_service.dart';
 
-class DanmakuManagerService {
+class BangumiDanmakuService {
   final DanmakuService _danmakuService = DanmakuService();
   DanmakuController? canvasController;
 
@@ -17,6 +18,8 @@ class DanmakuManagerService {
 
   /// 通过番剧标题加载弹幕
   Future<void> loadDanmakuByTitle(String title, int episode) async {
+    clear();
+
     try {
       debugPrint('========== 加载弹幕 ==========');
       debugPrint('番剧标题: $title');
@@ -39,21 +42,13 @@ class DanmakuManagerService {
       );
 
       debugPrint('加载弹幕数量: ${danmakus.length}');
-
-      // 按秒分组
-      danmakuMap.clear();
-      for (var danmaku in danmakus) {
-        final second = danmaku.time.floor();
-        if (!danmakuMap.containsKey(second)) {
-          danmakuMap[second] = [];
-        }
-        danmakuMap[second]!.add(danmaku);
-      }
+      _groupDanmakuBySecond(danmakus);
 
       isLoaded = true;
       debugPrint('弹幕加载完成');
       debugPrint('==================================');
     } catch (e) {
+      clear();
       debugPrint('加载弹幕失败: $e');
     }
   }
@@ -64,6 +59,8 @@ class DanmakuManagerService {
     int episode, {
     String? fallbackTitle,
   }) async {
+    clear();
+
     try {
       debugPrint('========== 加载弹幕 ==========');
       debugPrint('Bangumi ID: $bangumiId');
@@ -99,22 +96,22 @@ class DanmakuManagerService {
       );
 
       debugPrint('加载弹幕数量: ${danmakus.length}');
-
-      // 按秒分组
-      danmakuMap.clear();
-      for (var danmaku in danmakus) {
-        final second = danmaku.time.floor();
-        if (!danmakuMap.containsKey(second)) {
-          danmakuMap[second] = [];
-        }
-        danmakuMap[second]!.add(danmaku);
-      }
+      _groupDanmakuBySecond(danmakus);
 
       isLoaded = true;
       debugPrint('弹幕加载完成');
       debugPrint('==================================');
     } catch (e) {
+      clear();
       debugPrint('加载弹幕失败: $e');
+    }
+  }
+
+  void _groupDanmakuBySecond(List<Danmaku> danmakus) {
+    for (var danmaku in danmakus) {
+      final second = danmaku.time.floor();
+      danmakuMap.putIfAbsent(second, () => []);
+      danmakuMap[second]!.add(danmaku);
     }
   }
 

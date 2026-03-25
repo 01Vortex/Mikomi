@@ -494,41 +494,48 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   // 左侧按钮组
-                  Row(
-                    children: [
-                      if (widget.hasPreviousEpisode)
-                        _buildBottomButton(
-                          icon: Icons.skip_previous,
-                          label: '上一集',
-                          onTap: widget.onPreviousEpisode ?? () {},
-                          iconOnly: true,
-                        ),
-                      if (widget.hasPreviousEpisode) const SizedBox(width: 12),
-                      _buildBottomButton(
-                        icon: _isPlaying ? Icons.pause : Icons.play_arrow,
-                        label: _isPlaying ? '暂停' : '播放',
-                        onTap: _togglePlayPause,
-                        iconOnly: true,
+                  Expanded(
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: [
+                          if (widget.hasPreviousEpisode)
+                            _buildBottomButton(
+                              icon: Icons.skip_previous,
+                              label: '上一集',
+                              onTap: widget.onPreviousEpisode ?? () {},
+                              iconOnly: true,
+                            ),
+                          if (widget.hasPreviousEpisode)
+                            const SizedBox(width: 12),
+                          _buildBottomButton(
+                            icon: _isPlaying ? Icons.pause : Icons.play_arrow,
+                            label: _isPlaying ? '暂停' : '播放',
+                            onTap: _togglePlayPause,
+                            iconOnly: true,
+                          ),
+                          if (widget.hasNextEpisode) ...[
+                            const SizedBox(width: 12),
+                            _buildBottomButton(
+                              icon: Icons.skip_next,
+                              label: '下一集',
+                              onTap: widget.onNextEpisode ?? () {},
+                              iconOnly: true,
+                            ),
+                          ],
+                          const SizedBox(width: 24),
+                          _buildDanmakuButton(),
+                          const SizedBox(width: 12),
+                          _buildDanmakuSettingButton(),
+                          if (_showDanmakuInput) ...[
+                            const SizedBox(width: 12),
+                            _buildDanmakuInputInline(),
+                          ],
+                        ],
                       ),
-                      if (widget.hasNextEpisode) ...[
-                        const SizedBox(width: 12),
-                        _buildBottomButton(
-                          icon: Icons.skip_next,
-                          label: '下一集',
-                          onTap: widget.onNextEpisode ?? () {},
-                          iconOnly: true,
-                        ),
-                      ],
-                      const SizedBox(width: 24),
-                      _buildDanmakuButton(),
-                      const SizedBox(width: 12),
-                      _buildDanmakuSettingButton(),
-                      if (_showDanmakuInput) ...[
-                        const SizedBox(width: 12),
-                        _buildDanmakuInputInline(),
-                      ],
-                    ],
+                    ),
                   ),
+                  const SizedBox(width: 12),
                   // 右侧按钮组
                   Row(
                     children: [
@@ -649,11 +656,14 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
   }
 
   Widget _buildDanmakuInputInline() {
+    final inputWidth =
+        (MediaQuery.sizeOf(context).width * 0.3).clamp(120.0, 220.0).toDouble();
+
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
         Container(
-          width: 280,
+          width: inputWidth,
           padding: const EdgeInsets.symmetric(horizontal: 16),
           decoration: BoxDecoration(
             color: Colors.white.withValues(alpha: 0.15),
