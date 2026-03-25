@@ -71,6 +71,8 @@ class _SmallscreenVideoState extends State<SmallscreenVideo> {
   bool _lockPanel = false;
   Timer? _hideTimer;
   bool _hasRestoredProgress = false; // 是否已恢复进度
+  int _lastLoadedEpisode = -1;
+  bool _isDanmakuLoading = false;
 
   // 手势控制相关(预留)
   Timer? _hideVolumeUITimer;
@@ -84,6 +86,10 @@ class _SmallscreenVideoState extends State<SmallscreenVideo> {
   final BangumiDanmakuService _danmakuController = BangumiDanmakuService();
   int _lastDanmakuSecond = -1;
   DanmakuController? _canvasController;
+  StreamSubscription<bool>? _bufferingSub;
+  StreamSubscription<bool>? _playingSub;
+  StreamSubscription<Duration>? _positionSub;
+  StreamSubscription<Duration>? _durationSub;
 
   @override
   void initState() {
@@ -125,8 +131,20 @@ class _SmallscreenVideoState extends State<SmallscreenVideo> {
     }
   }
 
+  void _cancelPlayerSubscriptions() {
+    _bufferingSub?.cancel();
+    _playingSub?.cancel();
+    _positionSub?.cancel();
+    _durationSub?.cancel();
+    _bufferingSub = null;
+    _playingSub = null;
+    _positionSub = null;
+    _durationSub = null;
+  }
+
   @override
   void dispose() {
+    _cancelPlayerSubscriptions();
     _hideTimer?.cancel();
     _hideVolumeUITimer?.cancel();
     _hideBrightnessUITimer?.cancel();
@@ -148,19 +166,38 @@ class _SmallscreenVideoState extends State<SmallscreenVideo> {
       return;
     }
 
+    if (_isDanmakuLoading) return;
+    if (_lastLoadedEpisode == widget.currentEpisode &&
+        _danmakuController.isLoaded) {
+      return;
+    }
+
+    _isDanmakuLoading = true;
+    bool loaded = false;
+
     if (widget.bangumiId != null) {
-      await _danmakuController.loadDanmakuByBangumiId(
+      loaded = await _danmakuController.loadDanmakuByBangumiId(
         widget.bangumiId!,
         widget.currentEpisode,
         fallbackTitle: widget.animeTitle,
       );
     } else if (widget.animeTitle != null) {
-      await _danmakuController.loadDanmakuByTitle(
+      loaded = await _danmakuController.loadDanmakuByTitle(
         widget.animeTitle!,
         widget.currentEpisode,
       );
     } else {
       debugPrint('没有番剧ID或标题,无法加载弹幕');
+    }
+
+    _isDanmakuLoading = false;
+    _lastLoadedEpisode = widget.currentEpisode;
+
+    if (mounted && !loaded) {
+      final message = _danmakuController.lastError ?? '弹幕加载失败';
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message), duration: const Duration(seconds: 2)),
+      );
     }
 
     debugPrint('弹幕加载完成,已加载: ${_danmakuController.isLoaded}');
@@ -194,6 +231,13 @@ class _SmallscreenVideoState extends State<SmallscreenVideo> {
       );
     }
   }
+
+  void _sendDanmakuWindow(int second) {
+    _sendDanmakuAtTime(second - 1);
+    _sendDanmakuAtTime(second);
+    _sendDanmakuAtTime(second + 1);
+  }
+
 
   void _startControlsTimer() {
     _hideTimer?.cancel();
@@ -230,7 +274,8 @@ class _SmallscreenVideoState extends State<SmallscreenVideo> {
 
         final player = widget.playerController.player;
         if (player != null) {
-          player.stream.buffering.listen((buffering) {
+          _cancelPlayerSubscriptions();
+          _bufferingSub = player.stream.buffering.listen((buffering) {
             if (mounted) {
               setState(() {
                 _isBuffering = buffering;
@@ -238,7 +283,7 @@ class _SmallscreenVideoState extends State<SmallscreenVideo> {
             }
           });
 
-          player.stream.playing.listen((playing) {
+          _playingSub = player.stream.playing.listen((playing) {
             if (mounted) {
               setState(() {
                 _isPlaying = playing;
@@ -246,7 +291,7 @@ class _SmallscreenVideoState extends State<SmallscreenVideo> {
             }
           });
 
-          player.stream.position.listen((position) {
+          _positionSub = player.stream.position.listen((position) {
             if (mounted && !_isDragging) {
               setState(() {
                 _currentPosition = position;
@@ -255,7 +300,10 @@ class _SmallscreenVideoState extends State<SmallscreenVideo> {
               // 发送弹幕
               if (widget.isDanmakuEnabled && _isPlaying) {
                 final currentSecond = position.inSeconds;
-                if (currentSecond != _lastDanmakuSecond) {
+                if ((currentSecond - _lastDanmakuSecond).abs() > 2) {
+                  _lastDanmakuSecond = currentSecond;
+                  _sendDanmakuWindow(currentSecond);
+                } else if (currentSecond != _lastDanmakuSecond) {
                   _lastDanmakuSecond = currentSecond;
                   _sendDanmakuAtTime(currentSecond);
                 }
@@ -263,7 +311,7 @@ class _SmallscreenVideoState extends State<SmallscreenVideo> {
             }
           });
 
-          player.stream.duration.listen((duration) {
+          _durationSub = player.stream.duration.listen((duration) {
             if (mounted) {
               setState(() {
                 _totalDuration = duration;

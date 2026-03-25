@@ -57,6 +57,10 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
   bool _isDanmakuEnabled = false;
   bool _showDanmakuInput = false;
   final TextEditingController _danmakuController = TextEditingController();
+  StreamSubscription<bool>? _playingSub;
+  StreamSubscription<bool>? _bufferingSub;
+  StreamSubscription<Duration>? _positionSub;
+  StreamSubscription<Duration>? _durationSub;
   final GlobalKey _speedButtonKey = GlobalKey();
 
   @override
@@ -78,8 +82,20 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
     }
   }
 
+  void _cancelPlayerSubscriptions() {
+    _playingSub?.cancel();
+    _bufferingSub?.cancel();
+    _positionSub?.cancel();
+    _durationSub?.cancel();
+    _playingSub = null;
+    _bufferingSub = null;
+    _positionSub = null;
+    _durationSub = null;
+  }
+
   @override
   void dispose() {
+    _cancelPlayerSubscriptions();
     _hideTimer?.cancel();
     _danmakuController.dispose();
     super.dispose();
@@ -89,25 +105,27 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
     final player = widget.playerController.player;
     if (player == null) return;
 
-    player.stream.playing.listen((playing) {
+    _cancelPlayerSubscriptions();
+
+    _playingSub = player.stream.playing.listen((playing) {
       if (mounted) {
         setState(() => _isPlaying = playing);
       }
     });
 
-    player.stream.buffering.listen((buffering) {
+    _bufferingSub = player.stream.buffering.listen((buffering) {
       if (mounted) {
         setState(() => _isBuffering = buffering);
       }
     });
 
-    player.stream.position.listen((position) {
+    _positionSub = player.stream.position.listen((position) {
       if (mounted && !_isDragging) {
         setState(() => _position = position);
       }
     });
 
-    player.stream.duration.listen((duration) {
+    _durationSub = player.stream.duration.listen((duration) {
       if (mounted) {
         setState(() => _duration = duration);
       }
@@ -680,21 +698,13 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
               contentPadding: EdgeInsets.symmetric(vertical: 8),
             ),
             onSubmitted: (value) {
-              if (value.trim().isNotEmpty) {
-                // TODO: 发送弹幕
-                _danmakuController.clear();
-              }
+              _submitLocalDanmaku();
             },
           ),
         ),
         const SizedBox(width: 8),
         GestureDetector(
-          onTap: () {
-            if (_danmakuController.text.trim().isNotEmpty) {
-              // TODO: 发送弹幕
-              _danmakuController.clear();
-            }
-          },
+          onTap: _submitLocalDanmaku,
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
             decoration: BoxDecoration(
@@ -712,6 +722,16 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
           ),
         ),
       ],
+    );
+  }
+
+  void _submitLocalDanmaku() {
+    final text = _danmakuController.text.trim();
+    if (text.isEmpty) return;
+
+    _danmakuController.clear();
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('已发送（本地回显）'), duration: Duration(seconds: 1)),
     );
   }
 

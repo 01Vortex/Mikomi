@@ -71,6 +71,7 @@ class _VideoPageState extends State<VideoPage>
   Timer? _timeoutTimer;
   Timer? _saveHistoryTimer; // 定期保存历史的计时器
   Duration? _currentInitialProgress; // 当前使用的初始进度
+  bool _isReassembling = false;
 
   @override
   void initState() {
@@ -135,12 +136,26 @@ class _VideoPageState extends State<VideoPage>
     );
   }
 
-  @override
+    Future<void> _handleReassemble() async {
+    if (_isReassembling) return;
+    _isReassembling = true;
+
+    try {
+      await _playerController.stop();
+      await Future.delayed(const Duration(milliseconds: 80));
+      if (mounted) {
+        _updateCurrentVideoUrl();
+      }
+    } finally {
+      _isReassembling = false;
+    }
+  }
+
+@override
   void reassemble() {
     super.reassemble();
-    // 热重启时重新初始化播放器
-    debugPrint('VideoPage: 热重启检测到，重新初始化');
-    _updateCurrentVideoUrl();
+    debugPrint('VideoPage: 热重启检测到，暂停并重建播放器监听');
+    unawaited(_handleReassemble());
   }
 
   /// 更新当前视频URL(切换集数时调用)

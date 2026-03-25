@@ -11,6 +11,8 @@ class WebviewVideoParser {
   bool _useLegacyParser = false;
   Timer? _videoParserTimer;
   bool _isDisposed = false;
+  bool _isInitializing = false;
+  int _activeSessionId = 0;
 
   int _offset = 0;
   bool _isIframeLoaded = false;
@@ -56,6 +58,7 @@ class WebviewVideoParser {
   }) async {
     try {
       _isDisposed = false;
+      final sessionId = ++_activeSessionId;
       _videoUrlCompleter = Completer<String>();
 
       debugPrint('========== WebView 视频解析 (深度: $currentDepth) ==========');
@@ -82,6 +85,7 @@ class WebviewVideoParser {
         debugPrint('==================================');
 
         if (!_isDisposed &&
+            sessionId == _activeSessionId &&
             _videoUrlCompleter != null &&
             !_videoUrlCompleter!.isCompleted) {
           _videoUrlCompleter!.complete(videoUrl);
@@ -90,7 +94,10 @@ class WebviewVideoParser {
 
       // 设置超时
       _timeoutTimer = Timer(timeout, () {
-        if (_videoUrlCompleter != null && !_videoUrlCompleter!.isCompleted) {
+        if (!_isDisposed &&
+            sessionId == _activeSessionId &&
+            _videoUrlCompleter != null &&
+            !_videoUrlCompleter!.isCompleted) {
           debugPrint('WebView 解析超时');
           _videoUrlCompleter!.completeError('解析超时');
         }
@@ -149,6 +156,8 @@ class WebviewVideoParser {
   }
 
   Future<void> _init() async {
+    if (_isInitializing) return;
+    _isInitializing = true;
     _isDisposed = false;
     _headlessWebView ??= HeadlessInAppWebView(
       initialSettings: InAppWebViewSettings(
@@ -208,6 +217,7 @@ class WebviewVideoParser {
       },
     );
     await _headlessWebView?.run();
+    _isInitializing = false;
   }
 
   bool _isAdUrl(String url) {
@@ -677,7 +687,9 @@ class WebviewVideoParser {
   }
 
   Future<void> dispose() async {
+    _activeSessionId++;
     _isDisposed = true;
+    _isInitializing = false;
     _timeoutTimer?.cancel();
     _timeoutTimer = null;
 

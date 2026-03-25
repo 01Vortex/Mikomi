@@ -4,6 +4,11 @@ import 'package:mikomi/core/models/danmaku.dart';
 import 'package:mikomi/core/services/danmaku_service.dart';
 
 class BangumiDanmakuService {
+  static const int _maxDanmakuPerSecond = 24;
+
+  static final Map<int, int> _bgmToDanDanCache = {};
+  static final Map<String, int> _titleToDanDanCache = {};
+
   final DanmakuService _danmakuService = DanmakuService();
   DanmakuController? canvasController;
 
@@ -16,8 +21,11 @@ class BangumiDanmakuService {
   // 弹幕番剧ID
   int? danmakuBangumiId;
 
+  // 最近一次错误（用于 UI 提示）
+  String? lastError;
+
   /// 通过番剧标题加载弹幕
-  Future<void> loadDanmakuByTitle(String title, int episode) async {
+  Future<bool> loadDanmakuByTitle(String title, int episode) async {
     clear();
 
     try {
@@ -25,17 +33,21 @@ class BangumiDanmakuService {
       debugPrint('番剧标题: $title');
       debugPrint('集数: $episode');
 
-      // 搜索番剧ID
-      final bangumiId = await _danmakuService.getBangumiIdByTitle(title);
+      final titleKey = _normalizeTitle(title);
+      final cached = _titleToDanDanCache[titleKey];
+      final bangumiId =
+          cached ?? await _danmakuService.getBangumiIdByTitle(title);
+
       if (bangumiId == 0) {
-        debugPrint('未找到弹幕番剧ID');
-        return;
+        lastError = '未找到弹幕番剧ID';
+        debugPrint(lastError!);
+        return false;
       }
 
+      _titleToDanDanCache[titleKey] = bangumiId;
       danmakuBangumiId = bangumiId;
       debugPrint('弹幕番剧ID: $bangumiId');
 
-      // 获取弹幕
       final danmakus = await _danmakuService.getDanmakuByEpisode(
         bangumiId,
         episode,
@@ -44,17 +56,24 @@ class BangumiDanmakuService {
       debugPrint('加载弹幕数量: ${danmakus.length}');
       _groupDanmakuBySecond(danmakus);
 
-      isLoaded = true;
+      isLoaded = danmakuMap.isNotEmpty;
+      if (!isLoaded) {
+        lastError = '当前剧集暂无弹幕';
+      }
+
       debugPrint('弹幕加载完成');
       debugPrint('==================================');
+      return isLoaded;
     } catch (e) {
       clear();
-      debugPrint('加载弹幕失败: $e');
+      lastError = '加载弹幕失败: $e';
+      debugPrint(lastError!);
+      return false;
     }
   }
 
   /// 通过Bangumi ID加载弹幕
-  Future<void> loadDanmakuByBangumiId(
+  Future<bool> loadDanmakuByBangumiId(
     int bangumiId,
     int episode, {
     String? fallbackTitle,
@@ -66,30 +85,34 @@ class BangumiDanmakuService {
       debugPrint('Bangumi ID: $bangumiId');
       debugPrint('集数: $episode');
 
-      // 获取弹弹Play番剧ID
-      final danDanId = await _danmakuService.getDanDanBangumiIdByBgmId(
-        bangumiId,
-      );
+      final cachedDanDanId = _bgmToDanDanCache[bangumiId];
+      final danDanId = cachedDanDanId ??
+          await _danmakuService.getDanDanBangumiIdByBgmId(bangumiId);
 
       int finalDanDanId = danDanId;
 
-      // 如果通过Bangumi ID获取失败，尝试使用标题搜索
-      if (danDanId == 0 && fallbackTitle != null) {
+      if (danDanId == 0 && fallbackTitle != null && fallbackTitle.isNotEmpty) {
         debugPrint('通过Bangumi ID获取失败，尝试使用标题搜索: $fallbackTitle');
-        finalDanDanId = await _danmakuService.getBangumiIdByTitle(
-          fallbackTitle,
-        );
+        final titleKey = _normalizeTitle(fallbackTitle);
+        final titleCached = _titleToDanDanCache[titleKey];
+        finalDanDanId =
+            titleCached ?? await _danmakuService.getBangumiIdByTitle(fallbackTitle);
+
+        if (finalDanDanId > 0) {
+          _titleToDanDanCache[titleKey] = finalDanDanId;
+        }
       }
 
       if (finalDanDanId == 0) {
-        debugPrint('未找到弹幕番剧ID');
-        return;
+        lastError = '未找到弹幕番剧ID';
+        debugPrint(lastError!);
+        return false;
       }
 
+      _bgmToDanDanCache[bangumiId] = finalDanDanId;
       danmakuBangumiId = finalDanDanId;
       debugPrint('弹幕番剧ID: $finalDanDanId');
 
-      // 获取弹幕
       final danmakus = await _danmakuService.getDanmakuByEpisode(
         finalDanDanId,
         episode,
@@ -98,21 +121,52 @@ class BangumiDanmakuService {
       debugPrint('加载弹幕数量: ${danmakus.length}');
       _groupDanmakuBySecond(danmakus);
 
-      isLoaded = true;
+      isLoaded = danmakuMap.isNotEmpty;
+      if (!isLoaded) {
+        lastError = '当前剧集暂无弹幕';
+      }
+
       debugPrint('弹幕加载完成');
       debugPrint('==================================');
+      return isLoaded;
     } catch (e) {
       clear();
-      debugPrint('加载弹幕失败: $e');
+      lastError = '加载弹幕失败: $e';
+      debugPrint(lastError!);
+      return false;
     }
   }
 
   void _groupDanmakuBySecond(List<Danmaku> danmakus) {
+    final deduplicated = <String>{};
+
     for (var danmaku in danmakus) {
       final second = danmaku.time.floor();
-      danmakuMap.putIfAbsent(second, () => []);
-      danmakuMap[second]!.add(danmaku);
+      final normalized = _normalizeDanmakuText(danmaku.message);
+      final dedupeKey = '$second|${danmaku.type}|$normalized';
+
+      if (normalized.isEmpty || deduplicated.contains(dedupeKey)) {
+        continue;
+      }
+      deduplicated.add(dedupeKey);
+
+      final list = danmakuMap.putIfAbsent(second, () => []);
+      if (list.length >= _maxDanmakuPerSecond) {
+        continue;
+      }
+      list.add(danmaku);
     }
+  }
+
+  String _normalizeDanmakuText(String text) {
+    return text.trim().toLowerCase().replaceAll(RegExp(r'\s+'), '');
+  }
+
+  String _normalizeTitle(String title) {
+    var normalized = title.toLowerCase().trim();
+    normalized = normalized.replaceAll(RegExp(r'[：:·\-—_]'), ' ');
+    normalized = normalized.replaceAll(RegExp(r'\s+'), ' ');
+    return normalized;
   }
 
   /// 获取指定时间的弹幕
@@ -125,6 +179,7 @@ class BangumiDanmakuService {
     danmakuMap.clear();
     isLoaded = false;
     danmakuBangumiId = null;
+    lastError = null;
   }
 
   /// 释放资源
