@@ -337,8 +337,10 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
       left: 0,
       right: 0,
       child: SafeArea(
+        left: false,
+        right: false,
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
           child: Row(
             children: [
               IconButton(
@@ -417,8 +419,10 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
       left: 0,
       right: 0,
       child: SafeArea(
+        left: false,
+        right: false,
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [

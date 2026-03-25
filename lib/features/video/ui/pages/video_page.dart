@@ -7,6 +7,7 @@ import 'package:mikomi/features/video/ui/widgets/video_tab.dart';
 import 'package:mikomi/features/video/ui/widgets/smallscreen_episcode.dart';
 import 'package:mikomi/features/video/ui/widgets/danmaku_input.dart';
 import 'package:mikomi/features/anime/selector/video_source_selector.dart';
+import 'package:mikomi/features/settings/video_settings/service/plugin_manager_service.dart';
 import 'package:mikomi/shared/widgets/skeleton.dart';
 import 'package:mikomi/core/models/episode.dart';
 import 'package:mikomi/core/services/bangumi_episodes_service.dart';
@@ -57,9 +58,11 @@ class _VideoPageState extends State<VideoPage>
   bool _isDanmakuEnabled = false;
   bool _isDanmakuInputExpanded = false;
   bool _isEpisodesExpanded = true; // 剧集列表是否展开
+  List<VideoSource> _fallbackVideoSources = [];
   final TextEditingController _danmakuController = TextEditingController();
   final BangumiEpisodesService _episodesService = BangumiEpisodesService();
   final VideoSourceRepository _videoSourceRepo = VideoSourceRepository();
+  final VideoPluginManager _pluginManager = VideoPluginManager();
   final WatchHistoryService _historyService = WatchHistoryService();
 
   late final VideoPlaybackService _playerController;
@@ -111,6 +114,9 @@ class _VideoPageState extends State<VideoPage>
     _saveHistoryTimer = Timer.periodic(const Duration(seconds: 2), (timer) {
       _saveWatchHistory();
     });
+
+    // 兜底加载可切换的视频源（历史入口通常不传 videoSources）
+    _loadFallbackVideoSources();
   }
 
   @override
@@ -281,37 +287,40 @@ class _VideoPageState extends State<VideoPage>
   bool get _hasNextEpisode => _currentEpisode < _totalEpisodes;
   bool get _hasPreviousEpisode => _currentEpisode > 1;
 
+  Future<void> _playEpisode(Episode episode) async {
+    if (episode.number == _currentEpisode) return;
+
+    _saveWatchHistory();
+    await _playerController.stop();
+
+    if (!mounted) return;
+
+    setState(() {
+      _currentEpisode = episode.number;
+      // 切换集数时清除初始进度
+      _currentInitialProgress = null;
+    });
+
+    _updateCurrentVideoUrl();
+  }
+
   Future<void> _playNextEpisode() async {
     if (_hasNextEpisode) {
-      // 保存当前集数的观看历史
-      _saveWatchHistory();
-
-      // 立即停止当前播放
-      await _playerController.stop();
-
-      setState(() {
-        _currentEpisode++;
-        // 切换集数时清除初始进度
-        _currentInitialProgress = null;
-        _updateCurrentVideoUrl();
-      });
+      final nextEpisode = _episodes.firstWhere(
+        (ep) => ep.number == _currentEpisode + 1,
+        orElse: () => Episode(number: _currentEpisode + 1),
+      );
+      await _playEpisode(nextEpisode);
     }
   }
 
   Future<void> _playPreviousEpisode() async {
     if (_hasPreviousEpisode) {
-      // 保存当前集数的观看历史
-      _saveWatchHistory();
-
-      // 立即停止当前播放
-      await _playerController.stop();
-
-      setState(() {
-        _currentEpisode--;
-        // 切换集数时清除初始进度
-        _currentInitialProgress = null;
-        _updateCurrentVideoUrl();
-      });
+      final previousEpisode = _episodes.firstWhere(
+        (ep) => ep.number == _currentEpisode - 1,
+        orElse: () => Episode(number: _currentEpisode - 1),
+      );
+      await _playEpisode(previousEpisode);
     }
   }
 
@@ -396,7 +405,16 @@ class _VideoPageState extends State<VideoPage>
   }
 
   void _showVideoSourceSelector() {
-    if (widget.videoSources == null || widget.videoSources!.isEmpty) {
+    final availableSources =
+        (widget.videoSources != null && widget.videoSources!.isNotEmpty)
+        ? widget.videoSources!
+        : _fallbackVideoSources;
+
+    if (availableSources.isEmpty) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('暂无可用视频源')),
+      );
       return;
     }
 
@@ -405,7 +423,7 @@ class _VideoPageState extends State<VideoPage>
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
       builder: (context) => VideoSourceSelector(
-        sources: widget.videoSources!,
+        sources: availableSources,
         animeTitle: widget.animeTitle,
         onSourceSelected: (source) {
           Navigator.pop(context);
@@ -413,6 +431,18 @@ class _VideoPageState extends State<VideoPage>
         },
       ),
     );
+  }
+
+  Future<void> _loadFallbackVideoSources() async {
+    await _pluginManager.init();
+
+    if (!mounted) return;
+
+    setState(() {
+      _fallbackVideoSources = _pluginManager.plugins
+          .map((plugin) => VideoSource(name: plugin.name))
+          .toList();
+    });
   }
 
   void _saveWatchHistory() {
@@ -567,14 +597,7 @@ class _VideoPageState extends State<VideoPage>
                                   hasPreviousEpisode: _hasPreviousEpisode,
                                   initialProgress: _currentInitialProgress,
                                   episodes: _episodes,
-                                  onEpisodeSelected: (episode) async {
-                                    await _playerController.stop();
-                                    setState(() {
-                                      _currentEpisode = episode.number;
-                                      _currentInitialProgress = null;
-                                      _updateCurrentVideoUrl();
-                                    });
-                                  },
+                                  onEpisodeSelected: _playEpisode,
                                   isLoadingEpisodes: _isLoadingEpisodes,
                                   isDescending: _isDescending,
                                   onToggleSort: () {
@@ -651,38 +674,12 @@ class _VideoPageState extends State<VideoPage>
                                           if (_showTimeoutHint) ...[
                                             const SizedBox(height: 12),
                                             Text(
-                                              '加载时间较长',
+                                              '加载时间较长，点击右下角切换视频源',
                                               style: TextStyle(
                                                 color: Colors.white.withValues(
                                                   alpha: 0.7,
                                                 ),
                                                 fontSize: 13,
-                                              ),
-                                            ),
-                                            const SizedBox(height: 8),
-                                            GestureDetector(
-                                              onTap: _showVideoSourceSelector,
-                                              child: Container(
-                                                padding:
-                                                    const EdgeInsets.symmetric(
-                                                      horizontal: 20,
-                                                      vertical: 10,
-                                                    ),
-                                                decoration: BoxDecoration(
-                                                  color: Theme.of(
-                                                    context,
-                                                  ).colorScheme.primary,
-                                                  borderRadius:
-                                                      BorderRadius.circular(20),
-                                                ),
-                                                child: const Text(
-                                                  '切换视频源',
-                                                  style: TextStyle(
-                                                    color: Colors.white,
-                                                    fontSize: 14,
-                                                    fontWeight: FontWeight.w500,
-                                                  ),
-                                                ),
                                               ),
                                             ),
                                           ],
@@ -1000,17 +997,7 @@ class _VideoPageState extends State<VideoPage>
               return SmallscreenEpisode(
                 episode: episode,
                 isCurrent: isCurrent,
-                onTap: () async {
-                  // 立即停止当前播放
-                  await _playerController.stop();
-
-                  setState(() {
-                    _currentEpisode = episode.number;
-                    // 切换集数时清除初始进度
-                    _currentInitialProgress = null;
-                    _updateCurrentVideoUrl();
-                  });
-                },
+                onTap: () => _playEpisode(episode),
               );
             },
           ),
