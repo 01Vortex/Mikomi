@@ -25,13 +25,23 @@ class AntiAntiCrawler {
     String? previousPageUrl,
     String? cookieHeader,
   }) {
+    final origin = _safeOrigin(currentPageUrl) ?? _safeOrigin(targetUrl) ?? '';
+
     return {
       'Accept': '*/*',
       'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
       'Referer': previousPageUrl ?? currentPageUrl ?? targetUrl,
-      'Origin': Uri.tryParse(currentPageUrl ?? targetUrl)?.origin ?? '',
+      'Origin': origin,
       if (cookieHeader != null && cookieHeader.isNotEmpty) 'Cookie': cookieHeader,
     };
+  }
+
+  static String? _safeOrigin(String? raw) {
+    if (raw == null || raw.isEmpty) return null;
+    final uri = Uri.tryParse(raw);
+    if (uri == null) return null;
+    if (uri.scheme != 'http' && uri.scheme != 'https') return null;
+    return uri.origin;
   }
 
   static const String blobAndXhrHookScript = """

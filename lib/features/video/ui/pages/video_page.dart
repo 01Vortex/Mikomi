@@ -12,9 +12,12 @@ import 'package:mikomi/shared/widgets/skeleton.dart';
 import 'package:mikomi/core/models/episode.dart';
 import 'package:mikomi/core/services/bangumi_episodes_service.dart';
 import 'package:mikomi/features/video/data/video_source_repository.dart';
+import 'package:mikomi/features/video/services/parser/video_source_provider.dart'
+    show CaptchaRequiredException;
 import 'package:mikomi/features/video/services/video_playback_service.dart';
 import 'package:mikomi/core/services/watch_history_service.dart';
 import 'package:mikomi/core/models/watch_history.dart';
+import 'package:mikomi/shared/widgets/message_dialog.dart';
 
 class VideoPage extends StatefulWidget {
   final String title;
@@ -266,6 +269,11 @@ class _VideoPageState extends State<VideoPage>
         debugPrint('剧集加载完成，重新解析视频URL');
         _updateCurrentVideoUrl();
       }
+    } on CaptchaRequiredException catch (e) {
+      debugPrint('加载视频源剧集触发验证码: $e');
+      if (mounted) {
+        MessageDialog.warning(context, '当前视频源需要验证码验证，请先在视频源站点完成人机验证');
+      }
     } catch (e) {
       debugPrint('加载视频源剧集失败: $e');
     }
@@ -384,9 +392,13 @@ class _VideoPageState extends State<VideoPage>
     } catch (e) {
       debugPrint('获取当前视频URL失败: $e');
       debugPrint('==================================');
-      return _videoUrl;
+      if (mounted) {
+        MessageDialog.error(context, '视频解析失败，请切换视频源或稍后重试');
+      }
+      rethrow;
     }
   }
+
 
   Future<void> _switchVideoSource(VideoSource source) async {
     debugPrint('========== 切换视频源 ==========');
@@ -570,7 +582,7 @@ class _VideoPageState extends State<VideoPage>
                     final videoUrl = snapshot.data ?? '';
                     final isLoading =
                         snapshot.connectionState == ConnectionState.waiting ||
-                        (snapshot.connectionState == ConnectionState.done &&
+                        (_isLoadingEpisodes &&
                             videoUrl.isEmpty &&
                             !snapshot.hasError);
                     final hasError = snapshot.hasError;

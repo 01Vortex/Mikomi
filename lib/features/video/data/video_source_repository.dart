@@ -6,7 +6,7 @@ import 'package:mikomi/core/models/episode.dart';
 import 'package:mikomi/core/models/road.dart';
 import 'package:mikomi/core/models/video_plugin.dart';
 import 'package:mikomi/features/video/services/video_plugin_service.dart';
-import 'package:mikomi/features/video/services/webview_video_parser.dart';
+import 'package:mikomi/features/video/services/parser/video_source_provider.dart';
 
 class SearchResult {
   final String name;
@@ -17,7 +17,8 @@ class SearchResult {
 
 class VideoSourceRepository {
   final VideoPluginService _pluginService = VideoPluginService();
-  final WebviewVideoParser _webViewParser = WebviewVideoParser();
+  final IVideoSourceProvider _videoSourceProvider =
+      WebViewVideoSourceProvider();
   final Dio _dio = Dio(
     BaseOptions(
       connectTimeout: const Duration(seconds: 15),
@@ -62,6 +63,17 @@ class VideoSourceRepository {
       if (response.statusCode == 200) {
         final htmlString = response.data.toString();
         debugPrint('HTML长度: ${htmlString.length}');
+
+        if (_looksLikeCaptchaPage(htmlString) && plugin.antiCrawlerConfig.enabled) {
+          throw CaptchaRequiredException(
+            pluginName: plugin.name,
+            pageUrl: fullUrl,
+            captchaType: plugin.antiCrawlerConfig.captchaType,
+            captchaImageXpath: plugin.antiCrawlerConfig.captchaImage,
+            captchaInputXpath: plugin.antiCrawlerConfig.captchaInput,
+            captchaButtonXpath: plugin.antiCrawlerConfig.captchaButton,
+          );
+        }
 
         final document = html_parser.parse(htmlString);
         final htmlElement = document.documentElement;
@@ -168,6 +180,8 @@ class VideoSourceRepository {
         return results;
       }
       return [];
+    } on CaptchaRequiredException {
+      rethrow;
     } catch (e) {
       debugPrint('搜索失败: $e');
       return [];
@@ -197,8 +211,14 @@ class VideoSourceRepository {
 
       debugPrint('[$pluginName] 找到 ${searchResults.length} 个搜索结果');
 
-      // 获取第一个结果的剧集列表
-      final firstResult = searchResults.first;
+      final matchedResult = _selectBestSearchResult(keyword, searchResults);
+      if (matchedResult == null) {
+        debugPrint('[$pluginName] 未找到与 "$keyword" 完全匹配的结果，终止解析');
+        return [];
+      }
+
+      // 获取完全匹配结果的剧集列表
+      final firstResult = matchedResult;
       debugPrint('[$pluginName] 获取剧集列表: ${firstResult.name}');
       debugPrint('[$pluginName] 剧集URL: ${firstResult.url}');
 
@@ -236,6 +256,52 @@ class VideoSourceRepository {
       debugPrint('[$pluginName] 堆栈: $stackTrace');
       return [];
     }
+  }
+
+  bool _looksLikeCaptchaPage(String html) {
+    final lower = html.toLowerCase();
+    return lower.contains('captcha') ||
+        lower.contains('验证码') ||
+        lower.contains('verify') ||
+        lower.contains('人机验证') ||
+        lower.contains('geetest') ||
+        lower.contains('turnstile');
+  }
+
+  String _normalizeTitle(String value) {
+    return value
+        .toLowerCase()
+        .replaceAll(RegExp(r'\s+'), '')
+        .replaceAll(RegExp(r'[^a-z0-9\u4e00-\u9fa5]'), '');
+  }
+
+  SearchResult? _selectBestSearchResult(
+    String keyword,
+    List<SearchResult> results,
+  ) {
+    final normalizedKeyword = _normalizeTitle(keyword);
+
+    for (final result in results) {
+      if (_normalizeTitle(result.name) == normalizedKeyword) {
+        debugPrint('搜索完全匹配命中: ${result.name}');
+        return result;
+      }
+    }
+
+    final strictPrefix = RegExp(
+      '^${RegExp.escape(normalizedKeyword)}(?!\\d)',
+      caseSensitive: false,
+    );
+
+    for (final result in results) {
+      final normalizedName = _normalizeTitle(result.name);
+      if (strictPrefix.hasMatch(normalizedName)) {
+        debugPrint('搜索前缀匹配命中: ${result.name}');
+        return result;
+      }
+    }
+
+    return null;
   }
 
   /// 直接从URL获取剧集列表
@@ -318,6 +384,17 @@ class VideoSourceRepository {
         final htmlString = response.data.toString();
         debugPrint('HTML长度: ${htmlString.length}');
 
+        if (_looksLikeCaptchaPage(htmlString) && plugin.antiCrawlerConfig.enabled) {
+          throw CaptchaRequiredException(
+            pluginName: plugin.name,
+            pageUrl: fullUrl,
+            captchaType: plugin.antiCrawlerConfig.captchaType,
+            captchaImageXpath: plugin.antiCrawlerConfig.captchaImage,
+            captchaInputXpath: plugin.antiCrawlerConfig.captchaInput,
+            captchaButtonXpath: plugin.antiCrawlerConfig.captchaButton,
+          );
+        }
+
         final document = html_parser.parse(htmlString);
         final htmlElement = document.documentElement;
 
@@ -395,6 +472,8 @@ class VideoSourceRepository {
         return roadList;
       }
       return [];
+    } on CaptchaRequiredException {
+      rethrow;
     } catch (e, stackTrace) {
       debugPrint('获取剧集列表失败: $e');
       debugPrint('堆栈: $stackTrace');
@@ -404,45 +483,29 @@ class VideoSourceRepository {
 
   /// 解析视频播放地址（用于实际播放）
   Future<String> parseVideoUrl(String pageUrl, String pluginName) async {
-    try {
-      final plugin = _pluginService.getPluginByName(pluginName);
-      if (plugin == null) {
-        debugPrint('插件 $pluginName 不存在');
-        return pageUrl;
-      }
+    final plugin = _pluginService.getPluginByName(pluginName);
+    if (plugin == null) {
+      throw Exception('插件不存在: $pluginName');
+    }
 
-      // 如果插件需要使用WebView，使用 WebView 解析
-      if (plugin.useWebview) {
-        debugPrint('========== 开始 WebView 解析 ==========');
-        debugPrint('页面URL: $pageUrl');
-        debugPrint('插件: $pluginName');
-        debugPrint('使用Legacy模式: ${plugin.useLegacyParser}');
-
-        // 使用插件配置的解析模式,支持多层解析
-        final parsedUrl = await _webViewParser.parseVideoUrl(
-          pageUrl,
-          useLegacyParser: plugin.useLegacyParser,
-          timeout: const Duration(seconds: 45),
-          maxDepth: 3,
-        );
-
-        if (parsedUrl != null && parsedUrl.isNotEmpty) {
-          debugPrint('========== 最终解析结果 ==========');
-          debugPrint('视频流URL: $parsedUrl');
-          debugPrint('==================================');
-          return parsedUrl;
-        } else {
-          debugPrint('WebView 解析失败，使用原始URL');
-          debugPrint('==================================');
-          return pageUrl;
-        }
-      }
-
-      // 不需要解析，直接返回原始URL
-      return pageUrl;
-    } catch (e) {
-      debugPrint('解析视频地址失败: $e');
+    if (!plugin.useWebview) {
       return pageUrl;
     }
+
+    debugPrint('========== 开始 WebView 解析 ==========');
+    debugPrint('页面URL: $pageUrl');
+    debugPrint('插件: $pluginName');
+    debugPrint('使用Legacy模式: ${plugin.useLegacyParser}');
+
+    final source = await _videoSourceProvider.resolve(
+      pageUrl,
+      useLegacyParser: plugin.useLegacyParser,
+      timeout: const Duration(seconds: 45),
+    );
+
+    debugPrint('========== 最终解析结果 ==========');
+    debugPrint('视频流URL: ${source.url}');
+    debugPrint('==================================');
+    return source.url;
   }
 }

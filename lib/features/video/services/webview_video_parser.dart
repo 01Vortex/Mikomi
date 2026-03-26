@@ -21,7 +21,7 @@ class WebviewVideoParser {
   bool _isVideoSourceLoaded = false;
 
   int _activeSessionId = 0;
-  int _offset = 0;
+  final int _offset = 0;
 
   String? _currentPageUrl;
   String? _previousPageUrl;
@@ -163,7 +163,7 @@ class WebviewVideoParser {
       },
       onLoadStart: (controller, url) async {
         if (_isDisposed) return;
-        if (url != null) {
+        if (url != null && url.toString() != 'about:blank') {
           _previousPageUrl = _currentPageUrl;
           _currentPageUrl = url.toString();
         }
