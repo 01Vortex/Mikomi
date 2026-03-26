@@ -8,6 +8,8 @@ class WatchHistory {
   final String pluginName;
   final Duration progress;
   final Duration duration; // 视频总时长
+  final String cachedPlayUrl;
+  final DateTime? cachedPlayUrlTime;
 
   WatchHistory({
     required this.bangumiId,
@@ -19,6 +21,8 @@ class WatchHistory {
     required this.pluginName,
     required this.progress,
     required this.duration,
+    this.cachedPlayUrl = '',
+    this.cachedPlayUrlTime,
   });
 
   String get displayName =>
@@ -49,6 +53,8 @@ class WatchHistory {
       'pluginName': pluginName,
       'progress': progress.inMilliseconds,
       'duration': duration.inMilliseconds,
+      'cachedPlayUrl': cachedPlayUrl,
+      'cachedPlayUrlTime': cachedPlayUrlTime?.toIso8601String(),
     };
   }
 
@@ -65,6 +71,10 @@ class WatchHistory {
       pluginName: json['pluginName'] ?? '',
       progress: Duration(milliseconds: json['progress'] ?? 0),
       duration: Duration(milliseconds: json['duration'] ?? 0),
+      cachedPlayUrl: json['cachedPlayUrl'] ?? '',
+      cachedPlayUrlTime: json['cachedPlayUrlTime'] != null
+          ? DateTime.tryParse(json['cachedPlayUrlTime'])
+          : null,
     );
   }
 }

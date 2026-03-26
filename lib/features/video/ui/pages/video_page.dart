@@ -75,6 +75,9 @@ class _VideoPageState extends State<VideoPage>
   Timer? _saveHistoryTimer; // 定期保存历史的计时器
   Duration? _currentInitialProgress; // 当前使用的初始进度
   bool _isReassembling = false;
+  bool _shouldParseAfterEpisodesLoaded = false;
+  bool _isUsingCachedPlayUrl = false;
+  String _lastResolvedVideoUrl = '';
 
   @override
   void initState() {
@@ -97,9 +100,21 @@ class _VideoPageState extends State<VideoPage>
     // 初始化播放器
     _playerController = VideoPlaybackService();
 
-    // 立即开始解析视频（如果剧集已就绪）
+    // 立即开始解析视频（历史记录入口优先使用缓存流URL秒开）
     if (_episodes.isEmpty && _currentPluginName != null && widget.animeTitle != null) {
-      _currentVideoUrlFuture = Future.value('');
+      if (_videoUrl.isNotEmpty) {
+        if (_isDirectStreamUrl(_videoUrl)) {
+          _isUsingCachedPlayUrl = true;
+          _shouldParseAfterEpisodesLoaded = true;
+          _lastResolvedVideoUrl = _videoUrl;
+          _currentVideoUrlFuture = Future.value(_videoUrl);
+        } else {
+          _currentVideoUrlFuture = _getCurrentVideoUrl();
+        }
+      } else {
+        _shouldParseAfterEpisodesLoaded = true;
+        _currentVideoUrlFuture = Future.value('');
+      }
     } else {
       _currentVideoUrlFuture = _getCurrentVideoUrl();
     }
@@ -163,6 +178,34 @@ class _VideoPageState extends State<VideoPage>
     super.reassemble();
     debugPrint('VideoPage: 热重启检测到，暂停并重建播放器监听');
     unawaited(_handleReassemble());
+  }
+
+  bool _isDirectStreamUrl(String url) {
+    final lower = url.toLowerCase();
+    return lower.contains('.m3u8') || lower.contains('.mp4');
+  }
+
+  Future<void> _refreshParsedUrlSilently() async {
+    if (_currentPluginName == null || _episodes.isEmpty) return;
+    try {
+      final pageUrl =
+          _episodes.firstWhere((ep) => ep.number == _currentEpisode).url ??
+          _videoUrl;
+      final parsedUrl = await _videoSourceRepo.parseVideoUrl(
+        pageUrl,
+        _currentPluginName!,
+      );
+      if (!mounted || parsedUrl.isEmpty || parsedUrl == _lastResolvedVideoUrl) {
+        return;
+      }
+      _lastResolvedVideoUrl = parsedUrl;
+      setState(() {
+        _currentVideoUrlFuture = Future.value(parsedUrl);
+      });
+      debugPrint('静默刷新成功，已更新播放地址');
+    } catch (e) {
+      debugPrint('静默刷新视频URL失败: $e');
+    }
   }
 
   /// 更新当前视频URL(切换集数时调用)
@@ -271,9 +314,18 @@ class _VideoPageState extends State<VideoPage>
         debugPrint('成功加载 ${mergedEpisodes.length} 集');
         debugPrint('第一集URL: ${mergedEpisodes.first.url}');
 
-        // 剧集加载完成后，重新解析视频URL
-        debugPrint('剧集加载完成，重新解析视频URL');
-        _updateCurrentVideoUrl();
+        // 剧集加载完成后：仅在前面因缺少URL而延迟解析时再触发解析
+        if (_shouldParseAfterEpisodesLoaded) {
+          _shouldParseAfterEpisodesLoaded = false;
+          if (_isUsingCachedPlayUrl) {
+            _isUsingCachedPlayUrl = false;
+            debugPrint('剧集加载完成，后台静默校验并刷新播放URL');
+            unawaited(_refreshParsedUrlSilently());
+          } else {
+            debugPrint('剧集加载完成，触发延迟解析视频URL');
+            _updateCurrentVideoUrl();
+          }
+        }
       }
     } on CaptchaRequiredException catch (e) {
       debugPrint('加载视频源剧集触发验证码: $e');
@@ -360,6 +412,22 @@ class _VideoPageState extends State<VideoPage>
         debugPrint('========== 视频播放调试 ==========');
         debugPrint('剧集列表为空,使用初始URL: $_videoUrl');
         debugPrint('==================================');
+
+        if (_isDirectStreamUrl(_videoUrl)) {
+          _lastResolvedVideoUrl = _videoUrl;
+          return _videoUrl;
+        }
+
+        if (_currentPluginName != null && _videoUrl.isNotEmpty) {
+          final parsedUrl = await _videoSourceRepo.parseVideoUrl(
+            _videoUrl,
+            _currentPluginName!,
+          );
+          _lastResolvedVideoUrl = parsedUrl;
+          return parsedUrl;
+        }
+
+        _lastResolvedVideoUrl = _videoUrl;
         return _videoUrl;
       }
 
@@ -377,11 +445,13 @@ class _VideoPageState extends State<VideoPage>
           url,
           _currentPluginName!,
         );
+        _lastResolvedVideoUrl = parsedUrl;
         debugPrint('最终播放URL: $parsedUrl');
         debugPrint('==================================');
         return parsedUrl;
       }
 
+      _lastResolvedVideoUrl = url;
       debugPrint('无需解析,直接使用原始URL');
       debugPrint('==================================');
       return url;
@@ -505,6 +575,10 @@ class _VideoPageState extends State<VideoPage>
         pluginName: _currentPluginName ?? '',
         progress: progress,
         duration: duration,
+        cachedPlayUrl: _lastResolvedVideoUrl,
+        cachedPlayUrlTime: _lastResolvedVideoUrl.isNotEmpty
+            ? DateTime.now()
+            : null,
       );
 
       _historyService.addHistory(history);

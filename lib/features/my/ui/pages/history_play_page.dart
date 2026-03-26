@@ -268,7 +268,7 @@ class _WatchHistoryPageState extends State<WatchHistoryPage> {
                                               secondaryAnimation,
                                             ) => VideoPage(
                                               title: history.displayName,
-                                              videoUrl: '',
+                                              videoUrl: history.cachedPlayUrl,
                                               currentEpisode:
                                                   history.lastWatchEpisode,
                                               episodes: const [],
