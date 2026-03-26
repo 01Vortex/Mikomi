@@ -97,8 +97,12 @@ class _VideoPageState extends State<VideoPage>
     // 初始化播放器
     _playerController = VideoPlaybackService();
 
-    // 立即开始解析视频
-    _currentVideoUrlFuture = _getCurrentVideoUrl();
+    // 立即开始解析视频（如果剧集已就绪）
+    if (_episodes.isEmpty && _currentPluginName != null && widget.animeTitle != null) {
+      _currentVideoUrlFuture = Future.value('');
+    } else {
+      _currentVideoUrlFuture = _getCurrentVideoUrl();
+    }
 
     // 启动超时计时器
     _timeoutTimer = Timer(const Duration(seconds: 3), () {
@@ -356,16 +360,6 @@ class _VideoPageState extends State<VideoPage>
         debugPrint('========== 视频播放调试 ==========');
         debugPrint('剧集列表为空,使用初始URL: $_videoUrl');
         debugPrint('==================================');
-
-        // 即使剧集列表为空,也尝试解析初始URL
-        if (_currentPluginName != null && _videoUrl.isNotEmpty) {
-          final parsedUrl = await _videoSourceRepo.parseVideoUrl(
-            _videoUrl,
-            _currentPluginName!,
-          );
-          return parsedUrl;
-        }
-
         return _videoUrl;
       }
 
@@ -722,63 +716,7 @@ class _VideoPageState extends State<VideoPage>
                                   ],
                                 ),
                               if (!isLoading && videoUrl.isEmpty)
-                                Center(
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Icon(
-                                        hasError
-                                            ? Icons.error_outline
-                                            : Icons.play_circle_outline,
-                                        size: 80,
-                                        color: Colors.white.withValues(
-                                          alpha: 0.8,
-                                        ),
-                                      ),
-                                      if (hasError) ...[
-                                        const SizedBox(height: 16),
-                                        Text(
-                                          '视频解析失败',
-                                          style: TextStyle(
-                                            color: Colors.white.withValues(
-                                              alpha: 0.8,
-                                            ),
-                                            fontSize: 14,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 8),
-                                        GestureDetector(
-                                          onTap: () {
-                                            setState(() {
-                                              _updateCurrentVideoUrl();
-                                            });
-                                          },
-                                          child: Container(
-                                            padding: const EdgeInsets.symmetric(
-                                              horizontal: 20,
-                                              vertical: 10,
-                                            ),
-                                            decoration: BoxDecoration(
-                                              color: Theme.of(
-                                                context,
-                                              ).colorScheme.primary,
-                                              borderRadius:
-                                                  BorderRadius.circular(20),
-                                            ),
-                                            child: const Text(
-                                              '重试',
-                                              style: TextStyle(
-                                                color: Colors.white,
-                                                fontSize: 14,
-                                                fontWeight: FontWeight.w500,
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ],
-                                  ),
-                                ),
+                                const SizedBox.shrink(),
                             ],
                           ),
                         ),

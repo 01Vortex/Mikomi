@@ -6,7 +6,6 @@
     "muliSources": true,
     "useWebview": true,
     "useNativePlayer": true,
-    "useLegacyParser": false,
     "userAgent": "",
     "baseURL": "https://www.agedm.io/",
     "searchURL": "https://www.agedm.io/search?query=@keyword",

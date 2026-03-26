@@ -1,6 +1,10 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
+import 'package:mikomi/features/video/services/parser/video_webview_controller.dart';
 
-import 'package:mikomi/features/video/services/webview_video_parser.dart';
+// ──────────────────────────────────────────────
+// 数据模型
+// ──────────────────────────────────────────────
 
 enum VideoSourceType { online, cached }
 
@@ -14,11 +18,19 @@ class VideoSource {
     required this.offset,
     required this.type,
   });
+
+  @override
+  String toString() => 'VideoSource(url: $url, offset: $offset, type: $type)';
 }
+
+// ──────────────────────────────────────────────
+// 异常类
+// ──────────────────────────────────────────────
 
 class VideoSourceNotFoundException implements Exception {
   final String message;
-  const VideoSourceNotFoundException([this.message = 'Video source not found']);
+  const VideoSourceNotFoundException(
+      [this.message = 'Video source not found']);
 
   @override
   String toString() => 'VideoSourceNotFoundException: $message';
@@ -37,7 +49,8 @@ class VideoSourceCancelledException implements Exception {
   const VideoSourceCancelledException();
 
   @override
-  String toString() => 'VideoSourceCancelledException: Resolution was cancelled';
+  String toString() =>
+      'VideoSourceCancelledException: Resolution was cancelled';
 }
 
 class CaptchaRequiredException implements Exception {
@@ -58,10 +71,13 @@ class CaptchaRequiredException implements Exception {
   });
 
   @override
-  String toString() {
-    return 'CaptchaRequiredException(plugin=$pluginName, page=$pageUrl, type=$captchaType)';
-  }
+  String toString() =>
+      'CaptchaRequiredException(plugin=$pluginName, page=$pageUrl, type=$captchaType)';
 }
+
+// ──────────────────────────────────────────────
+// 接口
+// ──────────────────────────────────────────────
 
 abstract class IVideoSourceProvider {
   Future<VideoSource> resolve(
@@ -72,12 +88,22 @@ abstract class IVideoSourceProvider {
   });
 
   void cancel();
-
   void dispose();
 }
 
+// ──────────────────────────────────────────────
+// WebView 实现（照搬 Kazumi WebViewVideoSourceProvider）
+// ──────────────────────────────────────────────
+
+/// WebView 视频源提供者
+///
+/// WebView 实例在 Provider 生命周期内复用，切换集数时调用 unloadPage 释放页面资源，
+/// 仅在 [dispose] 时才真正销毁 WebView。
 class WebViewVideoSourceProvider implements IVideoSourceProvider {
-  final WebviewVideoParser _parser = WebviewVideoParser();
+  VideoWebviewController? _webview;
+  StreamSubscription<String>? _logSubscription;
+
+  /// 通过递增 ID 标识最新请求，取消旧请求
   int _resolveId = 0;
 
   @override
@@ -85,34 +111,64 @@ class WebViewVideoSourceProvider implements IVideoSourceProvider {
     String episodeUrl, {
     required bool useLegacyParser,
     int offset = 0,
-    Duration timeout = const Duration(seconds: 30),
+    Duration timeout = const Duration(seconds: 45),
   }) async {
     _resolveId++;
     final currentResolveId = _resolveId;
 
+    if (_webview == null) {
+      _webview = VideoWebviewControllerFactory.getController();
+      await _webview!.init();
+
+      _logSubscription = _webview!.onLog.listen((log) {
+        debugPrint('[WebView] $log');
+      });
+    }
+
     try {
-      final result = await _parser.parseVideoUrl(
+      await _webview!.loadUrl(
         episodeUrl,
-        useLegacyParser: useLegacyParser,
-        timeout: timeout,
-        maxDepth: 3,
+        useLegacyParser,
+        offset: offset,
       );
 
       if (currentResolveId != _resolveId) {
         throw const VideoSourceCancelledException();
       }
 
-      if (result == null || result.isEmpty) {
-        throw const VideoSourceNotFoundException();
+      final event = await _webview!.onVideoURLParser.first.timeout(
+        timeout,
+        onTimeout: () {
+          if (currentResolveId != _resolveId) {
+            throw const VideoSourceCancelledException();
+          }
+          throw VideoSourceTimeoutException(timeout);
+        },
+      );
+
+      if (currentResolveId != _resolveId) {
+        throw const VideoSourceCancelledException();
       }
 
+      debugPrint('========== 最终解析结果 ==========');
+      debugPrint('视频流URL: ${event.$1}');
+      debugPrint('==================================');
+
       return VideoSource(
-        url: result,
-        offset: offset,
+        url: event.$1,
+        offset: event.$2,
         type: VideoSourceType.online,
       );
-    } on TimeoutException {
-      throw VideoSourceTimeoutException(timeout);
+    } catch (e) {
+      if (e is VideoSourceCancelledException) rethrow;
+      if (currentResolveId != _resolveId) {
+        throw const VideoSourceCancelledException();
+      }
+      rethrow;
+    } finally {
+      if (currentResolveId == _resolveId) {
+        await _webview?.unloadPage();
+      }
     }
   }
 
@@ -124,6 +180,9 @@ class WebViewVideoSourceProvider implements IVideoSourceProvider {
   @override
   void dispose() {
     cancel();
-    unawaited(_parser.dispose());
+    _logSubscription?.cancel();
+    _logSubscription = null;
+    _webview?.dispose();
+    _webview = null;
   }
 }
