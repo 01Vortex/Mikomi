@@ -3,38 +3,27 @@ import 'package:flutter/services.dart';
 import 'package:mikomi/config/themes/app_colors.dart';
 import 'package:mikomi/features/video/services/video_playback_service.dart';
 import 'package:mikomi/features/video/ui/widgets/fullscreen_video.dart';
+import 'package:mikomi/features/video/ui/widgets/smallscreen_video.dart';
 import 'package:mikomi/core/models/episode.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 
 class FullscreenVideoPage extends StatefulWidget {
   final VideoPlaybackService playerController;
   final String title;
-  final int currentEpisode;
-  final String? episodeTitle;
+  final ValueNotifier<FullscreenVideoState> stateNotifier;
   final VoidCallback? onNextEpisode;
   final VoidCallback? onPreviousEpisode;
-  final bool hasNextEpisode;
-  final bool hasPreviousEpisode;
-  final List<Episode> episodes;
   final Function(Episode)? onEpisodeSelected;
-  final bool isLoadingEpisodes;
-  final bool isDescending;
   final VoidCallback? onToggleSort;
 
   const FullscreenVideoPage({
     super.key,
     required this.playerController,
     required this.title,
-    required this.currentEpisode,
-    this.episodeTitle,
+    required this.stateNotifier,
     this.onNextEpisode,
     this.onPreviousEpisode,
-    this.hasNextEpisode = false,
-    this.hasPreviousEpisode = false,
-    this.episodes = const [],
     this.onEpisodeSelected,
-    this.isLoadingEpisodes = false,
-    this.isDescending = false,
     this.onToggleSort,
   });
 
@@ -43,17 +32,33 @@ class FullscreenVideoPage extends StatefulWidget {
 }
 
 class _FullscreenVideoPageState extends State<FullscreenVideoPage> {
+  late FullscreenVideoState _state;
+
   @override
   void initState() {
     super.initState();
+    _state = widget.stateNotifier.value;
+    widget.stateNotifier.addListener(_onStateChanged);
     _enterFullscreen();
   }
 
-  void _enterFullscreen() {
-    // 立即隐藏状态栏和导航栏
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+  void _onStateChanged() {
+    if (mounted) {
+      setState(() {
+        _state = widget.stateNotifier.value;
+      });
+    }
+  }
 
-    // 设置横屏
+  @override
+  void dispose() {
+    widget.stateNotifier.removeListener(_onStateChanged);
+    _exitFullscreen();
+    super.dispose();
+  }
+
+  void _enterFullscreen() {
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
     SystemChrome.setPreferredOrientations([
       DeviceOrientation.landscapeLeft,
       DeviceOrientation.landscapeRight,
@@ -61,12 +66,10 @@ class _FullscreenVideoPageState extends State<FullscreenVideoPage> {
   }
 
   void _exitFullscreen() {
-    // 立即恢复状态栏 - 与视频页面保持一致
     SystemChrome.setEnabledSystemUIMode(
       SystemUiMode.manual,
       overlays: [SystemUiOverlay.top, SystemUiOverlay.bottom],
     );
-
     SystemChrome.setSystemUIOverlayStyle(
       SystemUiOverlayStyle(
         statusBarColor: AppColors.surface,
@@ -74,15 +77,7 @@ class _FullscreenVideoPageState extends State<FullscreenVideoPage> {
         statusBarBrightness: Brightness.light,
       ),
     );
-
-    // 恢复竖屏
     SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
-  }
-
-  @override
-  void dispose() {
-    _exitFullscreen();
-    super.dispose();
   }
 
   @override
@@ -99,15 +94,12 @@ class _FullscreenVideoPageState extends State<FullscreenVideoPage> {
     return PopScope(
       canPop: true,
       onPopInvokedWithResult: (didPop, result) {
-        if (didPop) {
-          _exitFullscreen();
-        }
+        if (didPop) _exitFullscreen();
       },
       child: Scaffold(
         backgroundColor: Colors.black,
         body: Stack(
           children: [
-            // 视频播放器
             Positioned.fill(
               child: Video(
                 controller: controller,
@@ -115,22 +107,20 @@ class _FullscreenVideoPageState extends State<FullscreenVideoPage> {
                 fit: BoxFit.cover,
               ),
             ),
-
-            // 自定义控制器
             FullscreenVideoControls(
               playerController: widget.playerController,
               title: widget.title,
-              currentEpisode: widget.currentEpisode,
-              episodeTitle: widget.episodeTitle,
+              currentEpisode: _state.currentEpisode,
+              episodeTitle: _state.episodeTitle,
               onExitFullscreen: () => Navigator.of(context).pop(),
               onNextEpisode: widget.onNextEpisode,
               onPreviousEpisode: widget.onPreviousEpisode,
-              hasNextEpisode: widget.hasNextEpisode,
-              hasPreviousEpisode: widget.hasPreviousEpisode,
-              episodes: widget.episodes,
+              hasNextEpisode: _state.hasNextEpisode,
+              hasPreviousEpisode: _state.hasPreviousEpisode,
+              episodes: _state.episodes,
               onEpisodeSelected: widget.onEpisodeSelected,
-              isLoadingEpisodes: widget.isLoadingEpisodes,
-              isDescending: widget.isDescending,
+              isLoadingEpisodes: _state.isLoadingEpisodes,
+              isDescending: _state.isDescending,
               onToggleSort: widget.onToggleSort,
             ),
           ],

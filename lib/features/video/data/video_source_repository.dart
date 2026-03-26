@@ -481,6 +481,10 @@ class VideoSourceRepository {
     }
   }
 
+  void cancelVideoParsing() {
+    _videoSourceProvider.cancel();
+  }
+
   /// 解析视频播放地址（用于实际播放）
   Future<String> parseVideoUrl(String pageUrl, String pluginName) async {
     final plugin = _pluginService.getPluginByName(pluginName);

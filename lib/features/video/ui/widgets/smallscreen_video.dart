@@ -60,6 +60,9 @@ class SmallscreenVideo extends StatefulWidget {
 }
 
 class _SmallscreenVideoState extends State<SmallscreenVideo> {
+  // 全屏页动态状态 notifier
+  late final ValueNotifier<FullscreenVideoState> _fullscreenNotifier;
+
   bool _isLoading = true;
   bool _isBuffering = false;
   bool _showControls = true;
@@ -94,6 +97,15 @@ class _SmallscreenVideoState extends State<SmallscreenVideo> {
   @override
   void initState() {
     super.initState();
+    _fullscreenNotifier = ValueNotifier(FullscreenVideoState(
+      currentEpisode: widget.currentEpisode,
+      episodes: widget.episodes,
+      isLoadingEpisodes: widget.isLoadingEpisodes,
+      isDescending: widget.isDescending,
+      hasNextEpisode: widget.hasNextEpisode,
+      hasPreviousEpisode: widget.hasPreviousEpisode,
+      episodeTitle: widget.episodeTitle,
+    ));
     _initPlayer();
     _startControlsTimer();
     _loadDanmaku();
@@ -102,6 +114,19 @@ class _SmallscreenVideoState extends State<SmallscreenVideo> {
   @override
   void didUpdateWidget(SmallscreenVideo oldWidget) {
     super.didUpdateWidget(oldWidget);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _fullscreenNotifier.value = FullscreenVideoState(
+          currentEpisode: widget.currentEpisode,
+          episodes: widget.episodes,
+          isLoadingEpisodes: widget.isLoadingEpisodes,
+          isDescending: widget.isDescending,
+          hasNextEpisode: widget.hasNextEpisode,
+          hasPreviousEpisode: widget.hasPreviousEpisode,
+          episodeTitle: widget.episodeTitle,
+        );
+      }
+    });
 
     // 监听弹幕开关变化
     if (oldWidget.isDanmakuEnabled != widget.isDanmakuEnabled) {
@@ -145,6 +170,7 @@ class _SmallscreenVideoState extends State<SmallscreenVideo> {
   @override
   void dispose() {
     _cancelPlayerSubscriptions();
+    _fullscreenNotifier.dispose();
     _hideTimer?.cancel();
     _hideVolumeUITimer?.cancel();
     _hideBrightnessUITimer?.cancel();
@@ -414,16 +440,10 @@ class _SmallscreenVideoState extends State<SmallscreenVideo> {
             FullscreenVideoPage(
               playerController: widget.playerController,
               title: widget.title,
-              currentEpisode: widget.currentEpisode,
-              episodeTitle: widget.episodeTitle,
+              stateNotifier: _fullscreenNotifier,
               onNextEpisode: widget.onNextEpisode,
               onPreviousEpisode: widget.onPreviousEpisode,
-              hasNextEpisode: widget.hasNextEpisode,
-              hasPreviousEpisode: widget.hasPreviousEpisode,
-              episodes: widget.episodes,
               onEpisodeSelected: widget.onEpisodeSelected,
-              isLoadingEpisodes: widget.isLoadingEpisodes,
-              isDescending: widget.isDescending,
               onToggleSort: widget.onToggleSort,
             ),
         transitionDuration: const Duration(milliseconds: 200),
@@ -533,8 +553,60 @@ class _SmallscreenVideoState extends State<SmallscreenVideo> {
   Widget _buildLoadingWidget() {
     return Container(
       color: Colors.black,
-      child: const Center(
-        child: CircularProgressIndicator(color: Colors.white, strokeWidth: 3),
+      child: Stack(
+        children: [
+          const Center(
+            child: CircularProgressIndicator(color: Colors.white, strokeWidth: 3),
+          ),
+          // 左上角集数标题，切集时立即更新
+          Positioned(
+            top: 10,
+            left: 4,
+            right: 4,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.arrow_back, color: Colors.white),
+                  onPressed: widget.onBack ?? () => Navigator.of(context).pop(),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                  iconSize: 24,
+                ),
+                const SizedBox(width: 4),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        widget.title,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      Text(
+                        widget.episodeTitle != null && widget.episodeTitle!.isNotEmpty
+                            ? '第${widget.currentEpisode}集 ${widget.episodeTitle}'
+                            : '第${widget.currentEpisode}集',
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.9),
+                          fontSize: 13,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -784,4 +856,25 @@ class _SmallscreenVideoState extends State<SmallscreenVideo> {
       ),
     );
   }
+}
+
+/// 全屏页动态状态数据
+class FullscreenVideoState {
+  final int currentEpisode;
+  final List<Episode> episodes;
+  final bool isLoadingEpisodes;
+  final bool isDescending;
+  final bool hasNextEpisode;
+  final bool hasPreviousEpisode;
+  final String? episodeTitle;
+
+  const FullscreenVideoState({
+    required this.currentEpisode,
+    required this.episodes,
+    required this.isLoadingEpisodes,
+    required this.isDescending,
+    required this.hasNextEpisode,
+    required this.hasPreviousEpisode,
+    this.episodeTitle,
+  });
 }

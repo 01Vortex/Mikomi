@@ -210,13 +210,15 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
   }
 
   void _showEpisodeSelector() {
+    final outerContext = context;
     showGeneralDialog(
-      context: context,
+      context: outerContext,
+      useRootNavigator: true,
       barrierDismissible: true,
       barrierLabel: '',
       barrierColor: Colors.black.withValues(alpha: 0.5),
       transitionDuration: const Duration(milliseconds: 300),
-      pageBuilder: (context, animation, secondaryAnimation) {
+      pageBuilder: (dialogContext, animation, secondaryAnimation) {
         return Align(
           alignment: Alignment.centerRight,
           child: SlideTransition(
@@ -231,9 +233,8 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
               episodes: widget.episodes,
               currentEpisode: widget.currentEpisode,
               onEpisodeSelected: (episode) {
-                if (widget.onEpisodeSelected != null) {
-                  widget.onEpisodeSelected!(episode);
-                }
+                Navigator.of(dialogContext).pop(); // 只关闭选集面板
+                widget.onEpisodeSelected?.call(episode);
               },
               isLoading: widget.isLoadingEpisodes,
               isDescending: widget.isDescending,

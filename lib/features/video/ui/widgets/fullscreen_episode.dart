@@ -28,6 +28,42 @@ class FullscreenEpisodeSelector extends StatefulWidget {
 }
 
 class _FullscreenEpisodeSelectorState extends State<FullscreenEpisodeSelector> {
+  final ScrollController _scrollController = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToCurrentEpisode());
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _scrollToCurrentEpisode() {
+    if (!_scrollController.hasClients) return;
+    final episodes = widget.isDescending
+        ? widget.episodes.reversed.toList()
+        : widget.episodes;
+    final index = episodes.indexWhere((ep) => ep.number == widget.currentEpisode);
+    if (index < 0) return;
+
+    // 每行3个，每个约 56px 高度（childAspectRatio=2.0, crossAxisSpacing=12, padding=16）
+    const crossAxisCount = 3;
+    const itemHeight = 56.0;
+    const mainAxisSpacing = 12.0;
+    const padding = 16.0;
+    final row = index ~/ crossAxisCount;
+    final offset = padding + row * (itemHeight + mainAxisSpacing);
+    _scrollController.animateTo(
+      offset.clamp(0.0, _scrollController.position.maxScrollExtent),
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeOut,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     debugPrint('========== 全屏选集面板 ==========');
@@ -118,7 +154,7 @@ class _FullscreenEpisodeSelectorState extends State<FullscreenEpisodeSelector> {
               ),
               const SizedBox(width: 12),
               GestureDetector(
-                onTap: () => Navigator.of(context).pop(),
+                onTap: () => Navigator.of(context, rootNavigator: false).pop(),
                 child: Container(
                   padding: const EdgeInsets.all(6),
                   decoration: BoxDecoration(
@@ -182,6 +218,7 @@ class _FullscreenEpisodeSelectorState extends State<FullscreenEpisodeSelector> {
         : widget.episodes;
 
     return GridView.builder(
+      controller: _scrollController,
       padding: const EdgeInsets.all(16),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 3,
@@ -203,7 +240,6 @@ class _FullscreenEpisodeSelectorState extends State<FullscreenEpisodeSelector> {
     return GestureDetector(
       onTap: () {
         widget.onEpisodeSelected(episode);
-        Navigator.of(context).pop();
       },
       child: Container(
         decoration: BoxDecoration(

@@ -13,7 +13,7 @@ import 'package:mikomi/core/models/episode.dart';
 import 'package:mikomi/core/services/bangumi_episodes_service.dart';
 import 'package:mikomi/features/video/data/video_source_repository.dart';
 import 'package:mikomi/features/video/services/parser/video_source_provider.dart'
-    show CaptchaRequiredException;
+    show CaptchaRequiredException, VideoSourceCancelledException;
 import 'package:mikomi/features/video/services/video_playback_service.dart';
 import 'package:mikomi/core/services/watch_history_service.dart';
 import 'package:mikomi/core/models/watch_history.dart';
@@ -163,6 +163,8 @@ class _VideoPageState extends State<VideoPage>
 
   /// 更新当前视频URL(切换集数时调用)
   void _updateCurrentVideoUrl() {
+    _videoSourceRepo.cancelVideoParsing();
+
     setState(() {
       _showTimeoutHint = false;
       _currentVideoUrlFuture = _getCurrentVideoUrl();
@@ -389,6 +391,9 @@ class _VideoPageState extends State<VideoPage>
       debugPrint('无需解析,直接使用原始URL');
       debugPrint('==================================');
       return url;
+    } on VideoSourceCancelledException {
+      debugPrint('当前解析任务被取消，等待新任务结果');
+      return '';
     } catch (e) {
       debugPrint('获取当前视频URL失败: $e');
       debugPrint('==================================');
@@ -404,6 +409,9 @@ class _VideoPageState extends State<VideoPage>
     debugPrint('========== 切换视频源 ==========');
     debugPrint('新视频源: ${source.name}');
     debugPrint('==================================');
+
+    _videoSourceRepo.cancelVideoParsing();
+    await _playerController.stop();
 
     setState(() {
       _currentPluginName = source.name;
@@ -574,9 +582,6 @@ class _VideoPageState extends State<VideoPage>
               ),
               Expanded(
                 child: FutureBuilder<String>(
-                  key: ValueKey(
-                    '${_currentEpisode}_${_currentVideoUrlFuture.hashCode}',
-                  ),
                   future: _currentVideoUrlFuture,
                   builder: (context, snapshot) {
                     final videoUrl = snapshot.data ?? '';
@@ -606,7 +611,8 @@ class _VideoPageState extends State<VideoPage>
                           color: Colors.black,
                           child: Stack(
                             children: [
-                              if (videoUrl.isNotEmpty && !isLoading)
+                              // SmallscreenVideo 始终保留在树中，避免全屏页被 pop
+                              if (videoUrl.isNotEmpty)
                                 SmallscreenVideo(
                                   videoUrl: videoUrl,
                                   title: widget.title,

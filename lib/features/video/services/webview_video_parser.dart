@@ -2,6 +2,8 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:mikomi/features/video/services/parser/anti_anti_crawler.dart';
+import 'package:mikomi/features/video/services/parser/video_source_provider.dart'
+    show VideoSourceCancelledException;
 import 'package:mikomi/features/video/services/parser/general_video_parser.dart';
 import 'package:mikomi/features/video/services/parser/special_video_parser.dart';
 
@@ -91,7 +93,7 @@ class WebviewVideoParser {
       debugPrint('WebView 解析失败: $e');
       return null;
     } finally {
-      await dispose();
+      await _cleanupAfterParse();
     }
   }
 
@@ -363,6 +365,40 @@ class WebviewVideoParser {
         );
       } catch (_) {}
     }
+  }
+
+  Future<void> _cleanupAfterParse() async {
+    _timeoutTimer?.cancel();
+    _timeoutTimer = null;
+
+    await _logSubscription?.cancel();
+    _logSubscription = null;
+
+    await _videoUrlSubscription?.cancel();
+    _videoUrlSubscription = null;
+
+    _videoParserTimer?.cancel();
+    _videoParserTimer = null;
+
+    _videoUrlCompleter = null;
+
+    await _unloadPage();
+  }
+
+  void cancelCurrentParse() {
+    _activeSessionId++;
+
+    if (_videoUrlCompleter != null && !_videoUrlCompleter!.isCompleted) {
+      _videoUrlCompleter!.completeError(const VideoSourceCancelledException());
+    }
+
+    _timeoutTimer?.cancel();
+    _timeoutTimer = null;
+
+    _videoParserTimer?.cancel();
+    _videoParserTimer = null;
+
+    unawaited(_unloadPage());
   }
 
   Future<void> dispose() async {

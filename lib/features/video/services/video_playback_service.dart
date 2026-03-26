@@ -127,11 +127,13 @@ class VideoPlaybackService {
     debugPrint('VideoPlayerController: 开始释放资源');
 
     try {
-      // 先停止播放
+      // 先暂停再停止，给 native 层时间完成当前回调
+      await _player?.pause();
+      await Future.delayed(const Duration(milliseconds: 50));
       await stop();
 
-      // 等待一小段时间确保停止完成
-      await Future.delayed(const Duration(milliseconds: 100));
+      // 等待 native 回调全部完成
+      await Future.delayed(const Duration(milliseconds: 200));
 
       // 释放播放器
       final player = _player;
