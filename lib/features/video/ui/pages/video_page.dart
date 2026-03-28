@@ -1,18 +1,18 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:mikomi/features/video/ui/widgets/danmaku_overlay.dart';
 import 'package:mikomi/features/video/ui/widgets/smallscreen_video.dart';
 import 'package:mikomi/features/video/ui/widgets/video_comment.dart';
 import 'package:mikomi/features/video/ui/widgets/video_tab.dart';
 import 'package:mikomi/features/video/ui/widgets/smallscreen_episcode.dart';
-import 'package:mikomi/features/video/ui/widgets/danmaku_input.dart';
 import 'package:mikomi/features/anime/selector/video_source_selector.dart';
 import 'package:mikomi/features/settings/video_settings/service/plugin_manager_service.dart';
 import 'package:mikomi/shared/widgets/skeleton.dart';
 import 'package:mikomi/core/models/episode.dart';
 import 'package:mikomi/core/services/bangumi_episodes_service.dart';
 import 'package:mikomi/features/video/data/video_conten.dart';
-import 'package:mikomi/features/video/services/parser/video_source_provider.dart'
+import 'package:mikomi/features/video/services/video_source_provider.dart'
     show CaptchaRequiredException, VideoSourceCancelledException;
 import 'package:mikomi/features/video/services/video_playback_service.dart';
 import 'package:mikomi/core/services/watch_history_service.dart';
@@ -460,7 +460,7 @@ class _VideoPageState extends State<VideoPage>
         },
         child: Scaffold(
           backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-          resizeToAvoidBottomInset: false,
+          resizeToAvoidBottomInset: true,
           body: Column(
             children: [
               Container(
@@ -505,6 +505,7 @@ class _VideoPageState extends State<VideoPage>
                                   isDanmakuEnabled: _isDanmakuEnabled,
                                   animeTitle: widget.animeTitle,
                                   bangumiId: widget.bangumiId,
+                                  onDanmakuToggle: (enabled) => setState(() => _isDanmakuEnabled = enabled),
                                 ),
                               if (hasError && !isLoading)
                                 Positioned.fill(

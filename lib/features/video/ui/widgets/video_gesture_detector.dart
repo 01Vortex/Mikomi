@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:mikomi/features/video/services/video_playback_service.dart';
 import 'package:screen_brightness/screen_brightness.dart';
 import 'package:volume_controller/volume_controller.dart';
@@ -22,7 +23,8 @@ class VideoGestureDetector extends StatefulWidget {
 
 enum _GestureType { none, brightness, volume }
 
-class _VideoGestureDetectorState extends State<VideoGestureDetector> {
+class _VideoGestureDetectorState extends State<VideoGestureDetector>
+    with TickerProviderStateMixin {
   _GestureType _gestureType = _GestureType.none;
   double _startDragY = 0;
   double _startValue = 0;
@@ -34,12 +36,25 @@ class _VideoGestureDetectorState extends State<VideoGestureDetector> {
   double _volume = 0.5;
   double _normalSpeed = 1.0;
   bool _isLongPressing = false;
+  bool _isDragging = false;
 
   Timer? _hudHideTimer;
+
+  // 加速脉冲动画
+  late AnimationController _pulseController;
+  late Animation<double> _pulseAnim;
 
   @override
   void initState() {
     super.initState();
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 800),
+    );
+    _pulseAnim = Tween<double>(begin: 0.95, end: 1.05).animate(
+      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
+    );
+
     VolumeController().listener((v) {
       if (mounted) setState(() => _volume = v);
     });
@@ -55,6 +70,7 @@ class _VideoGestureDetectorState extends State<VideoGestureDetector> {
   void dispose() {
     VolumeController().removeListener();
     _hudHideTimer?.cancel();
+    _pulseController.dispose();
     super.dispose();
   }
 
@@ -64,12 +80,13 @@ class _VideoGestureDetectorState extends State<VideoGestureDetector> {
       _showBrightnessHud = type == _GestureType.brightness;
       _showVolumeHud = type == _GestureType.volume;
     });
-    _hudHideTimer = Timer(const Duration(seconds: 2), () {
+    _hudHideTimer = Timer(const Duration(milliseconds: 1500), () {
       if (mounted) {
         setState(() {
-        _showBrightnessHud = false;
-        _showVolumeHud = false;
-      });
+          _showBrightnessHud = false;
+          _showVolumeHud = false;
+          _isDragging = false;
+        });
       }
     });
   }
@@ -79,8 +96,10 @@ class _VideoGestureDetectorState extends State<VideoGestureDetector> {
   void _onVerticalDragStart(DragStartDetails d, BoxConstraints c) {
     if (!widget.enabled) return;
     _startDragY = d.localPosition.dy;
+    _isDragging = true;
     final isLeft = _isLeftSide(d.localPosition, c);
     _gestureType = isLeft ? _GestureType.brightness : _GestureType.volume;
+    HapticFeedback.selectionClick();
     if (isLeft) {
       ScreenBrightness().current.then((v) => _startValue = v);
     } else {
@@ -91,7 +110,7 @@ class _VideoGestureDetectorState extends State<VideoGestureDetector> {
   void _onVerticalDragUpdate(DragUpdateDetails d, BoxConstraints c) {
     if (!widget.enabled || _gestureType == _GestureType.none) return;
     final dy = _startDragY - d.localPosition.dy;
-    final delta = dy / c.maxHeight;
+    final delta = dy / (c.maxHeight * 0.7);
     final newVal = (_startValue + delta).clamp(0.0, 1.0);
     if (_gestureType == _GestureType.brightness) {
       ScreenBrightness().setScreenBrightness(newVal);
@@ -106,6 +125,7 @@ class _VideoGestureDetectorState extends State<VideoGestureDetector> {
 
   void _onVerticalDragEnd(DragEndDetails _) {
     _gestureType = _GestureType.none;
+    _isDragging = false;
   }
 
   void _onLongPressStart(LongPressStartDetails _) {
@@ -116,6 +136,8 @@ class _VideoGestureDetectorState extends State<VideoGestureDetector> {
       _normalSpeed = player.state.rate;
       player.setRate(2.0);
     }
+    HapticFeedback.mediumImpact();
+    _pulseController.repeat(reverse: true);
     setState(() => _showSpeedHud = true);
   }
 
@@ -123,6 +145,8 @@ class _VideoGestureDetectorState extends State<VideoGestureDetector> {
     if (!_isLongPressing) return;
     _isLongPressing = false;
     widget.playerController?.player?.setRate(_normalSpeed);
+    _pulseController.stop();
+    _pulseController.reset();
     setState(() => _showSpeedHud = false);
   }
 
@@ -139,71 +163,170 @@ class _VideoGestureDetectorState extends State<VideoGestureDetector> {
         child: Stack(
           children: [
             widget.child,
-            if (_showBrightnessHud)
+
+            // 拖动区域高亮
+            if (_isDragging && _gestureType == _GestureType.brightness)
               Positioned(
                 left: 0, top: 0, bottom: 0,
                 width: constraints.maxWidth / 2,
-                child: _buildHud(
-                  icon: Icons.wb_sunny_rounded,
-                  value: _brightness,
+                child: AnimatedOpacity(
+                  opacity: _isDragging ? 1 : 0,
+                  duration: const Duration(milliseconds: 150),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.centerLeft,
+                        end: Alignment.centerRight,
+                        colors: [
+                          Colors.white.withValues(alpha: 0.06),
+                          Colors.transparent,
+                        ],
+                      ),
+                    ),
+                  ),
                 ),
               ),
-            if (_showVolumeHud)
+            if (_isDragging && _gestureType == _GestureType.volume)
               Positioned(
                 right: 0, top: 0, bottom: 0,
                 width: constraints.maxWidth / 2,
-                child: _buildHud(
-                  icon: _volume == 0
-                      ? Icons.volume_off_rounded
-                      : Icons.volume_up_rounded,
-                  value: _volume,
+                child: AnimatedOpacity(
+                  opacity: _isDragging ? 1 : 0,
+                  duration: const Duration(milliseconds: 150),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.centerRight,
+                        end: Alignment.centerLeft,
+                        colors: [
+                          Colors.white.withValues(alpha: 0.06),
+                          Colors.transparent,
+                        ],
+                      ),
+                    ),
+                  ),
                 ),
               ),
-            if (_showSpeedHud)
+
+            // 亮度 HUD
+            if (_showBrightnessHud)
               Positioned(
-                top: 16,
-                left: 0, right: 0,
-                child: Center(child: _buildSpeedHud()),
+                left: constraints.maxWidth * 0.12,
+                top: 0, bottom: 0,
+                child: Center(
+                  child: _buildVerticalHud(
+                    icon: _brightness < 0.05
+                        ? Icons.brightness_low_rounded
+                        : _brightness < 0.5
+                            ? Icons.brightness_medium_rounded
+                            : Icons.brightness_high_rounded,
+                    value: _brightness,
+                    color: const Color(0xFFFFD60A),
+                  ),
+                ),
               ),
+
+            // 音量 HUD
+            if (_showVolumeHud)
+              Positioned(
+                right: constraints.maxWidth * 0.12,
+                top: 0, bottom: 0,
+                child: Center(
+                  child: _buildVerticalHud(
+                    icon: _volume == 0
+                        ? Icons.volume_off_rounded
+                        : _volume < 0.4
+                            ? Icons.volume_down_rounded
+                            : Icons.volume_up_rounded,
+                    value: _volume,
+                    color: const Color(0xFF30D158),
+                  ),
+                ),
+              ),
+
+            // 加速 HUD
+            AnimatedOpacity(
+              opacity: _showSpeedHud ? 1 : 0,
+              duration: const Duration(milliseconds: 200),
+              child: _showSpeedHud
+                  ? Positioned(
+                      top: 20,
+                      left: 0, right: 0,
+                      child: Center(child: _buildSpeedHud()),
+                    )
+                  : const SizedBox.shrink(),
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildHud({required IconData icon, required double value}) {
-    return Center(
+  Widget _buildVerticalHud({
+    required IconData icon,
+    required double value,
+    required Color color,
+  }) {
+    return AnimatedScale(
+      scale: _isDragging ? 1.0 : 0.9,
+      duration: const Duration(milliseconds: 200),
+      curve: Curves.easeOutBack,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        width: 40,
+        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 10),
         decoration: BoxDecoration(
-          color: Colors.black.withValues(alpha: 0.6),
-          borderRadius: BorderRadius.circular(12),
+          color: Colors.black.withValues(alpha: 0.55),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: Colors.white.withValues(alpha: 0.1),
+            width: 0.5,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.3),
+              blurRadius: 12,
+              spreadRadius: 0,
+            ),
+          ],
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, color: Colors.white, size: 22),
-            const SizedBox(height: 8),
+            Icon(icon, color: Colors.white, size: 18),
+            const SizedBox(height: 10),
+            // 竖向进度条
             SizedBox(
-              width: 72,
+              height: 80,
+              width: 4,
               child: ClipRRect(
-                borderRadius: BorderRadius.circular(3),
-                child: LinearProgressIndicator(
-                  value: value,
-                  backgroundColor: Colors.white.withValues(alpha: 0.25),
-                  valueColor:
-                      const AlwaysStoppedAnimation<Color>(Colors.white),
-                  minHeight: 4,
+                borderRadius: BorderRadius.circular(2),
+                child: Stack(
+                  alignment: Alignment.bottomCenter,
+                  children: [
+                    Container(
+                      color: Colors.white.withValues(alpha: 0.18),
+                    ),
+                    FractionallySizedBox(
+                      heightFactor: value,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: color,
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
-            const SizedBox(height: 6),
+            const SizedBox(height: 10),
             Text(
-              '${(value * 100).round()}%',
+              '${(value * 100).round()}',
               style: const TextStyle(
                 color: Colors.white,
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                height: 1,
               ),
             ),
           ],
@@ -213,24 +336,44 @@ class _VideoGestureDetectorState extends State<VideoGestureDetector> {
   }
 
   Widget _buildSpeedHud() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.65),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: const Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.fast_forward_rounded, color: Colors.white, size: 16),
-          SizedBox(width: 6),
-          Text('2× 加速中',
+    return ScaleTransition(
+      scale: _pulseAnim,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.18),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: Colors.white.withValues(alpha: 0.3),
+            width: 0.8,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.25),
+              blurRadius: 8,
+            )
+          ],
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(
+              Icons.fast_forward_rounded,
+              color: Colors.white,
+              size: 15,
+            ),
+            const SizedBox(width: 5),
+            Text(
+              '2× 倍速',
               style: TextStyle(
-                color: Colors.white,
+                color: Colors.white.withValues(alpha: 0.95),
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
-              )),
-        ],
+                letterSpacing: 0.3,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

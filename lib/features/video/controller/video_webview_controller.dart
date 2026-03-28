@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:io';
-import 'package:mikomi/features/video/services/parser/video_webview_android_impl.dart';
-import 'package:mikomi/features/video/services/parser/video_webview_impl.dart';
+import 'package:mikomi/features/video/services/video_webview_android_impl.dart';
+import 'package:mikomi/features/video/services/video_webview_impl.dart';
 
 abstract class VideoWebviewController<T> {
   T? webviewController;

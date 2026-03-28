@@ -1,7 +1,9 @@
 import 'dart:async';
+import 'package:canvas_danmaku/canvas_danmaku.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:mikomi/features/video/services/video_playback_service.dart';
+import 'package:mikomi/features/video/ui/widgets/danmaku_overlay.dart';
 import 'package:mikomi/features/video/ui/widgets/danmaku_settings_sheet.dart';
 import 'package:mikomi/features/video/ui/widgets/fullscreen_episode.dart';
 import 'package:mikomi/features/video/ui/widgets/video_gesture_detector.dart';
@@ -22,6 +24,9 @@ class FullscreenVideoControls extends StatefulWidget {
   final bool isLoadingEpisodes;
   final bool isDescending;
   final VoidCallback? onToggleSort;
+  final bool isDanmakuEnabled;
+  final DanmakuController? danmakuController;
+  final void Function(bool)? onDanmakuToggle;
 
   const FullscreenVideoControls({
     super.key,
@@ -39,6 +44,9 @@ class FullscreenVideoControls extends StatefulWidget {
     this.isLoadingEpisodes = false,
     this.isDescending = false,
     this.onToggleSort,
+    this.isDanmakuEnabled = false,
+    this.danmakuController,
+    this.onDanmakuToggle,
   });
 
   @override
@@ -56,7 +64,6 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
   bool _isLocked = false;
   Timer? _hideTimer;
   double _playbackSpeed = 1.0;
-  bool _isDanmakuEnabled = false;
   bool _showDanmakuInput = false;
   final TextEditingController _danmakuController = TextEditingController();
   StreamSubscription<bool>? _playingSub;
@@ -654,15 +661,12 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
   Widget _buildDanmakuButton() {
     return GestureDetector(
       onTap: () {
+        final newEnabled = !widget.isDanmakuEnabled;
         setState(() {
-          _isDanmakuEnabled = !_isDanmakuEnabled;
-          if (_isDanmakuEnabled) {
-            _showDanmakuInput = true;
-          } else {
-            _showDanmakuInput = false;
-            _danmakuController.clear();
-          }
+          _showDanmakuInput = newEnabled;
+          if (!newEnabled) _danmakuController.clear();
         });
+        widget.onDanmakuToggle?.call(newEnabled);
       },
       child: Container(
         padding: const EdgeInsets.all(8),
@@ -671,7 +675,7 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
           borderRadius: BorderRadius.circular(8),
         ),
         child: SvgPicture.asset(
-          _isDanmakuEnabled
+          widget.isDanmakuEnabled
               ? 'assets/icons/danmaku_on.svg'
               : 'assets/icons/danmaku_off.svg',
           width: 20,
@@ -731,54 +735,9 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
   }
 
   Widget _buildDanmakuInputInline() {
-    final inputWidth =
-        (MediaQuery.sizeOf(context).width * 0.3).clamp(120.0, 220.0).toDouble();
-
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          width: inputWidth,
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.15),
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: TextField(
-            controller: _danmakuController,
-            style: const TextStyle(color: Colors.white, fontSize: 13),
-            decoration: const InputDecoration(
-              hintText: '发个友善的弹幕见证当下',
-              hintStyle: TextStyle(color: Colors.white60, fontSize: 13),
-              border: InputBorder.none,
-              isDense: true,
-              contentPadding: EdgeInsets.symmetric(vertical: 8),
-            ),
-            onSubmitted: (value) {
-              _submitLocalDanmaku();
-            },
-          ),
-        ),
-        const SizedBox(width: 8),
-        GestureDetector(
-          onTap: _submitLocalDanmaku,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.primary,
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: const Text(
-              '发送',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-        ),
-      ],
+    return DanmakuInlineInput(
+      controller: _danmakuController,
+      onSend: _submitLocalDanmaku,
     );
   }
 

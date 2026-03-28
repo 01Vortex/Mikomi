@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 import 'package:canvas_danmaku/canvas_danmaku.dart';
 import 'package:mikomi/features/video/services/video_playback_service.dart';
+import 'package:mikomi/features/video/ui/widgets/danmaku_overlay.dart';
 import 'package:mikomi/features/video/services/bangumi_danmaku_service.dart';
+import 'package:mikomi/features/video/controller/danmaku_broadcaster.dart';
 import 'package:mikomi/features/video/ui/pages/fullscreen_video_page.dart';
 import 'package:mikomi/features/video/ui/widgets/video_gesture_detector.dart';
 import 'package:mikomi/core/models/episode.dart';
@@ -30,6 +32,7 @@ class SmallscreenVideo extends StatefulWidget {
   final bool isDanmakuEnabled;
   final String? animeTitle;
   final int? bangumiId;
+  final void Function(bool)? onDanmakuToggle;
 
   const SmallscreenVideo({
     super.key,
@@ -54,6 +57,7 @@ class SmallscreenVideo extends StatefulWidget {
     this.isDanmakuEnabled = false,
     this.animeTitle,
     this.bangumiId,
+    this.onDanmakuToggle,
   });
 
   @override
@@ -88,6 +92,7 @@ class _SmallscreenVideoState extends State<SmallscreenVideo> {
 
   // 弹幕控制
   final BangumiDanmakuService _danmakuController = BangumiDanmakuService();
+  final DanmakuBroadcaster _danmakuBroadcaster = DanmakuBroadcaster();
   int _lastDanmakuSecond = -1;
   DanmakuController? _canvasController;
   StreamSubscription<bool>? _bufferingSub;
@@ -106,6 +111,9 @@ class _SmallscreenVideoState extends State<SmallscreenVideo> {
       hasNextEpisode: widget.hasNextEpisode,
       hasPreviousEpisode: widget.hasPreviousEpisode,
       episodeTitle: widget.episodeTitle,
+      isDanmakuEnabled: widget.isDanmakuEnabled,
+      danmakuController: _canvasController,
+      danmakuBroadcaster: _danmakuBroadcaster,
     ));
     _initPlayer();
     _startControlsTimer();
@@ -125,6 +133,9 @@ class _SmallscreenVideoState extends State<SmallscreenVideo> {
           hasNextEpisode: widget.hasNextEpisode,
           hasPreviousEpisode: widget.hasPreviousEpisode,
           episodeTitle: widget.episodeTitle,
+          isDanmakuEnabled: widget.isDanmakuEnabled,
+          danmakuController: _canvasController,
+          danmakuBroadcaster: _danmakuBroadcaster,
         );
       }
     });
@@ -171,6 +182,7 @@ class _SmallscreenVideoState extends State<SmallscreenVideo> {
   @override
   void dispose() {
     _cancelPlayerSubscriptions();
+    _danmakuBroadcaster.clear();
     _fullscreenNotifier.dispose();
     _hideTimer?.cancel();
     _hideVolumeUITimer?.cancel();
@@ -233,30 +245,11 @@ class _SmallscreenVideoState extends State<SmallscreenVideo> {
   }
 
   void _sendDanmakuAtTime(int second) {
-    if (!widget.isDanmakuEnabled ||
-        !_danmakuController.isLoaded ||
-        _canvasController == null) {
+    if (!widget.isDanmakuEnabled || !_danmakuController.isLoaded) {
       return;
     }
-
     final danmakus = _danmakuController.getDanmakuAtTime(second);
-    if (danmakus.isNotEmpty) {
-      debugPrint('发送 ${danmakus.length} 条弹幕 (时间: ${second}s)');
-    }
-
-    for (var danmaku in danmakus) {
-      _canvasController!.addDanmaku(
-        DanmakuContentItem(
-          danmaku.message,
-          color: danmaku.color,
-          type: danmaku.type == 5
-              ? DanmakuItemType.top
-              : (danmaku.type == 4
-                    ? DanmakuItemType.bottom
-                    : DanmakuItemType.scroll),
-        ),
-      );
-    }
+    _danmakuBroadcaster.send(danmakus);
   }
 
   void _sendDanmakuWindow(int second) {
@@ -434,6 +427,8 @@ class _SmallscreenVideoState extends State<SmallscreenVideo> {
   }
 
   void _enterFullscreen() {
+    // 记录进入全屏时的弹幕开关状态
+    final danmakuEnabledBeforeFullscreen = widget.isDanmakuEnabled;
     Navigator.of(context).push(
       PageRouteBuilder(
         pageBuilder: (context, animation, secondaryAnimation) =>
@@ -453,11 +448,17 @@ class _SmallscreenVideoState extends State<SmallscreenVideo> {
             parent: animation,
             curve: Curves.easeInOut,
           );
-
           return FadeTransition(opacity: curvedAnimation, child: child);
         },
       ),
-    );
+    ).then((_) {
+      // 退出全屏后同步弹幕开关状态到父组件
+      final danmakuEnabledAfterFullscreen =
+          _fullscreenNotifier.value.isDanmakuEnabled;
+      if (danmakuEnabledAfterFullscreen != danmakuEnabledBeforeFullscreen) {
+        widget.onDanmakuToggle?.call(danmakuEnabledAfterFullscreen);
+      }
+    });
   }
 
   @override
@@ -492,19 +493,27 @@ class _SmallscreenVideoState extends State<SmallscreenVideo> {
           // 弹幕层
           if (showPlayer && widget.isDanmakuEnabled)
             Positioned.fill(
-              child: IgnorePointer(
-                child: DanmakuScreen(
-                  createdController: (controller) {
-                    _canvasController = controller;
-                  },
-                  option: DanmakuOption(
-                    fontSize: 16,
-                    opacity: 1.0,
-                    duration: 8,
-                    strokeWidth: 1.0,
-                    area: 0.5,
-                  ),
-                ),
+              child: DanmakuLayer(
+                onControllerCreated: (controller) {
+                  _canvasController = controller;
+                  _danmakuBroadcaster.register(controller);
+                  // 同步弹幕 broadcaster 到全屏状态
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    if (!mounted) return;
+                    _fullscreenNotifier.value = FullscreenVideoState(
+                      currentEpisode: _fullscreenNotifier.value.currentEpisode,
+                      episodes: _fullscreenNotifier.value.episodes,
+                      isLoadingEpisodes: _fullscreenNotifier.value.isLoadingEpisodes,
+                      isDescending: _fullscreenNotifier.value.isDescending,
+                      hasNextEpisode: _fullscreenNotifier.value.hasNextEpisode,
+                      hasPreviousEpisode: _fullscreenNotifier.value.hasPreviousEpisode,
+                      episodeTitle: _fullscreenNotifier.value.episodeTitle,
+                      isDanmakuEnabled: _fullscreenNotifier.value.isDanmakuEnabled,
+                      danmakuController: controller,
+                      danmakuBroadcaster: _danmakuBroadcaster,
+                    );
+                  });
+                },
               ),
             ),
 
@@ -819,6 +828,9 @@ class FullscreenVideoState {
   final bool hasNextEpisode;
   final bool hasPreviousEpisode;
   final String? episodeTitle;
+  final bool isDanmakuEnabled;
+  final DanmakuController? danmakuController;
+  final DanmakuBroadcaster? danmakuBroadcaster;
 
   const FullscreenVideoState({
     required this.currentEpisode,
@@ -828,5 +840,8 @@ class FullscreenVideoState {
     required this.hasNextEpisode,
     required this.hasPreviousEpisode,
     this.episodeTitle,
+    this.isDanmakuEnabled = false,
+    this.danmakuController,
+    this.danmakuBroadcaster,
   });
 }

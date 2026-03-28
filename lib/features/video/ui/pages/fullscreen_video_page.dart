@@ -1,7 +1,9 @@
+import 'package:canvas_danmaku/canvas_danmaku.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mikomi/config/themes/app_colors.dart';
 import 'package:mikomi/features/video/services/video_playback_service.dart';
+import 'package:mikomi/features/video/ui/widgets/danmaku_overlay.dart';
 import 'package:mikomi/features/video/ui/widgets/fullscreen_video.dart';
 import 'package:mikomi/features/video/ui/widgets/smallscreen_video.dart';
 import 'package:mikomi/core/models/episode.dart';
@@ -33,6 +35,7 @@ class FullscreenVideoPage extends StatefulWidget {
 
 class _FullscreenVideoPageState extends State<FullscreenVideoPage> {
   late FullscreenVideoState _state;
+  DanmakuController? _fullscreenDanmakuController;
 
   @override
   void initState() {
@@ -43,15 +46,27 @@ class _FullscreenVideoPageState extends State<FullscreenVideoPage> {
   }
 
   void _onStateChanged() {
-    if (mounted) {
-      setState(() {
-        _state = widget.stateNotifier.value;
-      });
+    if (!mounted) return;
+    final newState = widget.stateNotifier.value;
+    // broadcaster 更新时重新注册
+    if (newState.danmakuBroadcaster != _state.danmakuBroadcaster &&
+        _fullscreenDanmakuController != null) {
+      _state.danmakuBroadcaster?.unregister(_fullscreenDanmakuController!);
+      newState.danmakuBroadcaster?.register(_fullscreenDanmakuController!);
     }
+    setState(() => _state = newState);
+  }
+
+  void _registerFullscreenController(DanmakuController controller) {
+    _fullscreenDanmakuController = controller;
+    _state.danmakuBroadcaster?.register(controller);
   }
 
   @override
   void dispose() {
+    if (_fullscreenDanmakuController != null) {
+      _state.danmakuBroadcaster?.unregister(_fullscreenDanmakuController!);
+    }
     widget.stateNotifier.removeListener(_onStateChanged);
     _exitFullscreen();
     super.dispose();
@@ -107,11 +122,20 @@ class _FullscreenVideoPageState extends State<FullscreenVideoPage> {
                 fit: BoxFit.contain,
               ),
             ),
+            // 弹幕层：只要弹幕开启就渲染，broadcaster 有值时注册 controller
+            if (_state.isDanmakuEnabled)
+              Positioned.fill(
+                child: DanmakuLayer(
+                  onControllerCreated: _registerFullscreenController,
+                ),
+              ),
             FullscreenVideoControls(
               playerController: widget.playerController,
               title: widget.title,
               currentEpisode: _state.currentEpisode,
               episodeTitle: _state.episodeTitle,
+              isDanmakuEnabled: _state.isDanmakuEnabled,
+              danmakuController: _state.danmakuController,
               onExitFullscreen: () => Navigator.of(context).pop(),
               onNextEpisode: widget.onNextEpisode,
               onPreviousEpisode: widget.onPreviousEpisode,
@@ -122,6 +146,20 @@ class _FullscreenVideoPageState extends State<FullscreenVideoPage> {
               isLoadingEpisodes: _state.isLoadingEpisodes,
               isDescending: _state.isDescending,
               onToggleSort: widget.onToggleSort,
+              onDanmakuToggle: (enabled) {
+                widget.stateNotifier.value = FullscreenVideoState(
+                  currentEpisode: _state.currentEpisode,
+                  episodes: _state.episodes,
+                  isLoadingEpisodes: _state.isLoadingEpisodes,
+                  isDescending: _state.isDescending,
+                  hasNextEpisode: _state.hasNextEpisode,
+                  hasPreviousEpisode: _state.hasPreviousEpisode,
+                  episodeTitle: _state.episodeTitle,
+                  isDanmakuEnabled: enabled,
+                  danmakuController: _state.danmakuController,
+                  danmakuBroadcaster: _state.danmakuBroadcaster,
+                );
+              },
             ),
           ],
         ),

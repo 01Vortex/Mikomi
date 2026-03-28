@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
-import 'package:mikomi/features/video/services/parser/video_webview_controller.dart';
+import 'package:mikomi/features/video/controller/video_webview_controller.dart';
 
 // ──────────────────────────────────────────────
 // 数据模型
