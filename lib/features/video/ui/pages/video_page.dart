@@ -96,6 +96,7 @@ class _VideoPageState extends State<VideoPage>
       overlays: [SystemUiOverlay.top, SystemUiOverlay.bottom],
     );
     _playerController = VideoPlaybackService();
+
     if (_episodes.isEmpty && _currentPluginName != null && widget.animeTitle != null) {
       if (_videoUrl.isNotEmpty) {
         if (_isDirectStreamUrl(_videoUrl)) {
@@ -117,6 +118,7 @@ class _VideoPageState extends State<VideoPage>
       if (mounted) setState(() => _showTimeoutHint = true);
     });
     if (_episodes.isEmpty && _currentPluginName != null) {
+      _isLoadingEpisodes = true; // 同步设置，确保第一帧 isLoading 为 true
       _loadEpisodesInBackground();
     }
     _saveHistoryTimer = Timer.periodic(const Duration(seconds: 2), (_) {
@@ -190,8 +192,6 @@ class _VideoPageState extends State<VideoPage>
   }
 
   Future<void> _loadEpisodesInBackground() async {
-    if (_isLoadingEpisodes) return;
-    setState(() => _isLoadingEpisodes = true);
     try {
       if (widget.animeTitle != null && _currentPluginName != null) {
         await _loadEpisodesWithVideoSource(_currentPluginName!);
@@ -539,8 +539,8 @@ class _VideoPageState extends State<VideoPage>
                                     ],
                                   ),
                                 ),
-                              // 顶部返回键：仅在加载中或解析失败时显示（正常播放时由 SmallscreenVideo 自身处理）
-                              if (isLoading || hasError)
+                              // 顶部返回键：仅在无视频URL时显示（有视频时由 SmallscreenVideo 自身处理）
+                              if ((isLoading || hasError) && videoUrl.isEmpty)
                                 Positioned(
                                   top: 0, left: 0, right: 0,
                                   child: Container(
