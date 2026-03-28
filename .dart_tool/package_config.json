@@ -3,9 +3,9 @@
   "packages": [
     {
       "name": "app_links",
-      "rootUri": "file:///D:/CodeApp/Data/Android/Flutter_Cache/hosted/pub.flutter-io.cn/app_links-6.4.1",
+      "rootUri": "file:///D:/CodeApp/Data/Android/Flutter_Cache/hosted/pub.flutter-io.cn/app_links-7.0.0",
       "packageUri": "lib/",
-      "languageVersion": "3.5"
+      "languageVersion": "3.10"
     },
     {
       "name": "app_links_linux",
