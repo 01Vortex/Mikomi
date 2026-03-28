@@ -5,6 +5,7 @@ import 'package:canvas_danmaku/canvas_danmaku.dart';
 import 'package:mikomi/features/video/services/video_playback_service.dart';
 import 'package:mikomi/features/video/services/bangumi_danmaku_service.dart';
 import 'package:mikomi/features/video/ui/pages/fullscreen_video_page.dart';
+import 'package:mikomi/features/video/ui/widgets/video_gesture_detector.dart';
 import 'package:mikomi/core/models/episode.dart';
 
 class SmallscreenVideo extends StatefulWidget {
@@ -264,7 +265,6 @@ class _SmallscreenVideoState extends State<SmallscreenVideo> {
     _sendDanmakuAtTime(second + 1);
   }
 
-
   void _startControlsTimer() {
     _hideTimer?.cancel();
     _hideTimer = Timer(const Duration(seconds: 4), () {
@@ -293,7 +293,7 @@ class _SmallscreenVideoState extends State<SmallscreenVideo> {
     });
 
     try {
-      await widget.playerController.initialize();
+      await widget.playerController.initialize(smallScreen: true);
 
       if (mounted && widget.videoUrl.isNotEmpty) {
         await widget.playerController.play(widget.videoUrl);
@@ -468,9 +468,12 @@ class _SmallscreenVideoState extends State<SmallscreenVideo> {
         widget.playerController.isInitialized &&
         controller != null;
 
-    return GestureDetector(
-      onTap: showPlayer ? _handleTap : null,
-      onDoubleTap: showPlayer ? _handleDoubleTap : null,
+    return VideoGestureDetector(
+      playerController: widget.playerController,
+      enabled: showPlayer,
+      child: GestureDetector(
+        onTap: showPlayer ? _handleTap : null,
+        onDoubleTap: showPlayer ? _handleDoubleTap : null,
       child: Stack(
         children: [
           // 背景
@@ -479,7 +482,11 @@ class _SmallscreenVideoState extends State<SmallscreenVideo> {
           // 视频播放器（仅在就绪时显示）
           if (showPlayer)
             Positioned.fill(
-              child: Video(controller: controller, controls: NoVideoControls),
+              child: Video(
+                controller: controller,
+                controls: NoVideoControls,
+                fit: BoxFit.contain,
+              ),
             ),
 
           // 弹幕层
@@ -561,6 +568,7 @@ class _SmallscreenVideoState extends State<SmallscreenVideo> {
           // 锁定按钮
           if (showPlayer) _buildLockButton(),
         ],
+      ),
       ),
     );
   }
@@ -682,16 +690,6 @@ class _SmallscreenVideoState extends State<SmallscreenVideo> {
                     ),
                 ],
               ),
-            ),
-            IconButton(
-              icon: const Icon(Icons.more_vert, color: Colors.white),
-              onPressed: () {
-                // TODO: 显示设置菜单
-                debugPrint('打开播放器设置');
-              },
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(),
-              iconSize: 24,
             ),
             if (widget.onOpenMenu != null)
               IconButton(

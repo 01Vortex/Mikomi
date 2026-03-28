@@ -67,9 +67,9 @@ dependencies:
   intl: 0.20.2
   
   # 视频播放器（media_kit）
-  media_kit: ^1.1.10
-  media_kit_video: ^1.2.4
-  media_kit_libs_video: ^1.0.4
+  media_kit: 1.2.3
+  media_kit_video: 2.0.1
+  media_kit_libs_video: 1.0.4
   
   # WebView（用于视频地址解析）
   flutter_inappwebview: ^6.1.5
@@ -80,6 +80,10 @@ dependencies:
   
   # URL启动器
   url_launcher: ^6.3.1
+  
+  # 亮度/音量控制（手势）
+  screen_brightness: ^0.2.2+1
+  volume_controller: ^2.0.7
   
   # Deep Link处理
   app_links: ^6.3.2

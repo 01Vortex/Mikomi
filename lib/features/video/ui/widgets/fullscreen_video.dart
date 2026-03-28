@@ -2,7 +2,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:mikomi/features/video/services/video_playback_service.dart';
+import 'package:mikomi/features/video/ui/widgets/danmaku_settings_sheet.dart';
 import 'package:mikomi/features/video/ui/widgets/fullscreen_episode.dart';
+import 'package:mikomi/features/video/ui/widgets/video_gesture_detector.dart';
 import 'package:mikomi/core/models/episode.dart';
 
 class FullscreenVideoControls extends StatefulWidget {
@@ -156,6 +158,34 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
     _startHideTimer();
   }
 
+  void _playPreviousEpisode() {
+    if (widget.episodes.isEmpty) {
+      widget.onPreviousEpisode?.call();
+      return;
+    }
+    if (widget.hasPreviousEpisode) {
+      widget.onPreviousEpisode?.call();
+    } else {
+      // 第一集 → 跳到最后一集
+      final last = widget.episodes.last;
+      widget.onEpisodeSelected?.call(last);
+    }
+  }
+
+  void _playNextEpisode() {
+    if (widget.episodes.isEmpty) {
+      widget.onNextEpisode?.call();
+      return;
+    }
+    if (widget.hasNextEpisode) {
+      widget.onNextEpisode?.call();
+    } else {
+      // 最后一集 → 跳到第一集
+      final first = widget.episodes.first;
+      widget.onEpisodeSelected?.call(first);
+    }
+  }
+
   void _showSpeedSelector() {
     final RenderBox? renderBox =
         _speedButtonKey.currentContext?.findRenderObject() as RenderBox?;
@@ -260,8 +290,10 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      children: [
+    return VideoGestureDetector(
+      playerController: widget.playerController,
+      child: Stack(
+        children: [
         // 主内容区域 - 可以点击切换控制栏
         Positioned.fill(
           child: GestureDetector(
@@ -292,6 +324,7 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
         // 锁定按钮
         _buildLockButton(),
       ],
+      ),
     );
   }
 
@@ -518,30 +551,26 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
                       scrollDirection: Axis.horizontal,
                       child: Row(
                         children: [
-                          if (widget.hasPreviousEpisode)
-                            _buildBottomButton(
-                              icon: Icons.skip_previous,
-                              label: '上一集',
-                              onTap: widget.onPreviousEpisode ?? () {},
-                              iconOnly: true,
-                            ),
-                          if (widget.hasPreviousEpisode)
-                            const SizedBox(width: 12),
+                          _buildBottomButton(
+                            icon: Icons.skip_previous,
+                            label: '上一集',
+                            onTap: _playPreviousEpisode,
+                            iconOnly: true,
+                          ),
+                          const SizedBox(width: 12),
                           _buildBottomButton(
                             icon: _isPlaying ? Icons.pause : Icons.play_arrow,
                             label: _isPlaying ? '暂停' : '播放',
                             onTap: _togglePlayPause,
                             iconOnly: true,
                           ),
-                          if (widget.hasNextEpisode) ...[
-                            const SizedBox(width: 12),
-                            _buildBottomButton(
-                              icon: Icons.skip_next,
-                              label: '下一集',
-                              onTap: widget.onNextEpisode ?? () {},
-                              iconOnly: true,
-                            ),
-                          ],
+                          const SizedBox(width: 12),
+                          _buildBottomButton(
+                            icon: Icons.skip_next,
+                            label: '下一集',
+                            onTap: _playNextEpisode,
+                            iconOnly: true,
+                          ),
                           const SizedBox(width: 24),
                           _buildDanmakuButton(),
                           const SizedBox(width: 12),
@@ -653,11 +682,38 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
     );
   }
 
+  void _showDanmakuSettings() {
+    final outerContext = context;
+    showGeneralDialog(
+      context: outerContext,
+      useRootNavigator: true,
+      barrierDismissible: true,
+      barrierLabel: '',
+      barrierColor: Colors.black.withValues(alpha: 0.4),
+      transitionDuration: const Duration(milliseconds: 280),
+      pageBuilder: (dialogContext, animation, secondaryAnimation) {
+        return Align(
+          alignment: Alignment.centerRight,
+          child: SlideTransition(
+            position: Tween<Offset>(
+              begin: const Offset(1, 0),
+              end: Offset.zero,
+            ).animate(CurvedAnimation(
+              parent: animation,
+              curve: Curves.easeOutCubic,
+            )),
+            child: DanmakuSettingsSidebar(
+              onClose: () => Navigator.of(dialogContext).pop(),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   Widget _buildDanmakuSettingButton() {
     return GestureDetector(
-      onTap: () {
-        // TODO: 打开弹幕设置面板
-      },
+      onTap: _showDanmakuSettings,
       child: Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(

@@ -104,7 +104,7 @@ class _FullscreenVideoPageState extends State<FullscreenVideoPage> {
               child: Video(
                 controller: controller,
                 controls: NoVideoControls,
-                fit: BoxFit.cover,
+                fit: BoxFit.contain,
               ),
             ),
             FullscreenVideoControls(

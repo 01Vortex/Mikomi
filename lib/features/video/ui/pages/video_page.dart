@@ -460,7 +460,7 @@ class _VideoPageState extends State<VideoPage>
         },
         child: Scaffold(
           backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-          resizeToAvoidBottomInset: true,
+          resizeToAvoidBottomInset: false,
           body: Column(
             children: [
               Container(
