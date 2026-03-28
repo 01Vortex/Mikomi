@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:mikomi/features/video/data/video_source_repository.dart';
+import 'package:mikomi/features/video/data/video_conten.dart';
 import 'package:mikomi/features/settings/video_settings/service/plugin_manager_service.dart';
 
 class VideoSource {
@@ -28,7 +28,7 @@ class _VideoSourceSelectorState extends State<VideoSourceSelector>
     with TickerProviderStateMixin {
   late TabController _tabController;
   late List<VideoSource> _sources;
-  final VideoSourceRepository _videoSourceRepo = VideoSourceRepository();
+  final VideoConten _videoSourceRepo = VideoConten();
   final VideoPluginManager _pluginManager = VideoPluginManager();
   final Map<String, bool?> _sourceAvailability = {};
   final Map<String, int> _sourceEpisodeCount = {};

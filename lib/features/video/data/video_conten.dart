@@ -15,7 +15,7 @@ class SearchResult {
   SearchResult({required this.name, required this.url});
 }
 
-class VideoSourceRepository {
+class VideoConten {
   final VideoPluginService _pluginService = VideoPluginService();
   final IVideoSourceProvider _videoSourceProvider =
       WebViewVideoSourceProvider();

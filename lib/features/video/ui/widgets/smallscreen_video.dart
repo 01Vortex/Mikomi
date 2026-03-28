@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 import 'package:canvas_danmaku/canvas_danmaku.dart';
 import 'package:mikomi/features/video/services/video_playback_service.dart';
-import 'package:mikomi/features/video/services/Bangumi_danmaku_service.dart';
+import 'package:mikomi/features/video/services/bangumi_danmaku_service.dart';
 import 'package:mikomi/features/video/ui/pages/fullscreen_video_page.dart';
 import 'package:mikomi/core/models/episode.dart';
 
@@ -462,30 +462,28 @@ class _SmallscreenVideoState extends State<SmallscreenVideo> {
 
   @override
   Widget build(BuildContext context) {
-    if (_errorMessage != null) {
-      return _buildErrorWidget();
-    }
-
     final controller = widget.playerController.videoController;
-
-    if (_isLoading ||
-        !widget.playerController.isInitialized ||
-        controller == null) {
-      return _buildLoadingWidget();
-    }
+    final bool showPlayer = _errorMessage == null &&
+        !_isLoading &&
+        widget.playerController.isInitialized &&
+        controller != null;
 
     return GestureDetector(
-      onTap: _handleTap,
-      onDoubleTap: _handleDoubleTap,
+      onTap: showPlayer ? _handleTap : null,
+      onDoubleTap: showPlayer ? _handleDoubleTap : null,
       child: Stack(
         children: [
-          // 视频播放器
-          Positioned.fill(
-            child: Video(controller: controller, controls: NoVideoControls),
-          ),
+          // 背景
+          Positioned.fill(child: Container(color: Colors.black)),
+
+          // 视频播放器（仅在就绪时显示）
+          if (showPlayer)
+            Positioned.fill(
+              child: Video(controller: controller, controls: NoVideoControls),
+            ),
 
           // 弹幕层
-          if (widget.isDanmakuEnabled)
+          if (showPlayer && widget.isDanmakuEnabled)
             Positioned.fill(
               child: IgnorePointer(
                 child: DanmakuScreen(
@@ -503,109 +501,65 @@ class _SmallscreenVideoState extends State<SmallscreenVideo> {
               ),
             ),
 
-          // 缓冲指示器
-          if (_isBuffering) _buildBufferingIndicator(),
-
-          // 顶部渐变遮罩
-          if (_showControls && !_lockPanel) _buildTopGradient(),
-
-          // 底部渐变遮罩
-          if (_showControls && !_lockPanel) _buildBottomGradient(),
-
-          // 顶部控制栏
-          if (_showControls && !_lockPanel) _buildTopControls(),
-
-          // 底部控制栏
-          if (_showControls && !_lockPanel) _buildBottomControls(),
-
-          // 锁定按钮
-          _buildLockButton(),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildErrorWidget() {
-    return Container(
-      color: Colors.black,
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.error_outline, color: Colors.white70, size: 48),
-            const SizedBox(height: 16),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 32),
-              child: Text(
-                _errorMessage!,
-                style: const TextStyle(color: Colors.white70),
-                textAlign: TextAlign.center,
+          // 加载中
+          if (_isLoading)
+            const Positioned.fill(
+              child: Center(
+                child: CircularProgressIndicator(
+                  color: Colors.white,
+                  strokeWidth: 3,
+                ),
               ),
             ),
-            const SizedBox(height: 16),
-            TextButton(onPressed: _initPlayer, child: const Text('重试')),
-          ],
-        ),
-      ),
-    );
-  }
 
-  Widget _buildLoadingWidget() {
-    return Container(
-      color: Colors.black,
-      child: Stack(
-        children: [
-          const Center(
-            child: CircularProgressIndicator(color: Colors.white, strokeWidth: 3),
-          ),
-          // 左上角集数标题，切集时立即更新
-          Positioned(
-            top: 10,
-            left: 4,
-            right: 4,
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.arrow_back, color: Colors.white),
-                  onPressed: widget.onBack ?? () => Navigator.of(context).pop(),
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
-                  iconSize: 24,
-                ),
-                const SizedBox(width: 4),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        widget.title,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+          // 错误信息
+          if (_errorMessage != null)
+            Positioned.fill(
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(
+                      Icons.error_outline,
+                      color: Colors.white70,
+                      size: 48,
+                    ),
+                    const SizedBox(height: 16),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 32),
+                      child: Text(
+                        _errorMessage!,
+                        style: const TextStyle(color: Colors.white70),
+                        textAlign: TextAlign.center,
                       ),
-                      Text(
-                        widget.episodeTitle != null && widget.episodeTitle!.isNotEmpty
-                            ? '第${widget.currentEpisode}集 ${widget.episodeTitle}'
-                            : '第${widget.currentEpisode}集',
-                        style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.9),
-                          fontSize: 13,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
-                  ),
+                    ),
+                    const SizedBox(height: 16),
+                    TextButton(
+                      onPressed: _initPlayer,
+                      child: const Text('重试'),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
-          ),
+
+          // 缓冲指示器
+          if (showPlayer && _isBuffering) _buildBufferingIndicator(),
+
+          // 顶部渐变遮罩（播放中且显示控制栏时）
+          if (showPlayer && _showControls && !_lockPanel) _buildTopGradient(),
+
+          // 底部渐变遮罩
+          if (showPlayer && _showControls && !_lockPanel) _buildBottomGradient(),
+
+          // 顶部控制栏（始终显示，不受加载/错误状态影响）
+          _buildTopControls(),
+
+          // 底部控制栏（仅播放中显示）
+          if (showPlayer && _showControls && !_lockPanel) _buildBottomControls(),
+
+          // 锁定按钮
+          if (showPlayer) _buildLockButton(),
         ],
       ),
     );
