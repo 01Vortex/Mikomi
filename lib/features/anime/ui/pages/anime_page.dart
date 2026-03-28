@@ -187,6 +187,7 @@ class _AnimePageState extends State<AnimePage>
             PlayButton(
               videoSources: _videoSources,
               animeTitle: _bangumiItem.displayName,
+              animeName: _bangumiItem.name,
               bangumiId: _bangumiItem.id,
               onPlay: () {
                 // 播放回调

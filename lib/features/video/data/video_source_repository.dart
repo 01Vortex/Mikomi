@@ -231,24 +231,10 @@ class VideoSourceRepository {
 
       debugPrint('[$pluginName] 成功获取 ${roads.length} 个播放列表');
 
-      // 转换为Episode列表（不解析视频地址，只返回原始URL）
       final firstRoad = roads.first;
       debugPrint('[$pluginName] 第一个播放列表有 ${firstRoad.data.length} 集');
 
-      final episodes = <Episode>[];
-
-      for (int i = 0; i < firstRoad.data.length; i++) {
-        episodes.add(
-          Episode.fromRoadData(
-            index: i,
-            identifier: i < firstRoad.identifier.length
-                ? firstRoad.identifier[i]
-                : '第${i + 1}集',
-            url: firstRoad.data[i],
-          ),
-        );
-      }
-
+      final episodes = _roadToEpisodes(firstRoad);
       debugPrint('[$pluginName] 转换为 ${episodes.length} 集');
       return episodes;
     } catch (e, stackTrace) {
@@ -281,6 +267,7 @@ class VideoSourceRepository {
   ) {
     final normalizedKeyword = _normalizeTitle(keyword);
 
+    // 第一优先：完全匹配
     for (final result in results) {
       if (_normalizeTitle(result.name) == normalizedKeyword) {
         debugPrint('搜索完全匹配命中: ${result.name}');
@@ -288,17 +275,32 @@ class VideoSourceRepository {
       }
     }
 
-    final strictPrefix = RegExp(
+    // 第二优先：结果名字以 keyword 开头且后面不直接跟数字
+    // 收集所有候选，选名字长度与 keyword 最接近的，避免误选更短的同名前缀
+    final keywordPrefixRegex = RegExp(
       '^${RegExp.escape(normalizedKeyword)}(?!\\d)',
       caseSensitive: false,
     );
 
+    final candidates = <SearchResult>[];
     for (final result in results) {
       final normalizedName = _normalizeTitle(result.name);
-      if (strictPrefix.hasMatch(normalizedName)) {
-        debugPrint('搜索前缀匹配命中: ${result.name}');
-        return result;
+      if (keywordPrefixRegex.hasMatch(normalizedName)) {
+        candidates.add(result);
       }
+    }
+
+    if (candidates.isNotEmpty) {
+      // 选长度差最小的，即名字与 keyword 最接近的结果
+      candidates.sort((a, b) {
+        final aDiff =
+            (_normalizeTitle(a.name).length - normalizedKeyword.length).abs();
+        final bDiff =
+            (_normalizeTitle(b.name).length - normalizedKeyword.length).abs();
+        return aDiff.compareTo(bDiff);
+      });
+      debugPrint('搜索前缀匹配命中: ${candidates.first.name}');
+      return candidates.first;
     }
 
     return null;
@@ -320,27 +322,30 @@ class VideoSourceRepository {
         return [];
       }
 
-      // 转换为Episode列表
-      final firstRoad = roads.first;
-      final episodes = <Episode>[];
-
-      for (int i = 0; i < firstRoad.data.length; i++) {
-        episodes.add(
-          Episode.fromRoadData(
-            index: i,
-            identifier: i < firstRoad.identifier.length
-                ? firstRoad.identifier[i]
-                : '第${i + 1}集',
-            url: firstRoad.data[i],
-          ),
-        );
-      }
-
-      return episodes;
+      return _roadToEpisodes(roads.first);
     } catch (e) {
       debugPrint('获取剧集失败: $e');
       return [];
     }
+  }
+
+  /// 将 Road 转换为按集数正序排列的 Episode 列表
+  List<Episode> _roadToEpisodes(Road road) {
+    final episodes = <Episode>[];
+    for (int i = 0; i < road.data.length; i++) {
+      episodes.add(
+        Episode.fromRoadData(
+          index: i,
+          identifier: i < road.identifier.length
+              ? road.identifier[i]
+              : '第${i + 1}集',
+          url: road.data[i],
+        ),
+      );
+    }
+    // 按集数正序排列，消除插件网站返回顺序的影响
+    episodes.sort((a, b) => a.number.compareTo(b.number));
+    return episodes;
   }
 
   /// 获取剧集列表

@@ -27,6 +27,7 @@ class VideoPage extends StatefulWidget {
   final List<VideoSource>? videoSources;
   final String? pluginName;
   final String? animeTitle;
+  final String? animeName; // 原名（日文/英文），作为备用搜索词
   final int? bangumiId;
   final String? coverUrl;
   final Duration? initialProgress; // 初始播放进度
@@ -40,6 +41,7 @@ class VideoPage extends StatefulWidget {
     this.videoSources,
     this.pluginName,
     this.animeTitle,
+    this.animeName,
     this.bangumiId,
     this.coverUrl,
     this.initialProgress,
@@ -255,7 +257,7 @@ class _VideoPageState extends State<VideoPage>
 
     try {
       // 异步获取视频源剧集
-      final videoEpisodes = await _videoSourceRepo
+      var videoEpisodes = await _videoSourceRepo
           .searchAndGetEpisodes(widget.animeTitle!, pluginName)
           .timeout(
             const Duration(seconds: 60),
@@ -264,6 +266,22 @@ class _VideoPageState extends State<VideoPage>
               return [];
             },
           );
+
+      // 中文名搜索无结果时，用原名重试
+      if (videoEpisodes.isEmpty &&
+          widget.animeName != null &&
+          widget.animeName != widget.animeTitle) {
+        debugPrint('中文名搜索无结果，尝试原名: ${widget.animeName}');
+        videoEpisodes = await _videoSourceRepo
+            .searchAndGetEpisodes(widget.animeName!, pluginName)
+            .timeout(
+              const Duration(seconds: 60),
+              onTimeout: () {
+                debugPrint('原名搜索视频源超时');
+                return [];
+              },
+            );
+      }
 
       if (videoEpisodes.isEmpty) {
         debugPrint('未找到视频源剧集');
