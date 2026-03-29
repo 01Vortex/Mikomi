@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mikomi/core/models/video_plugin.dart';
-import 'package:mikomi/features/video/data/video_conten.dart';
+import 'package:mikomi/features/video/services/video_content_service.dart';
 import 'package:mikomi/core/models/road.dart';
 import 'package:mikomi/shared/utils/theme_extensions.dart';
 import 'package:mikomi/shared/widgets/message_dialog.dart';
@@ -20,7 +20,7 @@ class PluginTestPage extends StatefulWidget {
 
 class _PluginTestPageState extends State<PluginTestPage> {
   final TextEditingController _searchController = TextEditingController();
-  final VideoConten _repository = VideoConten();
+  final VideoContentService _repository = VideoContentService();
   final ScrollController _htmlScrollController = ScrollController();
   final ScrollController _chapterScrollController = ScrollController();
 

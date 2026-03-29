@@ -3,7 +3,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:mikomi/features/video/controller/video_webview_controller.dart';
 
-class VideoWebviewImpl
+/// 通用 WebView 实现（不支持 DOCUMENT_START_SCRIPT 时的回退方案）
+class WebviewFallbackImpl
     extends VideoWebviewController<InAppWebViewController> {
   HeadlessInAppWebView? headlessWebView;
   bool hasRegisteredHandlers = false;
@@ -191,9 +192,7 @@ class VideoWebviewImpl
         (function() {
           function pv(video) {
             var src=video.getAttribute('src');
-            if(src&&src.trim()!==''&&src.indexOf('blob:')!==0&&src.indexOf('googleads')===-1){
-              window.flutter_inappwebview.callHandler('VideoBridgeDebug',src);return true;
-            }
+            if(src&&src.trim()!==''&&src.indexOf('blob:')!==0&&src.indexOf('googleads')===-1){window.flutter_inappwebview.callHandler('VideoBridgeDebug',src);return true;}
             var ss=video.getElementsByTagName('source');
             for(var i=0;i<ss.length;i++){src=ss[i].getAttribute('src');if(src&&src.trim()!==''&&src.indexOf('blob:')!==0&&src.indexOf('googleads')===-1){window.flutter_inappwebview.callHandler('VideoBridgeDebug',src);return true;}}
             return false;
@@ -222,7 +221,10 @@ class VideoWebviewImpl
   void _startVideoParserTimer() {
     videoParserTimer?.cancel();
     videoParserTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (isVideoSourceLoaded) { timer.cancel(); return; }
+      if (isVideoSourceLoaded) {
+        timer.cancel();
+        return;
+      }
       _pollVideoSource();
     });
   }
@@ -230,13 +232,11 @@ class VideoWebviewImpl
   Future<void> _pollVideoSource() async {
     if (isVideoSourceLoaded) return;
     if (_useLegacyParser) {
-      await webviewController?.evaluateJavascript(source: """
-        (function(){var ifs=document.querySelectorAll('iframe');for(var i=0;i<ifs.length;i++){var src=ifs[i].getAttribute('src');if(src)window.flutter_inappwebview.callHandler('JSBridgeDebug',src);}})();
-      """);
+      await webviewController?.evaluateJavascript(source:
+          "(function(){var ifs=document.querySelectorAll('iframe');for(var i=0;i<ifs.length;i++){var src=ifs[i].getAttribute('src');if(src)window.flutter_inappwebview.callHandler('JSBridgeDebug',src);}})();");
     } else {
-      await webviewController?.evaluateJavascript(source: """
-        (function(){var vs=document.querySelectorAll('video');for(var i=0;i<vs.length;i++){var src=vs[i].getAttribute('src');if(src&&src.trim()!==''&&src.indexOf('blob:')!==0&&src.indexOf('googleads')===-1){window.flutter_inappwebview.callHandler('VideoBridgeDebug',src);return;}}})();
-      """);
+      await webviewController?.evaluateJavascript(source:
+          "(function(){var vs=document.querySelectorAll('video');for(var i=0;i<vs.length;i++){var src=vs[i].getAttribute('src');if(src&&src.trim()!==''&&src.indexOf('blob:')!==0&&src.indexOf('googleads')===-1){window.flutter_inappwebview.callHandler('VideoBridgeDebug',src);return;}}})();");
     }
   }
 
@@ -244,7 +244,8 @@ class VideoWebviewImpl
   Future<void> unloadPage() async {
     videoParserTimer?.cancel();
     videoParserTimer = null;
-    await webviewController?.loadUrl(urlRequest: URLRequest(url: WebUri('about:blank')));
+    await webviewController
+        ?.loadUrl(urlRequest: URLRequest(url: WebUri('about:blank')));
   }
 
   @override
@@ -282,7 +283,9 @@ class VideoWebviewImpl
 
   String _decodeVideoSource(String iframeUrl) {
     final decodedUrl = Uri.decodeFull(iframeUrl);
-    final regExp = RegExp(r'(http[s]?://.*?\.m3u8)|(http[s]?://.*?\.mp4)', caseSensitive: false);
+    final regExp = RegExp(
+        r'(http[s]?://.*?\.m3u8)|(http[s]?://.*?\.mp4)',
+        caseSensitive: false);
     final uri = Uri.tryParse(decodedUrl);
     if (uri == null) return Uri.encodeFull(decodedUrl);
     String matchedUrl = iframeUrl;

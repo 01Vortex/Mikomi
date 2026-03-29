@@ -11,7 +11,7 @@ import 'package:mikomi/features/settings/video_settings/service/plugin_manager_s
 import 'package:mikomi/shared/widgets/skeleton.dart';
 import 'package:mikomi/core/models/episode.dart';
 import 'package:mikomi/core/services/bangumi_episodes_service.dart';
-import 'package:mikomi/features/video/data/video_conten.dart';
+import 'package:mikomi/features/video/services/video_content_service.dart';
 import 'package:mikomi/features/video/services/video_source_provider.dart'
     show CaptchaRequiredException, VideoSourceCancelledException;
 import 'package:mikomi/features/video/services/video_playback_service.dart';
@@ -66,7 +66,7 @@ class _VideoPageState extends State<VideoPage>
   List<VideoSource> _fallbackVideoSources = [];
   final TextEditingController _danmakuController = TextEditingController();
   final BangumiEpisodesService _episodesService = BangumiEpisodesService();
-  final VideoConten _videoSourceRepo = VideoConten();
+  final VideoContentService _videoSourceRepo = VideoContentService();
   final VideoPluginManager _pluginManager = VideoPluginManager();
   final WatchHistoryService _historyService = WatchHistoryService();
 

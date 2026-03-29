@@ -4,7 +4,7 @@ import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:mikomi/features/video/controller/video_webview_controller.dart';
 
 /// Android WebView 实现（支持 DOCUMENT_START_SCRIPT 时使用）
-class VideoWebviewAndroidImpl
+class WebviewAndroidImpl
     extends VideoWebviewController<InAppWebViewController> {
   HeadlessInAppWebView? headlessWebView;
   bool hasInjectedScripts = false;
@@ -50,7 +50,8 @@ class VideoWebviewAndroidImpl
         logEventController.add('Console: ${consoleMessage.message}');
       },
       onReceivedServerTrustAuthRequest: (controller, challenge) async {
-        logEventController.add('ServerTrust challenge: ${challenge.protectionSpace.host}');
+        logEventController
+            .add('ServerTrust challenge: ${challenge.protectionSpace.host}');
         return ServerTrustAuthResponse(
           action: ServerTrustAuthResponseAction.PROCEED,
         );
@@ -73,7 +74,6 @@ class VideoWebviewAndroidImpl
     isIframeLoaded = false;
     isVideoSourceLoaded = false;
     videoLoadingEventController.add(true);
-
     await webviewController?.loadUrl(urlRequest: URLRequest(url: WebUri(url)));
   }
 
@@ -124,7 +124,6 @@ class VideoWebviewAndroidImpl
           if (message.contains('about:blank')) return;
           logEventController.add(message);
         });
-
     if (useLegacyParser) {
       logEventController.add('Adding JSBridgeDebug handler');
       webviewController?.addJavaScriptHandler(
@@ -171,18 +170,14 @@ class VideoWebviewAndroidImpl
 
   Future<void> _addUserScripts(bool useLegacyParser) async {
     final scripts = <UserScript>[];
-
     if (useLegacyParser) {
       logEventController.add('Adding JSBridgeDebug UserScript');
       const String jsBridgeDebugScript = """
         window.flutter_inappwebview.callHandler('LogBridge', 'JSBridgeDebug script loaded: ' + window.location.href);
         function processIframeElement(iframe) {
           let src = iframe.getAttribute('src');
-          if (src) {
-            window.flutter_inappwebview.callHandler('JSBridgeDebug', src);
-          }
+          if (src) { window.flutter_inappwebview.callHandler('JSBridgeDebug', src); }
         }
-
         const _observer = new MutationObserver((mutations) => {
           mutations.forEach(mutation => {
             if (mutation.type === 'attributes' && mutation.target.nodeName === 'IFRAME') {
@@ -190,20 +185,12 @@ class VideoWebviewAndroidImpl
             } else {
               mutation.addedNodes.forEach(node => {
                 if (node.nodeName === 'IFRAME') processIframeElement(node);
-                if (node.querySelectorAll) {
-                  node.querySelectorAll('iframe').forEach(processIframeElement);
-                }
+                if (node.querySelectorAll) { node.querySelectorAll('iframe').forEach(processIframeElement); }
               });
             }
           });
         });
-
-        _observer.observe(document.documentElement, {
-          childList: true,
-          subtree: true,
-          attributes: true,
-          attributeFilter: ['src']
-        });
+        _observer.observe(document.documentElement, { childList: true, subtree: true, attributes: true, attributeFilter: ['src'] });
       """;
       scripts.add(UserScript(
         source: jsBridgeDebugScript,
@@ -213,7 +200,6 @@ class VideoWebviewAndroidImpl
       logEventController.add('Adding VideoBridgeDebug UserScripts');
       const String blobParserScript = """
         window.flutter_inappwebview.callHandler('LogBridge', 'BlobParser script loaded: ' + window.location.href);
-
         function _hookWindowFetch(win) {
           try {
             const _r_text = win.Response.prototype.text;
@@ -230,7 +216,6 @@ class VideoWebviewAndroidImpl
             };
           } catch(_) {}
         }
-
         function _hookWindowXHR(win) {
           try {
             const _open = win.XMLHttpRequest.prototype.open;
@@ -248,16 +233,9 @@ class VideoWebviewAndroidImpl
             };
           } catch(_) {}
         }
-
         function _injectIntoIframe(iframe) {
-          try {
-            const iframeWindow = iframe.contentWindow;
-            if (!iframeWindow) return;
-            _hookWindowFetch(iframeWindow);
-            _hookWindowXHR(iframeWindow);
-          } catch(e) {}
+          try { const w = iframe.contentWindow; if (!w) return; _hookWindowFetch(w); _hookWindowXHR(w); } catch(e) {}
         }
-
         function _setupIframeListeners() {
           document.querySelectorAll('iframe').forEach(iframe => {
             if (iframe.contentDocument) _injectIntoIframe(iframe);
@@ -266,53 +244,26 @@ class VideoWebviewAndroidImpl
           const observer = new MutationObserver(mutations => {
             mutations.forEach(mutation => {
               mutation.addedNodes.forEach(node => {
-                if (node.nodeName === 'IFRAME') {
-                  node.addEventListener('load', () => _injectIntoIframe(node));
-                }
-                if (node.querySelectorAll) {
-                  node.querySelectorAll('iframe').forEach(iframe => {
-                    iframe.addEventListener('load', () => _injectIntoIframe(iframe));
-                  });
-                }
+                if (node.nodeName === 'IFRAME') { node.addEventListener('load', () => _injectIntoIframe(node)); }
+                if (node.querySelectorAll) { node.querySelectorAll('iframe').forEach(f => { f.addEventListener('load', () => _injectIntoIframe(f)); }); }
               });
             });
           });
-          if (document.body) {
-            observer.observe(document.body, { childList: true, subtree: true });
-          } else {
-            document.addEventListener('DOMContentLoaded', () => {
-              observer.observe(document.body, { childList: true, subtree: true });
-            });
-          }
+          if (document.body) { observer.observe(document.body, { childList: true, subtree: true }); }
+          else { document.addEventListener('DOMContentLoaded', () => { observer.observe(document.body, { childList: true, subtree: true }); }); }
         }
-
-        _hookWindowFetch(window);
-        _hookWindowXHR(window);
-
-        if (document.readyState === 'loading') {
-          document.addEventListener('DOMContentLoaded', _setupIframeListeners);
-        } else {
-          _setupIframeListeners();
-        }
+        _hookWindowFetch(window); _hookWindowXHR(window);
+        if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', _setupIframeListeners); }
+        else { _setupIframeListeners(); }
       """;
-
       const String videoTagParserScript = """
         window.flutter_inappwebview.callHandler('LogBridge', 'VideoTagParser script loaded: ' + window.location.href);
         const _observer = new MutationObserver((mutations) => {
           for (const mutation of mutations) {
-            if (mutation.type === 'attributes' && mutation.target.nodeName === 'VIDEO') {
-              if (processVideoElement(mutation.target)) return;
-              continue;
-            }
+            if (mutation.type === 'attributes' && mutation.target.nodeName === 'VIDEO') { if (processVideoElement(mutation.target)) return; continue; }
             for (const node of mutation.addedNodes) {
-              if (node.nodeName === 'VIDEO') {
-                if (processVideoElement(node)) return;
-              }
-              if (node.querySelectorAll) {
-                for (const video of node.querySelectorAll('video')) {
-                  if (processVideoElement(video)) return;
-                }
-              }
+              if (node.nodeName === 'VIDEO') { if (processVideoElement(node)) return; }
+              if (node.querySelectorAll) { for (const v of node.querySelectorAll('video')) { if (processVideoElement(v)) return; } }
             }
           }
         });
@@ -320,16 +271,13 @@ class VideoWebviewAndroidImpl
           let src = video.getAttribute('src');
           if (src && src.trim() !== '' && !src.startsWith('blob:') && !src.includes('googleads')) {
             _observer.disconnect();
-            window.flutter_inappwebview.callHandler('LogBridge', 'VIDEO source found: ' + src);
             window.flutter_inappwebview.callHandler('VideoBridgeDebug', src);
             return true;
           }
-          const sources = video.getElementsByTagName('source');
-          for (let source of sources) {
-            src = source.getAttribute('src');
+          for (let s of video.getElementsByTagName('source')) {
+            src = s.getAttribute('src');
             if (src && src.trim() !== '' && !src.startsWith('blob:') && !src.includes('googleads')) {
               _observer.disconnect();
-              window.flutter_inappwebview.callHandler('LogBridge', 'VIDEO source found (source tag): ' + src);
               window.flutter_inappwebview.callHandler('VideoBridgeDebug', src);
               return true;
             }
@@ -337,33 +285,15 @@ class VideoWebviewAndroidImpl
           return false;
         }
         function setupVideoProcessing() {
-          for (const video of document.querySelectorAll('video')) {
-            if (processVideoElement(video)) return;
-          }
-          _observer.observe(document.body, {
-            childList: true,
-            subtree: true,
-            attributes: true,
-            attributeFilter: ['src']
-          });
+          for (const v of document.querySelectorAll('video')) { if (processVideoElement(v)) return; }
+          _observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['src'] });
         }
-        if (document.readyState === 'loading') {
-          document.addEventListener('DOMContentLoaded', setupVideoProcessing);
-        } else {
-          setupVideoProcessing();
-        }
+        if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', setupVideoProcessing); }
+        else { setupVideoProcessing(); }
       """;
-
-      scripts.add(UserScript(
-        source: blobParserScript,
-        injectionTime: UserScriptInjectionTime.AT_DOCUMENT_START,
-      ));
-      scripts.add(UserScript(
-        source: videoTagParserScript,
-        injectionTime: UserScriptInjectionTime.AT_DOCUMENT_START,
-      ));
+      scripts.add(UserScript(source: blobParserScript, injectionTime: UserScriptInjectionTime.AT_DOCUMENT_START));
+      scripts.add(UserScript(source: videoTagParserScript, injectionTime: UserScriptInjectionTime.AT_DOCUMENT_START));
     }
-
     await webviewController?.addUserScripts(userScripts: scripts);
   }
 
@@ -380,7 +310,6 @@ class VideoWebviewAndroidImpl
     webviewController = null;
   }
 
-  /// 从 URL 参数中解析 m3u8/mp4
   String _decodeVideoSource(String iframeUrl) {
     final decodedUrl = Uri.decodeFull(iframeUrl);
     final regExp = RegExp(
@@ -391,9 +320,7 @@ class VideoWebviewAndroidImpl
     if (uri == null) return Uri.encodeFull(decodedUrl);
     String matchedUrl = iframeUrl;
     uri.queryParameters.forEach((key, value) {
-      if (regExp.hasMatch(value)) {
-        matchedUrl = value;
-      }
+      if (regExp.hasMatch(value)) matchedUrl = value;
     });
     return Uri.encodeFull(matchedUrl);
   }
