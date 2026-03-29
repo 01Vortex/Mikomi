@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:card_settings_ui/card_settings_ui.dart';
 import 'package:provider/provider.dart';
 import 'package:mikomi/features/settings/video_settings/service/play_settings_service.dart';
+import 'package:mikomi/features/settings/video_settings/service/hardware_decode_service.dart';
 import 'package:mikomi/features/settings/account_settings/account_settings_page.dart';
 import 'package:mikomi/core/services/auth_service.dart';
 import 'package:mikomi/shared/widgets/message_dialog.dart';
@@ -15,6 +16,7 @@ class SettingsPage extends StatefulWidget {
 
 class _SettingsPageState extends State<SettingsPage> {
   final PlayService _playService = PlayService();
+  final HardwareDecodeService _hwService = HardwareDecodeService();
 
   bool _autoPlayNext = true;
   bool _privateMode = false;
@@ -31,7 +33,7 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   Future<void> _loadSettings() async {
-    final hardwareDecoding = await _playService.getHardwareDecoding();
+    final hardwareDecoding = await _hwService.getEnabled();
     final autoPlayNext = await _playService.getAutoPlayNext();
     final playSpeed = await _playService.getPlaySpeed();
 
@@ -103,18 +105,13 @@ class _SettingsPageState extends State<SettingsPage> {
                 title: const Text('视频源管理'),
                 description: const Text('管理视频数据源'),
               ),
-              SettingsTile.switchTile(
-                onToggle: (value) async {
-                  final newValue = value ?? !_hardwareDecoding;
-                  await _playService.setHardwareDecoding(newValue);
-                  setState(() {
-                    _hardwareDecoding = newValue;
-                  });
+              SettingsTile.navigation(
+                onPressed: (_) {
+                  Navigator.pushNamed(context, '/hardware_decode').then((_) => _loadSettings());
                 },
-                leading: const Icon(Icons.hardware_outlined),
+                leading: const Icon(Icons.memory_outlined),
                 title: const Text('硬件解码'),
-                description: const Text('启用硬件加速解码'),
-                initialValue: _hardwareDecoding,
+                description: Text(_hardwareDecoding ? '已启用' : '已关闭'),
               ),
               SettingsTile.switchTile(
                 onToggle: (value) async {
