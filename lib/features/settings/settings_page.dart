@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:card_settings_ui/card_settings_ui.dart';
 import 'package:provider/provider.dart';
-import 'package:mikomi/features/settings/video_settings/service/play_settings_service.dart';
+import 'package:mikomi/features/settings/video_settings/service/video_basis_service.dart';
 import 'package:mikomi/features/settings/video_settings/service/hardware_decode_service.dart';
 import 'package:mikomi/features/settings/account_settings/account_settings_page.dart';
 import 'package:mikomi/core/services/auth_service.dart';
@@ -15,7 +15,7 @@ class SettingsPage extends StatefulWidget {
 }
 
 class _SettingsPageState extends State<SettingsPage> {
-  final PlayService _playService = PlayService();
+  final VideoBasisService _basisService = VideoBasisService();
   final HardwareDecodeService _hwService = HardwareDecodeService();
 
   bool _autoPlayNext = true;
@@ -33,15 +33,15 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   Future<void> _loadSettings() async {
+    final autoPlayNext = await _basisService.getAutoPlayNext();
+    final playSpeed = await _basisService.getPlaySpeed();
     final hardwareDecoding = await _hwService.getEnabled();
-    final autoPlayNext = await _playService.getAutoPlayNext();
-    final playSpeed = await _playService.getPlaySpeed();
 
     if (mounted) {
       setState(() {
-        _hardwareDecoding = hardwareDecoding;
         _autoPlayNext = autoPlayNext;
         _playSpeed = playSpeed;
+        _hardwareDecoding = hardwareDecoding;
         _isLoading = false;
       });
     }
@@ -113,37 +113,13 @@ class _SettingsPageState extends State<SettingsPage> {
                 title: const Text('硬件解码'),
                 description: Text(_hardwareDecoding ? '已启用' : '已关闭'),
               ),
-              SettingsTile.switchTile(
-                onToggle: (value) async {
-                  final newValue = value ?? !_autoPlayNext;
-                  await _playService.setAutoPlayNext(newValue);
-                  setState(() {
-                    _autoPlayNext = newValue;
-                  });
+              SettingsTile.navigation(
+                onPressed: (_) {
+                  Navigator.pushNamed(context, '/video_basis').then((_) => _loadSettings());
                 },
-                leading: const Icon(Icons.skip_next_outlined),
-                title: const Text('自动连播'),
-                description: const Text('当前视频播放完毕后自动播放下一集'),
-                initialValue: _autoPlayNext,
-              ),
-              SettingsTile(
-                leading: const Icon(Icons.speed_outlined),
-                title: const Text('默认倍速'),
-                description: Slider(
-                  value: _playSpeed,
-                  min: 0.5,
-                  max: 2.0,
-                  divisions: 6,
-                  label: '${_playSpeed}x',
-                  onChanged: (value) {
-                    setState(() {
-                      _playSpeed = value;
-                    });
-                  },
-                  onChangeEnd: (value) async {
-                    await _playService.setPlaySpeed(value);
-                  },
-                ),
+                leading: const Icon(Icons.play_circle_outlined),
+                title: const Text('播放基础设置'),
+                description: Text(_autoPlayNext ? '自动连播已启用' : '自动连播已关闭'),
               ),
             ],
           ),

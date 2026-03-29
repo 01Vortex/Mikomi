@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 import 'package:mikomi/features/settings/video_settings/service/hardware_decode_service.dart';
+import 'package:mikomi/features/settings/video_settings/service/video_basis_service.dart';
 
 class VideoPlaybackService {
   Player? _player;
@@ -9,6 +10,7 @@ class VideoPlaybackService {
   bool _isInitialized = false;
   bool _isDisposing = false;
   final HardwareDecodeService _hwService = HardwareDecodeService();
+  final VideoBasisService _basisService = VideoBasisService();
 
   bool get isInitialized => _isInitialized;
   Player? get player => _player;
@@ -19,6 +21,7 @@ class VideoPlaybackService {
     try {
       final enabled = await _hwService.getEnabled();
       final decoder = await _hwService.getDecoder();
+      final playSpeed = await _basisService.getPlaySpeed();
 
       _player = Player(
         configuration: const PlayerConfiguration(
@@ -35,6 +38,9 @@ class VideoPlaybackService {
           scale: smallScreen ? 0.75 : 1.0,
         ),
       );
+
+      // 设置默认播放速度
+      await _player!.setRate(playSpeed);
 
       _isInitialized = true;
     } catch (e) {
@@ -79,3 +85,4 @@ class VideoPlaybackService {
     }
   }
 }
+

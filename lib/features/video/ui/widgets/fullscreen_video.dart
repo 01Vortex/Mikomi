@@ -88,6 +88,7 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
       _position = player.state.position;
       _duration = player.state.duration;
       _isBuffering = player.state.buffering;
+      _playbackSpeed = player.state.rate;
     }
   }
 
@@ -137,6 +138,12 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
     _durationSub = player.stream.duration.listen((duration) {
       if (mounted) {
         setState(() => _duration = duration);
+      }
+    });
+
+    player.stream.rate.listen((rate) {
+      if (mounted) {
+        setState(() => _playbackSpeed = rate);
       }
     });
   }

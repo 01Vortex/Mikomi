@@ -9,6 +9,7 @@ import '../../features/settings/video_settings/pages/plugin_editor_page.dart';
 import '../../features/settings/video_settings/pages/plugin_test_page.dart';
 import '../../features/auth/ui/pages/login_page.dart';
 import '../../features/settings/video_settings/pages/hardware_decode_page.dart';
+import '../../features/settings/video_settings/pages/video_basis_page.dart';
 import '../../core/models/bangumi_item.dart';
 import '../../core/models/video_plugin.dart';
 
@@ -23,6 +24,7 @@ class AppRoutes {
   static const String pluginTest = '/plugin_test';
   static const String login = '/login';
   static const String hardwareDecode = '/hardware_decode';
+  static const String videoBasis = '/video_basis';
 
   static Map<String, WidgetBuilder> get routes {
     return {
@@ -33,6 +35,7 @@ class AppRoutes {
       pluginManage: (context) => const PluginManagePage(),
       login: (context) => const LoginPage(),
       hardwareDecode: (context) => const HardwareDecodePage(),
+      videoBasis: (context) => const VideoBasisPage(),
     };
   }
 
