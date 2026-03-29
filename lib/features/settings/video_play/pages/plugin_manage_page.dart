@@ -32,15 +32,40 @@ class _PluginManagePageState extends State<PluginManagePage> {
   }
 
   void _handleAdd() {
-    showDialog(
+    showModalBottomSheet(
       context: context,
-      builder: (context) => AlertDialog(
-        content: Column(
+      builder: (context) => Container(
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            Padding(
+              padding: const EdgeInsets.only(top: 12),
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.outlineVariant,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Text(
+                '添加数据源',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+              ),
+            ),
             ListTile(
-              leading: const Icon(Icons.add),
+              leading: const Icon(Icons.add_circle_outline),
               title: const Text('新建规则'),
+              subtitle: const Text('从零开始创建新的数据源'),
               onTap: () {
                 Navigator.pop(context);
                 Navigator.pushNamed(context, '/plugin_editor').then((result) {
@@ -51,13 +76,15 @@ class _PluginManagePageState extends State<PluginManagePage> {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.content_paste),
+              leading: const Icon(Icons.content_paste_outlined),
               title: const Text('从剪贴板导入'),
+              subtitle: const Text('导入 Base64 编码的规则'),
               onTap: () {
                 Navigator.pop(context);
                 _showImportDialog();
               },
             ),
+            const SizedBox(height: 16),
           ],
         ),
       ),
@@ -72,13 +99,16 @@ class _PluginManagePageState extends State<PluginManagePage> {
         title: const Text('导入规则'),
         content: TextField(
           controller: controller,
-          decoration: const InputDecoration(hintText: '粘贴Base64编码的规则'),
-          maxLines: 3,
+          decoration: const InputDecoration(
+            hintText: '粘贴 Base64 编码的规则',
+            border: OutlineInputBorder(),
+          ),
+          maxLines: 4,
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text('取消', style: TextStyle(color: context.colors.outline)),
+            child: const Text('取消'),
           ),
           TextButton(
             onPressed: () async {
@@ -88,7 +118,12 @@ class _PluginManagePageState extends State<PluginManagePage> {
               if (mounted) {
                 Navigator.pop(context);
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text(success ? '导入成功' : '导入失败,请检查格式')),
+                  SnackBar(
+                    content: Text(success ? '导入成功' : '导入失败，请检查格式'),
+                    backgroundColor: success
+                        ? Colors.green
+                        : Theme.of(context).colorScheme.error,
+                  ),
                 );
                 if (success) {
                   setState(() {});
@@ -107,11 +142,11 @@ class _PluginManagePageState extends State<PluginManagePage> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('删除规则'),
-        content: Text('确定要删除选中的 ${_selectedNames.length} 条规则吗?'),
+        content: Text('确定要删除选中的 ${_selectedNames.length} 条规则吗？'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text('取消', style: TextStyle(color: context.colors.outline)),
+            child: const Text('取消'),
           ),
           TextButton(
             onPressed: () async {
@@ -133,6 +168,8 @@ class _PluginManagePageState extends State<PluginManagePage> {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
     return PopScope(
       canPop: !_isMultiSelectMode,
       onPopInvokedWithResult: (didPop, result) {
@@ -147,7 +184,8 @@ class _PluginManagePageState extends State<PluginManagePage> {
         appBar: AppBar(
           title: _isMultiSelectMode
               ? Text('已选择 ${_selectedNames.length} 项')
-              : const Text('规则管理'),
+              : const Text('数据源管理'),
+          centerTitle: true,
           leading: _isMultiSelectMode
               ? IconButton(
                   icon: const Icon(Icons.close),
@@ -163,156 +201,299 @@ class _PluginManagePageState extends State<PluginManagePage> {
             if (_isMultiSelectMode)
               IconButton(
                 onPressed: _selectedNames.isEmpty ? null : _handleDelete,
-                icon: const Icon(Icons.delete),
+                icon: const Icon(Icons.delete_outline),
+                tooltip: '删除',
               )
             else
               IconButton(
                 onPressed: _handleAdd,
-                icon: const Icon(Icons.add),
-                tooltip: '添加规则',
+                icon: const Icon(Icons.add_circle_outline),
+                tooltip: '添加数据源',
               ),
           ],
         ),
         body: _isLoading
             ? const Center(child: CircularProgressIndicator())
             : _pluginManager.plugins.isEmpty
-            ? Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.extension_off_outlined,
-                      size: 64,
-                      color: context.colors.textSecondary,
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.extension_off_outlined,
+                          size: 64,
+                          color: cs.onSurfaceVariant,
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          '暂无数据源',
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          '点击右上角 + 添加第一个数据源',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: cs.onSurfaceVariant,
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        FilledButton.icon(
+                          onPressed: _handleAdd,
+                          icon: const Icon(Icons.add),
+                          label: const Text('添加数据源'),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 16),
-                    Text(
-                      '暂无可用规则',
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: context.colors.textSecondary,
-                      ),
-                    ),
-                  ],
-                ),
-              )
-            : ReorderableListView.builder(
-                buildDefaultDragHandles: false,
-                onReorder: (oldIndex, newIndex) async {
-                  await _pluginManager.reorderPlugins(oldIndex, newIndex);
-                  setState(() {});
-                },
-                itemCount: _pluginManager.plugins.length,
-                itemBuilder: (context, index) {
-                  final plugin = _pluginManager.plugins[index];
-                  final isSelected = _selectedNames.contains(plugin.name);
+                  )
+                : ReorderableListView.builder(
+                    buildDefaultDragHandles: false,
+                    onReorder: (oldIndex, newIndex) async {
+                      await _pluginManager.reorderPlugins(oldIndex, newIndex);
+                      setState(() {});
+                    },
+                    padding: const EdgeInsets.all(12),
+                    itemCount: _pluginManager.plugins.length,
+                    itemBuilder: (context, index) {
+                      final plugin = _pluginManager.plugins[index];
+                      final isSelected = _selectedNames.contains(plugin.name);
 
-                  return Card(
-                    key: ValueKey(plugin.name),
-                    margin: const EdgeInsets.fromLTRB(8, 0, 8, 8),
-                    child: ListTile(
-                      selected: isSelected,
-                      selectedTileColor: context.colors.primaryContainer,
-                      onLongPress: () {
-                        if (!_isMultiSelectMode) {
+                      return _PluginCard(
+                        key: ValueKey(plugin.name),
+                        plugin: plugin,
+                        isSelected: isSelected,
+                        isMultiSelectMode: _isMultiSelectMode,
+                        onLongPress: () {
+                          if (!_isMultiSelectMode) {
+                            setState(() {
+                              _isMultiSelectMode = true;
+                              _selectedNames.add(plugin.name);
+                            });
+                          }
+                        },
+                        onTap: () {
+                          if (_isMultiSelectMode) {
+                            setState(() {
+                              if (isSelected) {
+                                _selectedNames.remove(plugin.name);
+                                if (_selectedNames.isEmpty) {
+                                  _isMultiSelectMode = false;
+                                }
+                              } else {
+                                _selectedNames.add(plugin.name);
+                              }
+                            });
+                          }
+                        },
+                        onCheckboxChanged: (value) {
                           setState(() {
-                            _isMultiSelectMode = true;
-                            _selectedNames.add(plugin.name);
-                          });
-                        }
-                      },
-                      onTap: () {
-                        if (_isMultiSelectMode) {
-                          setState(() {
-                            if (isSelected) {
+                            if (value == true) {
+                              _selectedNames.add(plugin.name);
+                            } else {
                               _selectedNames.remove(plugin.name);
                               if (_selectedNames.isEmpty) {
                                 _isMultiSelectMode = false;
                               }
-                            } else {
-                              _selectedNames.add(plugin.name);
                             }
                           });
-                        }
-                      },
-                      title: Text(
-                        plugin.name,
-                        style: const TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                      subtitle: Text(
-                        'Version: ${plugin.version}',
-                        style: TextStyle(color: context.colors.textSecondary),
-                      ),
-                      trailing: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          if (_isMultiSelectMode)
-                            Checkbox(
-                              value: isSelected,
-                              onChanged: (value) {
-                                setState(() {
-                                  if (value == true) {
-                                    _selectedNames.add(plugin.name);
-                                  } else {
-                                    _selectedNames.remove(plugin.name);
-                                    if (_selectedNames.isEmpty) {
-                                      _isMultiSelectMode = false;
-                                    }
-                                  }
-                                });
-                              },
-                            )
-                          else
-                            _buildPopupMenu(plugin),
-                          ReorderableDragStartListener(
-                            index: index,
-                            child: const Icon(Icons.drag_handle),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                },
-              ),
+                        },
+                        onEdit: () async {
+                          final result = await Navigator.pushNamed(
+                            context,
+                            '/plugin_editor',
+                            arguments: plugin,
+                          );
+                          if (result == true && mounted) {
+                            setState(() {});
+                          }
+                        },
+                        onTest: () async {
+                          await Navigator.pushNamed(
+                            context,
+                            '/plugin_test',
+                            arguments: plugin,
+                          );
+                        },
+                        onShare: () async {
+                          final base64 =
+                              _pluginManager.exportPluginToBase64(plugin);
+                          await Clipboard.setData(ClipboardData(text: base64));
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('已复制到剪贴板')),
+                            );
+                          }
+                        },
+                        onDelete: () async {
+                          await _pluginManager.removePlugin(plugin);
+                          if (mounted) {
+                            setState(() {});
+                          }
+                        },
+                        dragHandle: ReorderableDragStartListener(
+                          index: index,
+                          child: const Icon(Icons.drag_handle),
+                        ),
+                      );
+                    },
+                  ),
       ),
     );
   }
+}
 
-  Widget _buildPopupMenu(VideoPlugin plugin) {
+class _PluginCard extends StatelessWidget {
+  final VideoPlugin plugin;
+  final bool isSelected;
+  final bool isMultiSelectMode;
+  final VoidCallback onLongPress;
+  final VoidCallback onTap;
+  final Function(bool?) onCheckboxChanged;
+  final VoidCallback onEdit;
+  final VoidCallback onTest;
+  final VoidCallback onShare;
+  final VoidCallback onDelete;
+  final Widget dragHandle;
+
+  const _PluginCard({
+    super.key,
+    required this.plugin,
+    required this.isSelected,
+    required this.isMultiSelectMode,
+    required this.onLongPress,
+    required this.onTap,
+    required this.onCheckboxChanged,
+    required this.onEdit,
+    required this.onTest,
+    required this.onShare,
+    required this.onDelete,
+    required this.dragHandle,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
+    return GestureDetector(
+      onLongPress: onLongPress,
+      onTap: onTap,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        decoration: BoxDecoration(
+          color: isSelected ? cs.primaryContainer : cs.surfaceContainerLow,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isSelected ? cs.primary : cs.outlineVariant,
+            width: isSelected ? 2 : 1,
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  if (isMultiSelectMode)
+                    Checkbox(
+                      value: isSelected,
+                      onChanged: onCheckboxChanged,
+                    )
+                  else
+                    Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: Icon(
+                        Icons.extension_outlined,
+                        color: cs.primary,
+                        size: 24,
+                      ),
+                    ),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          plugin.name,
+                          style: Theme.of(context).textTheme.titleSmall
+                              ?.copyWith(fontWeight: FontWeight.w600),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'v${plugin.version}',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: cs.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (!isMultiSelectMode) ...[
+                    _MoreButton(
+                      onEdit: onEdit,
+                      onTest: onTest,
+                      onShare: onShare,
+                      onDelete: onDelete,
+                    ),
+                    const SizedBox(width: 4),
+                    dragHandle,
+                  ],
+                ],
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      plugin.baseURL,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: cs.onSurfaceVariant,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _MoreButton extends StatelessWidget {
+  final VoidCallback onEdit;
+  final VoidCallback onTest;
+  final VoidCallback onShare;
+  final VoidCallback onDelete;
+
+  const _MoreButton({
+    required this.onEdit,
+    required this.onTest,
+    required this.onShare,
+    required this.onDelete,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     return PopupMenuButton<String>(
-      onSelected: (value) async {
+      icon: const Icon(Icons.more_vert),
+      onSelected: (value) {
         switch (value) {
           case 'edit':
-            final result = await Navigator.pushNamed(
-              context,
-              '/plugin_editor',
-              arguments: plugin,
-            );
-            if (result == true && mounted) {
-              setState(() {});
-            }
+            onEdit();
             break;
           case 'test':
-            await Navigator.pushNamed(
-              context,
-              '/plugin_test',
-              arguments: plugin,
-            );
+            onTest();
             break;
           case 'share':
-            final base64 = _pluginManager.exportPluginToBase64(plugin);
-            await Clipboard.setData(ClipboardData(text: base64));
-            if (mounted) {
-              ScaffoldMessenger.of(
-                context,
-              ).showSnackBar(const SnackBar(content: Text('已复制到剪贴板')));
-            }
+            onShare();
             break;
           case 'delete':
-            await _pluginManager.removePlugin(plugin);
-            if (mounted) {
-              setState(() {});
-            }
+            onDelete();
             break;
         }
       },
@@ -320,7 +501,11 @@ class _PluginManagePageState extends State<PluginManagePage> {
         const PopupMenuItem(
           value: 'edit',
           child: Row(
-            children: [Icon(Icons.edit), SizedBox(width: 8), Text('编辑')],
+            children: [
+              Icon(Icons.edit_outlined),
+              SizedBox(width: 12),
+              Text('编辑'),
+            ],
           ),
         ),
         const PopupMenuItem(
@@ -328,7 +513,7 @@ class _PluginManagePageState extends State<PluginManagePage> {
           child: Row(
             children: [
               Icon(Icons.bug_report_outlined),
-              SizedBox(width: 8),
+              SizedBox(width: 12),
               Text('测试'),
             ],
           ),
@@ -336,13 +521,21 @@ class _PluginManagePageState extends State<PluginManagePage> {
         const PopupMenuItem(
           value: 'share',
           child: Row(
-            children: [Icon(Icons.share), SizedBox(width: 8), Text('分享')],
+            children: [
+              Icon(Icons.share_outlined),
+              SizedBox(width: 12),
+              Text('分享'),
+            ],
           ),
         ),
         const PopupMenuItem(
           value: 'delete',
           child: Row(
-            children: [Icon(Icons.delete), SizedBox(width: 8), Text('删除')],
+            children: [
+              Icon(Icons.delete_outline),
+              SizedBox(width: 12),
+              Text('删除'),
+            ],
           ),
         ),
       ],
