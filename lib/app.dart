@@ -7,7 +7,7 @@ import 'config/localization/app_localizations.dart';
 import 'core/services/locale_service.dart';
 import 'core/services/auth_service.dart';
 import 'core/services/navigation_service.dart';
-import 'core/providers/theme_color_provider.dart';
+import 'core/providers/app_theme_provider.dart';
 import 'core/providers/theme_font_provider.dart';
 import 'core/providers/theme_animation_provider.dart';
 
@@ -18,17 +18,17 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => ColorProvider()),
+        ChangeNotifierProvider(create: (_) => AppThemeProvider()),
         ChangeNotifierProvider(create: (_) => FontProvider()),
         ChangeNotifierProvider(create: (_) => AnimationProvider()),
         ChangeNotifierProvider(create: (_) => AuthService()..init()),
         ChangeNotifierProvider(create: (_) => NavigationService()),
       ],
-      child: Consumer2<ColorProvider, FontProvider>(
-        builder: (context, colorProvider, fontProvider, _) {
-          final effectiveColor = colorProvider.useDynamicColor
+      child: Consumer2<AppThemeProvider, FontProvider>(
+        builder: (context, themeProvider, fontProvider, _) {
+          final effectiveColor = themeProvider.useDynamicColor
               ? null
-              : colorProvider.themeColor;
+              : themeProvider.currentTheme.primaryColor;
           final effectiveFontFamily = fontProvider.getEffectiveFontFamily();
 
           return MaterialApp(

@@ -214,7 +214,7 @@ class _MyPageState extends State<MyPage> {
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => const ThemePage()),
+                  MaterialPageRoute(builder: (context) => const ThemeSettingsPage()),
                 );
               },
               icon: const Icon(Icons.palette_outlined),

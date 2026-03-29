@@ -19,11 +19,9 @@ class _SettingsPageState extends State<SettingsPage> {
   final HardwareDecodeService _hwService = HardwareDecodeService();
 
   bool _autoPlayNext = true;
-  bool _privateMode = false;
-  bool _wifiOnlyDownload = true;
-  bool _hardwareDecoding = true;
   bool _showDanmaku = true;
   double _playSpeed = 1.0;
+  bool _hardwareDecoding = true;
   bool _isLoading = true;
 
   @override
@@ -58,12 +56,14 @@ class _SettingsPageState extends State<SettingsPage> {
         body: const Center(child: CircularProgressIndicator()),
       );
     }
+
     return Scaffold(
       appBar: AppBar(title: const Text('设置'), centerTitle: true),
       body: SettingsList(
         sections: [
+          // 账号设置
           SettingsSection(
-            title: const Text('账号设置'),
+            title: const Text('账号'),
             tiles: [
               SettingsTile.navigation(
                 onPressed: (_) {
@@ -94,37 +94,43 @@ class _SettingsPageState extends State<SettingsPage> {
                 ),
             ],
           ),
+
+          // 视频播放
           SettingsSection(
-            title: const Text('播放设置'),
+            title: const Text('视频播放'),
             tiles: [
+              SettingsTile.navigation(
+                onPressed: (_) {
+                  Navigator.pushNamed(context, '/video_basis')
+                      .then((_) => _loadSettings());
+                },
+                leading: const Icon(Icons.play_circle_outlined),
+                title: const Text('播放设置'),
+                description: Text(_autoPlayNext ? '自动连播已启用' : '自动连播已关闭'),
+              ),
               SettingsTile.navigation(
                 onPressed: (_) {
                   Navigator.pushNamed(context, '/plugin_manage');
                 },
                 leading: const Icon(Icons.video_settings_outlined),
-                title: const Text('视频源管理'),
+                title: const Text('视频源'),
                 description: const Text('管理视频数据源'),
               ),
               SettingsTile.navigation(
                 onPressed: (_) {
-                  Navigator.pushNamed(context, '/hardware_decode').then((_) => _loadSettings());
+                  Navigator.pushNamed(context, '/hardware_decode')
+                      .then((_) => _loadSettings());
                 },
                 leading: const Icon(Icons.memory_outlined),
                 title: const Text('硬件解码'),
                 description: Text(_hardwareDecoding ? '已启用' : '已关闭'),
               ),
-              SettingsTile.navigation(
-                onPressed: (_) {
-                  Navigator.pushNamed(context, '/video_basis').then((_) => _loadSettings());
-                },
-                leading: const Icon(Icons.play_circle_outlined),
-                title: const Text('播放基础设置'),
-                description: Text(_autoPlayNext ? '自动连播已启用' : '自动连播已关闭'),
-              ),
             ],
           ),
+
+          // 弹幕设置
           SettingsSection(
-            title: const Text('弹幕设置'),
+            title: const Text('弹幕'),
             tiles: [
               SettingsTile.switchTile(
                 onToggle: (value) {
@@ -134,109 +140,20 @@ class _SettingsPageState extends State<SettingsPage> {
                 },
                 leading: const Icon(Icons.subtitles_outlined),
                 title: const Text('显示弹幕'),
-                description: const Text('播放时显示弹幕'),
+                description: const Text('总是开启弹幕'),
                 initialValue: _showDanmaku,
               ),
-              SettingsTile.navigation(
-                onPressed: (_) {},
-                leading: const Icon(Icons.text_fields_outlined),
-                title: const Text('弹幕样式'),
-                description: const Text('设置弹幕字体、大小和透明度'),
-              ),
-              SettingsTile.navigation(
-                onPressed: (_) {},
-                leading: const Icon(Icons.filter_list_outlined),
-                title: const Text('弹幕过滤'),
-                description: const Text('设置弹幕屏蔽规则'),
-              ),
             ],
           ),
+
+          // 关于
           SettingsSection(
-            title: const Text('下载设置'),
+            title: const Text('关于'),
             tiles: [
               SettingsTile.navigation(
-                onPressed: (_) {},
-                leading: const Icon(Icons.folder_outlined),
-                title: const Text('下载路径'),
-                description: const Text('设置视频下载位置'),
-              ),
-              SettingsTile.switchTile(
-                onToggle: (value) {
-                  setState(() {
-                    _wifiOnlyDownload = value ?? !_wifiOnlyDownload;
-                  });
-                },
-                leading: const Icon(Icons.wifi_outlined),
-                title: const Text('仅WiFi下载'),
-                description: const Text('节省移动数据'),
-                initialValue: _wifiOnlyDownload,
-              ),
-              SettingsTile.navigation(
-                onPressed: (_) {},
-                leading: const Icon(Icons.storage_outlined),
-                title: const Text('缓存管理'),
-                description: const Text('清理应用缓存'),
-              ),
-            ],
-          ),
-          SettingsSection(
-            title: const Text('主题设置'),
-            tiles: [
-              SettingsTile.navigation(
-                onPressed: (_) {},
-                leading: const Icon(Icons.dark_mode_outlined),
-                title: const Text('深色模式'),
-                description: const Text('跟随系统'),
-              ),
-              SettingsTile.navigation(
-                onPressed: (_) {},
-                leading: const Icon(Icons.color_lens_outlined),
-                title: const Text('主题色'),
-                description: const Text('选择应用主题颜色'),
-              ),
-              SettingsTile.navigation(
-                onPressed: (_) {},
-                leading: const Icon(Icons.language_outlined),
-                title: const Text('语言'),
-                description: const Text('简体中文'),
-              ),
-            ],
-          ),
-          SettingsSection(
-            title: const Text('隐私与安全'),
-            tiles: [
-              SettingsTile.navigation(
-                onPressed: (_) {},
-                leading: const Icon(Icons.history_outlined),
-                title: const Text('播放记录'),
-                description: const Text('管理观看历史'),
-              ),
-              SettingsTile.switchTile(
-                onToggle: (value) {
-                  setState(() {
-                    _privateMode = value ?? !_privateMode;
-                  });
-                },
-                leading: const Icon(Icons.visibility_off_outlined),
-                title: const Text('隐身模式'),
-                description: const Text('不保留观看记录'),
-                initialValue: _privateMode,
-              ),
-              SettingsTile.navigation(
-                onPressed: (_) {},
-                leading: const Icon(Icons.delete_outline),
-                title: const Text('清除数据'),
-                description: const Text('清除所有本地数据'),
-              ),
-            ],
-          ),
-          SettingsSection(
-            title: const Text('其他'),
-            tiles: [
-              SettingsTile.navigation(
-                onPressed: (_) {},
+                onPressed: (_) => _showAboutDialog(context),
                 leading: const Icon(Icons.info_outline),
-                title: const Text('关于'),
+                title: const Text('关于 Mikomi'),
                 description: const Text('版本 1.0.0'),
               ),
             ],
@@ -266,6 +183,33 @@ class _SettingsPageState extends State<SettingsPage> {
               }
             },
             child: const Text('确定'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showAboutDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('关于 Mikomi'),
+        content: const Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Mikomi v1.0.0'),
+            SizedBox(height: 12),
+            Text(
+              '一个简洁高效的动漫播放器',
+              style: TextStyle(fontSize: 13),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('关闭'),
           ),
         ],
       ),
