@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mikomi/features/video/services/video_content_service.dart';
-import 'package:mikomi/features/settings/video_settings/service/plugin_manager_service.dart';
+import 'package:mikomi/features/settings/video_play/service/plugin_manager_service.dart';
 
 class VideoSource {
   final String name;

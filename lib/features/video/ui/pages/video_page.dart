@@ -7,7 +7,7 @@ import 'package:mikomi/features/video/ui/widgets/video_comment.dart';
 import 'package:mikomi/features/video/ui/widgets/video_tab.dart';
 import 'package:mikomi/features/video/ui/widgets/smallscreen_episcode.dart';
 import 'package:mikomi/features/anime/selector/video_source_selector.dart';
-import 'package:mikomi/features/settings/video_settings/service/plugin_manager_service.dart';
+import 'package:mikomi/features/settings/video_play/service/plugin_manager_service.dart';
 import 'package:mikomi/shared/widgets/skeleton.dart';
 import 'package:mikomi/core/models/episode.dart';
 import 'package:mikomi/core/services/bangumi_episodes_service.dart';

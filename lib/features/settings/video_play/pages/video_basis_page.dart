@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:mikomi/features/settings/video_settings/service/video_basis_service.dart';
+import 'package:mikomi/features/settings/video_play/service/video_basis_service.dart';
 
 class VideoBasisPage extends StatefulWidget {
   const VideoBasisPage({super.key});

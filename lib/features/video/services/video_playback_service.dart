@@ -1,8 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
-import 'package:mikomi/features/settings/video_settings/service/hardware_decode_service.dart';
-import 'package:mikomi/features/settings/video_settings/service/video_basis_service.dart';
+import 'package:mikomi/features/settings/video_play/service/hardware_decode_service.dart';
+import 'package:mikomi/features/settings/video_play/service/video_basis_service.dart';
 
 class VideoPlaybackService {
   Player? _player;

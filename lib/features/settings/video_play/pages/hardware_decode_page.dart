@@ -1,6 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:mikomi/features/settings/video_settings/service/hardware_decode_service.dart';
+import 'package:mikomi/features/settings/video_play/service/hardware_decode_service.dart';
 
 class HardwareDecodePage extends StatefulWidget {
   const HardwareDecodePage({super.key});

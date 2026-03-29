@@ -4,12 +4,12 @@ import '../../features/anime/ui/pages/anime_page.dart';
 import '../../features/home/ui/pages/schedule_page.dart';
 import '../../features/home/ui/pages/ranking_page.dart';
 import '../../features/home/ui/pages/category_page.dart';
-import '../../features/settings/video_settings/pages/plugin_manage_page.dart';
-import '../../features/settings/video_settings/pages/plugin_editor_page.dart';
-import '../../features/settings/video_settings/pages/plugin_test_page.dart';
+import '../../features/settings/video_play/pages/plugin_manage_page.dart';
+import '../../features/settings/video_play/pages/plugin_editor_page.dart';
+import '../../features/settings/video_play/pages/plugin_test_page.dart';
 import '../../features/auth/ui/pages/login_page.dart';
-import '../../features/settings/video_settings/pages/hardware_decode_page.dart';
-import '../../features/settings/video_settings/pages/video_basis_page.dart';
+import '../../features/settings/video_play/pages/hardware_decode_page.dart';
+import '../../features/settings/video_play/pages/video_basis_page.dart';
 import '../../core/models/bangumi_item.dart';
 import '../../core/models/video_plugin.dart';
 

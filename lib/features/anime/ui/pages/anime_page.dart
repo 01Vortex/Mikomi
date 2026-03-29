@@ -8,7 +8,7 @@ import 'package:mikomi/features/anime/ui/widgets/anime_teasing_tab.dart';
 import 'package:mikomi/features/anime/selector/collection_status_selector.dart';
 import 'package:mikomi/features/anime/ui/widgets/play_button.dart';
 import 'package:mikomi/features/anime/selector/video_source_selector.dart';
-import 'package:mikomi/features/settings/video_settings/service/plugin_manager_service.dart';
+import 'package:mikomi/features/settings/video_play/service/plugin_manager_service.dart';
 import 'package:mikomi/shared/utils/theme_extensions.dart';
 
 class AnimePage extends StatefulWidget {

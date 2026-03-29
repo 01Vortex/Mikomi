@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:mikomi/core/models/video_plugin.dart';
-import 'package:mikomi/features/settings/video_settings/service/plugin_manager_service.dart';
+import 'package:mikomi/features/settings/video_play/service/plugin_manager_service.dart';
 
 class VideoPluginService {
   static final VideoPluginService _instance = VideoPluginService._internal();

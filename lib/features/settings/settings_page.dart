@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:card_settings_ui/card_settings_ui.dart';
 import 'package:provider/provider.dart';
-import 'package:mikomi/features/settings/video_settings/service/video_basis_service.dart';
-import 'package:mikomi/features/settings/video_settings/service/hardware_decode_service.dart';
-import 'package:mikomi/features/settings/account_settings/account_settings_page.dart';
+import 'package:mikomi/features/settings/video_play/service/video_basis_service.dart';
+import 'package:mikomi/features/settings/video_play/service/hardware_decode_service.dart';
+import 'package:mikomi/features/settings/account/account_manage_page.dart';
 import 'package:mikomi/core/services/auth_service.dart';
 import 'package:mikomi/shared/widgets/message_dialog.dart';
 
