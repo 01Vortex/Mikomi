@@ -6,6 +6,7 @@ import 'package:mikomi/features/video/services/video_playback_service.dart';
 import 'package:mikomi/features/video/ui/widgets/danmaku_overlay.dart';
 import 'package:mikomi/features/video/ui/widgets/fullscreen_video.dart';
 import 'package:mikomi/features/video/ui/widgets/smallscreen_video.dart';
+import 'package:mikomi/features/video/ui/widgets/video_fit.dart';
 import 'package:mikomi/core/models/episode.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 import 'package:mikomi/features/settings/danmaku/danmaku_setting_service.dart';
@@ -37,6 +38,7 @@ class FullscreenVideoPage extends StatefulWidget {
 class _FullscreenVideoPageState extends State<FullscreenVideoPage> {
   late FullscreenVideoState _state;
   DanmakuController? _fullscreenDanmakuController;
+  VideoFitMode _fitMode = VideoFitMode.contain;
 
   @override
   void initState() {
@@ -120,7 +122,7 @@ class _FullscreenVideoPageState extends State<FullscreenVideoPage> {
               child: Video(
                 controller: controller,
                 controls: NoVideoControls,
-                fit: BoxFit.contain,
+                fit: _fitMode.boxFit,
               ),
             ),
             // 弹幕层：只要弹幕开启就渲染，broadcaster 有值时注册 controller
@@ -137,6 +139,8 @@ class _FullscreenVideoPageState extends State<FullscreenVideoPage> {
               episodeTitle: _state.episodeTitle,
               isDanmakuEnabled: _state.isDanmakuEnabled,
               danmakuController: _state.danmakuController,
+              fitMode: _fitMode,
+              onFitModeChanged: (mode) => setState(() => _fitMode = mode),
               onExitFullscreen: () => Navigator.of(context).pop(),
               onNextEpisode: widget.onNextEpisode,
               onPreviousEpisode: widget.onPreviousEpisode,

@@ -6,6 +6,7 @@ import 'package:mikomi/features/video/services/video_playback_service.dart';
 import 'package:mikomi/features/video/ui/widgets/danmaku_overlay.dart';
 import 'package:mikomi/features/video/ui/widgets/danmaku_settings_sheet.dart';
 import 'package:mikomi/features/video/ui/widgets/fullscreen_episode.dart';
+import 'package:mikomi/features/video/ui/widgets/video_fit.dart';
 import 'package:mikomi/features/video/ui/widgets/video_gesture_detector.dart';
 import 'package:mikomi/core/models/episode.dart';
 import 'package:mikomi/features/settings/video_play/service/play_setting_service.dart';
@@ -31,6 +32,8 @@ class FullscreenVideoControls extends StatefulWidget {
   final bool isDanmakuEnabled;
   final DanmakuController? danmakuController;
   final void Function(bool)? onDanmakuToggle;
+  final VideoFitMode fitMode;
+  final ValueChanged<VideoFitMode>? onFitModeChanged;
 
   const FullscreenVideoControls({
     super.key,
@@ -51,6 +54,8 @@ class FullscreenVideoControls extends StatefulWidget {
     this.isDanmakuEnabled = false,
     this.danmakuController,
     this.onDanmakuToggle,
+    this.fitMode = VideoFitMode.contain,
+    this.onFitModeChanged,
   });
 
   @override
@@ -634,9 +639,17 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
                       key: _speedButtonKey,
                       child: _buildTextBtn('${_playbackSpeed}x', _showSpeedSelector),
                     ),
-                    const SizedBox(width: 10),
-                    _buildTextBtn('选集', _showEpisodeSelector),
-                    const SizedBox(width: 10),
+                    const SizedBox(width: 16),
+                    VideoFitButton(
+                      fitMode: widget.fitMode,
+                      onChanged: (mode) {
+                        widget.onFitModeChanged?.call(mode);
+                        _startHideTimer();
+                      },
+                    ),
+                    const SizedBox(width: 16),
+                    _buildIconBtn(Icons.video_library_outlined, _showEpisodeSelector),
+                    const SizedBox(width: 16),
                     GestureDetector(
                       onTap: widget.onExitFullscreen,
                       child: const Icon(Icons.fullscreen_exit, color: Colors.white, size: 22),
