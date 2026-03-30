@@ -423,61 +423,61 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
   }
 
   Widget _buildTopBar() {
+    final safePadding = MediaQuery.of(context).padding;
     return Positioned(
       top: 0,
       left: 0,
       right: 0,
-      child: SafeArea(
-        left: false,
-        right: false,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
-          child: Row(
-            children: [
-              IconButton(
-                icon: const Icon(Icons.arrow_back, color: Colors.white),
-                onPressed: widget.onExitFullscreen,
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(
+          safePadding.left + 4,
+          safePadding.top + 8,
+          safePadding.right + 4,
+          8,
+        ),
+        child: Row(
+          children: [
+            IconButton(
+              icon: const Icon(Icons.arrow_back, color: Colors.white),
+              onPressed: widget.onExitFullscreen,
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    widget.title,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  if (widget.episodeTitle != null &&
+                      widget.episodeTitle!.isNotEmpty) ...[
+                    const SizedBox(height: 2),
                     Text(
-                      widget.title,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
+                      '第${widget.currentEpisode}集 ${widget.episodeTitle}',
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.8),
+                        fontSize: 13,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    if (widget.episodeTitle != null &&
-                        widget.episodeTitle!.isNotEmpty) ...[
-                      const SizedBox(height: 2),
-                      Text(
-                        '第${widget.currentEpisode}集 ${widget.episodeTitle}',
-                        style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.8),
-                          fontSize: 13,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
                   ],
-                ),
+                ],
               ),
-              IconButton(
-                icon: const Icon(Icons.more_vert, color: Colors.white),
-                onPressed: () {
-                  // TODO: 打开设置面板
-                },
-              ),
-            ],
-          ),
+            ),
+            IconButton(
+              icon: const Icon(Icons.more_vert, color: Colors.white),
+              onPressed: () {},
+            ),
+          ],
         ),
       ),
     );
@@ -505,16 +505,19 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
   }
 
   Widget _buildBottomControls() {
+    final safePadding = MediaQuery.of(context).padding;
     return Positioned(
       bottom: 0,
       left: 0,
       right: 0,
-      child: SafeArea(
-        left: false,
-        right: false,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-          child: Column(
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(
+          safePadding.left + 4,
+          0,
+          safePadding.right + 4,
+          safePadding.bottom + 8,
+        ),
+        child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               // 进度条
@@ -652,7 +655,6 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
                 ],
               ),
             ],
-          ),
         ),
       ),
     );
