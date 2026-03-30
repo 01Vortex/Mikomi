@@ -32,6 +32,9 @@ class PluginTestService {
   /// 重置 Dio 实例（清除 cookie 等状态）
   void resetDio() => _initDio();
 
+  /// 获取当前 Dio 实例（供外部注入 cookie）
+  Dio getDio() => _dio;
+
   /// 取消当前请求
   void cancel(String reason) {
     cancelToken?.cancel(reason);

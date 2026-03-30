@@ -4,6 +4,7 @@ import 'package:mikomi/core/models/video_plugin.dart';
 import 'package:mikomi/core/models/road.dart';
 import 'package:mikomi/features/video/services/video_content_service.dart';
 import 'package:mikomi/features/settings/video_play/service/plugin_test_service.dart';
+import 'package:mikomi/features/settings/video_play/service/anti-anti-crawler_test_service.dart';
 import 'package:mikomi/shared/utils/theme_extensions.dart';
 import 'package:mikomi/shared/widgets/message_dialog.dart';
 import 'package:html/parser.dart' as html_parser;
@@ -24,6 +25,7 @@ class _PluginTestPageState extends State<PluginTestPage> {
   final ScrollController _chapterScrollController = ScrollController();
 
   bool _isTesting = false;
+  bool _antiCrawlerEnabled = true;
   String _searchHtml = '';
   List<SearchResult> _searchResults = [];
   List<Road> _chapters = [];
@@ -148,6 +150,25 @@ class _PluginTestPageState extends State<PluginTestPage> {
   }
 
   Future<String?> _fetchWithCaptchaRetry(String url) async {
+    // 反反爬虫模式：先用 AAC 服务突破，再 fallback 到手动验证
+    if (_antiCrawlerEnabled) {
+      final aacResult = await AntiAntiCrawlerService.fetch(
+        url,
+        _service.getDio(),
+        cancelToken: _service.cancelToken,
+      );
+      if (aacResult.success && aacResult.html != null) {
+        return aacResult.html;
+      }
+      // AAC 失败后降级到手动 WebView 验证
+      if (!aacResult.success && mounted) {
+        final verifiedHtml = await _showCaptchaWebView(url);
+        return verifiedHtml;
+      }
+      return null;
+    }
+
+    // 普通模式：直接请求，遇验证码弹 WebView
     var html = await _service.fetchHtml(url);
     if (html == null) return null;
     if (_service.looksLikeCaptcha(html)) {
@@ -230,6 +251,30 @@ class _PluginTestPageState extends State<PluginTestPage> {
             ),
           ),
           const SizedBox(height: 16),
+          // 反反爬虫开关
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
+              children: [
+                Icon(Icons.security, size: 18, color: _antiCrawlerEnabled ? context.colors.primary : context.colors.onSurfaceVariant),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('反反爬虫模式', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: context.colors.onSurface)),
+                      Text('自动绕过 Cloudflare/验证码拦截，失败时降级到手动验证', style: TextStyle(fontSize: 11, color: context.colors.textSecondary)),
+                    ],
+                  ),
+                ),
+                Switch(
+                  value: _antiCrawlerEnabled,
+                  onChanged: (v) => setState(() => _antiCrawlerEnabled = v),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 8),
           Expanded(
             child: SingleChildScrollView(
               padding: const EdgeInsets.symmetric(horizontal: 16),
