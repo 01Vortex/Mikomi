@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mikomi/features/settings/video_play/service/plugin_http_service.dart';
 import 'package:mikomi/features/settings/video_play/service/plugin_manager_service.dart';
-import 'package:mikomi/shared/utils/theme_extensions.dart';
+import 'package:mikomi/shared/widgets/message_dialog.dart';
 
 class PluginShopPage extends StatefulWidget {
   const PluginShopPage({super.key});
@@ -46,24 +46,18 @@ class _PluginShopPageState extends State<PluginShopPage> {
   }
 
   Future<void> _installPlugin(PluginHTTPItem item) async {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('正在安装...')),
-    );
+    MessageDialog.info(context, '正在安装...');
 
     final plugin = await _httpService.getPlugin(item.name);
     if (plugin != null) {
       await _pluginManager.updatePlugin(plugin);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('安装成功')),
-        );
+        MessageDialog.success(context, '安装成功');
         setState(() {});
       }
     } else {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('安装失败')),
-        );
+        MessageDialog.error(context, '安装失败');
       }
     }
   }

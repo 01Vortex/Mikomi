@@ -168,13 +168,14 @@ class VideoPluginManager {
   /// 导入插件(从Base64编码的JSON)
   Future<bool> importPluginFromBase64(String base64String) async {
     try {
-      // 去除可能的 kazumi:// 前缀
       String cleanBase64 = base64String.trim();
-      if (cleanBase64.startsWith('kazumi://')) {
-        cleanBase64 = cleanBase64.substring('kazumi://'.length);
+      // 去除已知前缀
+      for (final prefix in ['mikomi://', 'kazumi://', 'mikomi:', 'kazumi:']) {
+        if (cleanBase64.startsWith(prefix)) {
+          cleanBase64 = cleanBase64.substring(prefix.length);
+          break;
+        }
       }
-
-      // 解码Base64
       final jsonString = utf8.decode(base64Decode(cleanBase64));
       final json = jsonDecode(jsonString);
       final plugin = VideoPlugin.fromJson(json);
@@ -186,11 +187,11 @@ class VideoPluginManager {
     }
   }
 
-  /// 导出插件为Base64编码的JSON(带kazumi://前缀)
+  /// 导出插件为Base64编码的JSON(带mikomi://前缀)
   String exportPluginToBase64(VideoPlugin plugin) {
     final jsonString = jsonEncode(plugin.toJson());
     final base64 = base64Encode(utf8.encode(jsonString));
-    return 'kazumi://$base64';
+    return 'mikomi://$base64';
   }
 
   /// 重新加载默认插件(用于重置)

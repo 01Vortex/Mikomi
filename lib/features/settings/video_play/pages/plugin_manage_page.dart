@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mikomi/core/models/video_plugin.dart';
 import 'package:mikomi/features/settings/video_play/service/plugin_manager_service.dart';
-import 'package:mikomi/shared/utils/theme_extensions.dart';
+import 'package:mikomi/shared/widgets/message_dialog.dart';
+
 
 class PluginManagePage extends StatefulWidget {
   const PluginManagePage({super.key});
@@ -91,7 +92,9 @@ class _PluginManagePageState extends State<PluginManagePage> {
               subtitle: const Text('浏览并安装云端插件'),
               onTap: () {
                 Navigator.pop(context);
-                Navigator.pushNamed(context, '/plugin_shop');
+                Navigator.pushNamed(context, '/plugin_shop').then((_) {
+                  if (mounted) setState(() {});
+                });
               },
             ),
             const SizedBox(height: 16),
@@ -127,16 +130,11 @@ class _PluginManagePageState extends State<PluginManagePage> {
               );
               if (mounted) {
                 Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(success ? '导入成功' : '导入失败，请检查格式'),
-                    backgroundColor: success
-                        ? Colors.green
-                        : Theme.of(context).colorScheme.error,
-                  ),
-                );
                 if (success) {
+                  MessageDialog.success(context, '导入成功');
                   setState(() {});
+                } else {
+                  MessageDialog.error(context, '导入失败，请检查格式');
                 }
               }
             },
@@ -329,9 +327,7 @@ class _PluginManagePageState extends State<PluginManagePage> {
                               _pluginManager.exportPluginToBase64(plugin);
                           await Clipboard.setData(ClipboardData(text: base64));
                           if (mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('已复制到剪贴板')),
-                            );
+                            MessageDialog.success(context, '已复制到剪贴板');
                           }
                         },
                         onDelete: () async {
