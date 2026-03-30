@@ -85,6 +85,15 @@ class _PluginManagePageState extends State<PluginManagePage> {
                 _showImportDialog();
               },
             ),
+            ListTile(
+              leading: const Icon(Icons.cloud_download_outlined),
+              title: const Text('从云端获取'),
+              subtitle: const Text('浏览并安装云端插件'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.pushNamed(context, '/plugin_shop');
+              },
+            ),
             const SizedBox(height: 16),
           ],
         ),
