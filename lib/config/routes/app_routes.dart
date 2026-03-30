@@ -8,6 +8,7 @@ import '../../features/settings/video_play/pages/plugin_manage_page.dart';
 import '../../features/settings/video_play/pages/plugin_editor_page.dart';
 import '../../features/settings/video_play/pages/plugin_test_page.dart';
 import '../../features/settings/video_play/pages/plugin_shop_page.dart';
+import '../../features/settings/danmaku/danmaku_setting_page.dart';
 import '../../features/auth/ui/pages/login_page.dart';
 import '../../features/settings/video_play/pages/hardware_decode_page.dart';
 import '../../features/settings/video_play/pages/play_setting_page.dart';
@@ -24,6 +25,7 @@ class AppRoutes {
   static const String pluginEditor = '/plugin_editor';
   static const String pluginTest = '/plugin_test';
   static const String pluginShop = '/plugin_shop';
+  static const String danmakuSetting = '/danmaku_setting';
   static const String login = '/login';
   static const String hardwareDecode = '/hardware_decode';
   static const String videoBasis = '/video_basis';
@@ -36,6 +38,7 @@ class AppRoutes {
       category: (context) => const CategoryPage(),
       pluginManage: (context) => const PluginManagePage(),
       pluginShop: (context) => const PluginShopPage(),
+      danmakuSetting: (context) => const DanmakuSettingPage(),
       login: (context) => const LoginPage(),
       hardwareDecode: (context) => const HardwareDecodePage(),
       videoBasis: (context) => const VideoBasisPage(),

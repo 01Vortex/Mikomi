@@ -18,6 +18,7 @@ import 'package:mikomi/features/video/services/video_playback_service.dart';
 import 'package:mikomi/core/services/watch_history_service.dart';
 import 'package:mikomi/core/models/watch_history.dart';
 import 'package:mikomi/shared/widgets/message_dialog.dart';
+import 'package:mikomi/features/settings/danmaku/danmaku_setting_service.dart';
 
 class VideoPage extends StatefulWidget {
   final String title;
@@ -96,6 +97,10 @@ class _VideoPageState extends State<VideoPage>
       overlays: [SystemUiOverlay.top, SystemUiOverlay.bottom],
     );
     _playerController = VideoPlaybackService();
+    // 从设置中加载弹幕开关初始值
+    DanmakuSettingService().getShowDanmaku().then((v) {
+      if (mounted) setState(() => _isDanmakuEnabled = v);
+    });
 
     if (_episodes.isEmpty && _currentPluginName != null && widget.animeTitle != null) {
       if (_videoUrl.isNotEmpty) {

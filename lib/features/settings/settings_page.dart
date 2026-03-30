@@ -3,6 +3,7 @@ import 'package:card_settings_ui/card_settings_ui.dart';
 import 'package:provider/provider.dart';
 import 'package:mikomi/features/settings/video_play/service/play_setting_service.dart';
 import 'package:mikomi/features/settings/video_play/service/hardware_decode_service.dart';
+import 'package:mikomi/features/settings/danmaku/danmaku_setting_service.dart';
 import 'package:mikomi/features/settings/account/account_manage_page.dart';
 import 'package:mikomi/core/services/auth_service.dart';
 import 'package:mikomi/shared/widgets/message_dialog.dart';
@@ -17,9 +18,10 @@ class SettingsPage extends StatefulWidget {
 class _SettingsPageState extends State<SettingsPage> {
   final PlaySettingsService _basisService = PlaySettingsService();
   final HardwareDecodeService _hwService = HardwareDecodeService();
+  final DanmakuSettingService _danmakuService = DanmakuSettingService();
 
   bool _autoPlayNext = true;
-  bool _showDanmaku = true;
+  bool _showDanmaku = false;
   double _playSpeed = 1.0;
   bool _hardwareDecoding = true;
   bool _isLoading = true;
@@ -34,12 +36,14 @@ class _SettingsPageState extends State<SettingsPage> {
     final autoPlayNext = await _basisService.getAutoPlayNext();
     final playSpeed = await _basisService.getPlaySpeed();
     final hardwareDecoding = await _hwService.getEnabled();
+    final showDanmaku = await _danmakuService.getShowDanmaku();
 
     if (mounted) {
       setState(() {
         _autoPlayNext = autoPlayNext;
         _playSpeed = playSpeed;
         _hardwareDecoding = hardwareDecoding;
+        _showDanmaku = showDanmaku;
         _isLoading = false;
       });
     }
@@ -132,16 +136,14 @@ class _SettingsPageState extends State<SettingsPage> {
           SettingsSection(
             title: const Text('弹幕'),
             tiles: [
-              SettingsTile.switchTile(
-                onToggle: (value) {
-                  setState(() {
-                    _showDanmaku = value ?? !_showDanmaku;
-                  });
+              SettingsTile.navigation(
+                onPressed: (_) {
+                  Navigator.pushNamed(context, '/danmaku_setting')
+                      .then((_) => _loadSettings());
                 },
                 leading: const Icon(Icons.subtitles_outlined),
-                title: const Text('显示弹幕'),
-                description: const Text('总是开启弹幕'),
-                initialValue: _showDanmaku,
+                title: const Text('弹幕设置'),
+                description: Text(_showDanmaku ? '显示弹幕已启用' : '显示弹幕已关闭'),
               ),
             ],
           ),
