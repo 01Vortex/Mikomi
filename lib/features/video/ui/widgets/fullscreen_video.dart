@@ -230,20 +230,18 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
         _speedButtonKey.currentContext?.findRenderObject() as RenderBox?;
     if (renderBox == null) return;
 
-    final overlay = Overlay.of(context).context.findRenderObject() as RenderBox;
-    final buttonPosition = renderBox.localToGlobal(
-      Offset.zero,
-      ancestor: overlay,
-    );
+    // 使用全局坐标，确保全屏横屏下定位准确
+    final buttonPosition = renderBox.localToGlobal(Offset.zero);
     final buttonSize = renderBox.size;
 
     showMenu(
       context: context,
+      useRootNavigator: true,
       position: RelativeRect.fromLTRB(
-        buttonPosition.dx,
-        buttonPosition.dy - 268,
-        buttonPosition.dx + buttonSize.width,
-        buttonPosition.dy,
+        buttonPosition.dx - (100 - buttonSize.width) / 2 - 4,
+        buttonPosition.dy - 268 - 8,
+        buttonPosition.dx + buttonSize.width + (100 - buttonSize.width) / 2 + 4,
+        buttonPosition.dy - 8,
       ),
       color: Colors.white.withValues(alpha: 0.92),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),

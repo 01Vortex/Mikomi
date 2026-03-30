@@ -55,17 +55,18 @@ class VideoFitButton extends StatelessWidget {
   void _showMenu(BuildContext context) {
     final renderBox = context.findRenderObject() as RenderBox?;
     if (renderBox == null) return;
-    final overlay = Overlay.of(context).context.findRenderObject() as RenderBox;
-    final pos = renderBox.localToGlobal(Offset.zero, ancestor: overlay);
+    // 转换为全局坐标，不依赖 overlay ancestor
+    final pos = renderBox.localToGlobal(Offset.zero);
     final size = renderBox.size;
 
     showMenu<VideoFitMode>(
       context: context,
+      useRootNavigator: true,
       position: RelativeRect.fromLTRB(
-        pos.dx,
-        pos.dy - 148,
-        pos.dx + size.width,
-        pos.dy,
+        pos.dx - (120 - size.width) / 2 - 4,
+        pos.dy - 148 - 8,
+        pos.dx + size.width + (120 - size.width) / 2 + 4,
+        pos.dy - 8,
       ),
       color: Colors.white.withValues(alpha: 0.92),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
