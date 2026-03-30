@@ -10,6 +10,9 @@ import 'package:mikomi/features/video/ui/widgets/video_gesture_detector.dart';
 import 'package:mikomi/core/models/episode.dart';
 import 'package:mikomi/features/settings/video_play/service/play_setting_service.dart';
 
+// 顶部/底部控制栏统一左右边距（不含安全区），确保两侧完全对齐
+const double _kSideMargin = 16.0;
+
 class FullscreenVideoControls extends StatefulWidget {
   final VideoPlaybackService playerController;
   final String title;
@@ -329,40 +332,78 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
 
   @override
   Widget build(BuildContext context) {
+    final safePadding = MediaQuery.of(context).viewPadding;
+    final double leftPad = safePadding.left + _kSideMargin;
+    final double rightPad = safePadding.right + _kSideMargin;
+
     return VideoGestureDetector(
       playerController: widget.playerController,
       child: Stack(
         children: [
-        // 主内容区域 - 可以点击切换控制栏
-        Positioned.fill(
-          child: GestureDetector(
-            onTap: _toggleControls,
-            behavior: HitTestBehavior.opaque,
-            child: Container(color: Colors.transparent),
+          // 点击区域切换控制栏
+          Positioned.fill(
+            child: GestureDetector(
+              onTap: _toggleControls,
+              behavior: HitTestBehavior.opaque,
+              child: const ColoredBox(color: Colors.transparent),
+            ),
           ),
-        ),
 
-        // 缓冲指示器
-        if (_isBuffering) _buildBufferingIndicator(),
+          // 缓冲指示器
+          if (_isBuffering) _buildBufferingIndicator(),
 
-        // 顶部渐变
-        if (_showControls && !_isLocked) _buildTopGradient(),
+          // 顶部渐变遮罩
+          if (_showControls && !_isLocked)
+            Positioned(
+              top: 0, left: 0, right: 0,
+              child: Container(
+                height: 130,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Colors.black.withValues(alpha: 0.72),
+                      Colors.transparent,
+                    ],
+                  ),
+                ),
+              ),
+            ),
 
-        // 底部渐变
-        if (_showControls && !_isLocked) _buildBottomGradient(),
+          // 底部渐变遮罩
+          if (_showControls && !_isLocked)
+            Positioned(
+              bottom: 0, left: 0, right: 0,
+              child: Container(
+                height: 150,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.bottomCenter,
+                    end: Alignment.topCenter,
+                    colors: [
+                      Colors.black.withValues(alpha: 0.72),
+                      Colors.transparent,
+                    ],
+                  ),
+                ),
+              ),
+            ),
 
-        // 顶部控制栏
-        if (_showControls && !_isLocked) _buildTopBar(),
+          // 顶部控制栏
+          if (_showControls && !_isLocked)
+            _buildTopBar(safePadding: safePadding, leftPad: leftPad, rightPad: rightPad),
 
-        // 中间播放控制
-        if (_showControls && !_isLocked) _buildCenterControls(),
+          // 中间播放/暂停
+          if (_showControls && !_isLocked) _buildCenterControls(),
 
-        // 底部控制栏
-        if (_showControls && !_isLocked) _buildBottomControls(),
+          // 底部控制栏
+          if (_showControls && !_isLocked)
+            _buildBottomControls(safePadding: safePadding, leftPad: leftPad, rightPad: rightPad),
 
-        // 锁定按钮
-        _buildLockButton(),
-      ],
+          // 锁屏按钮
+          _buildLockButton(),
+        ],
       ),
     );
   }
@@ -386,64 +427,31 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
     );
   }
 
-  Widget _buildTopGradient() {
-    return Positioned(
-      top: 0,
-      left: 0,
-      right: 0,
-      child: Container(
-        height: 120,
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Colors.black.withValues(alpha: 0.7), Colors.transparent],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildBottomGradient() {
-    return Positioned(
-      bottom: 0,
-      left: 0,
-      right: 0,
-      child: Container(
-        height: 120,
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Colors.transparent, Colors.black.withValues(alpha: 0.7)],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTopBar() {
-    final safePadding = MediaQuery.of(context).viewPadding;
+  // 顶部控制栏：返回按钮左边距 = leftPad，更多按钮右边距 = rightPad，两侧完全对称
+  Widget _buildTopBar({
+    required EdgeInsets safePadding,
+    required double leftPad,
+    required double rightPad,
+  }) {
     return Positioned(
       top: 0,
       left: 0,
       right: 0,
       child: Padding(
         padding: EdgeInsets.fromLTRB(
-          safePadding.left + 4,
-          safePadding.top + 8,
-          safePadding.right + 4,
-          8,
+          leftPad,
+          safePadding.top + 10,
+          rightPad,
+          10,
         ),
         child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            IconButton(
-              icon: const Icon(Icons.arrow_back, color: Colors.white),
-              onPressed: widget.onExitFullscreen,
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(),
+            GestureDetector(
+              onTap: widget.onExitFullscreen,
+              child: const Icon(Icons.arrow_back, color: Colors.white, size: 22),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: 10),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -460,7 +468,7 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
                     overflow: TextOverflow.ellipsis,
                   ),
                   if (widget.episodeTitle != null &&
-                      widget.episodeTitle!.isNotEmpty) ...[
+                      widget.episodeTitle!.isNotEmpty) ...[  
                     const SizedBox(height: 2),
                     Text(
                       '第${widget.currentEpisode}集 ${widget.episodeTitle}',
@@ -475,11 +483,10 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
                 ],
               ),
             ),
-            IconButton(
-              icon: const Icon(Icons.more_vert, color: Colors.white, size: 20),
-              onPressed: () {},
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(),
+            const SizedBox(width: 10),
+            GestureDetector(
+              onTap: () {},
+              child: const Icon(Icons.more_vert, color: Colors.white, size: 22),
             ),
           ],
         ),
@@ -508,199 +515,161 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
     );
   }
 
-  Widget _buildBottomControls() {
-    final safePadding = MediaQuery.of(context).viewPadding;
+  // 底部控制栏：进度条和按钮组都使用 leftPad/rightPad，与顶部完全对齐
+  Widget _buildBottomControls({
+    required EdgeInsets safePadding,
+    required double leftPad,
+    required double rightPad,
+  }) {
     return Positioned(
       bottom: 0,
       left: 0,
       right: 0,
       child: Padding(
         padding: EdgeInsets.fromLTRB(
-          safePadding.left + 4,
+          leftPad,
           0,
-          safePadding.right + 4,
-          safePadding.bottom + 8,
+          rightPad,
+          safePadding.bottom + 10,
         ),
         child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // 进度条
-              GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                child: Row(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // 进度条行：时间 + Slider + 时间
+            Row(
+              children: [
+                Text(
+                  _formatDuration(_position),
+                  style: const TextStyle(color: Colors.white, fontSize: 12),
+                ),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: SliderTheme(
+                    data: SliderThemeData(
+                      trackHeight: 3,
+                      trackShape: const RectangularSliderTrackShape(),
+                      thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
+                      overlayShape: const RoundSliderOverlayShape(overlayRadius: 12),
+                      activeTrackColor: Theme.of(context).colorScheme.primary,
+                      inactiveTrackColor: Colors.white.withValues(alpha: 0.3),
+                      thumbColor: Theme.of(context).colorScheme.primary,
+                    ),
+                    child: Slider(
+                      value: _duration.inMilliseconds > 0
+                          ? (_position.inMilliseconds / _duration.inMilliseconds).clamp(0.0, 1.0)
+                          : 0.0,
+                      onChangeStart: (_) => _hideTimer?.cancel(),
+                      onChanged: (value) {
+                        setState(() {
+                          _isDragging = true;
+                          _position = Duration(
+                            milliseconds: (value * _duration.inMilliseconds).toInt(),
+                          );
+                        });
+                      },
+                      onChangeEnd: (value) {
+                        setState(() => _isDragging = false);
+                        widget.playerController.player?.seek(_position);
+                        _startHideTimer();
+                      },
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  _formatDuration(_duration),
+                  style: const TextStyle(color: Colors.white, fontSize: 12),
+                ),
+              ],
+            ),
+            const SizedBox(height: 6),
+            // 按钮行：左侧滚动组 + 右侧固定组
+            Row(
+              children: [
+                // 左侧按钮组（可横向滚动）
+                Expanded(
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        _buildIconBtn(Icons.skip_previous, _playPreviousEpisode),
+                        const SizedBox(width: 10),
+                        _buildIconBtn(
+                          _isPlaying ? Icons.pause : Icons.play_arrow,
+                          _togglePlayPause,
+                        ),
+                        const SizedBox(width: 10),
+                        _buildIconBtn(Icons.skip_next, _playNextEpisode),
+                        const SizedBox(width: 20),
+                        _buildDanmakuButton(),
+                        const SizedBox(width: 10),
+                        _buildDanmakuSettingButton(),
+                        if (_showDanmakuInput) ...[  
+                          const SizedBox(width: 10),
+                          _buildDanmakuInputInline(),
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                // 右侧按钮组
+                Row(
                   children: [
-                    Text(
-                      _formatDuration(_position),
-                      style: const TextStyle(color: Colors.white, fontSize: 12),
+                    KeyedSubtree(
+                      key: _speedButtonKey,
+                      child: _buildTextBtn('${_playbackSpeed}x', _showSpeedSelector),
                     ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: SliderTheme(
-                        data: SliderThemeData(
-                          trackHeight: 3,
-                          trackShape: const RectangularSliderTrackShape(),
-                          thumbShape: const RoundSliderThumbShape(
-                            enabledThumbRadius: 6,
-                          ),
-                          overlayShape: const RoundSliderOverlayShape(
-                            overlayRadius: 12,
-                          ),
-                          activeTrackColor: Theme.of(
-                            context,
-                          ).colorScheme.primary,
-                          inactiveTrackColor: Colors.white.withValues(
-                            alpha: 0.3,
-                          ),
-                          thumbColor: Theme.of(context).colorScheme.primary,
-                        ),
-                        child: Slider(
-                          value: _duration.inMilliseconds > 0
-                              ? (_position.inMilliseconds /
-                                        _duration.inMilliseconds)
-                                    .clamp(0.0, 1.0)
-                              : 0.0,
-                          onChanged: (value) {
-                            setState(() {
-                              _isDragging = true;
-                              _position = Duration(
-                                milliseconds: (value * _duration.inMilliseconds)
-                                    .toInt(),
-                              );
-                            });
-                          },
-                          onChangeEnd: (value) {
-                            setState(() => _isDragging = false);
-                            widget.playerController.player?.seek(_position);
-                            _startHideTimer();
-                          },
-                          onChangeStart: (value) {
-                            _hideTimer?.cancel();
-                          },
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      _formatDuration(_duration),
-                      style: const TextStyle(color: Colors.white, fontSize: 12),
+                    const SizedBox(width: 10),
+                    _buildTextBtn('选集', _showEpisodeSelector),
+                    const SizedBox(width: 10),
+                    GestureDetector(
+                      onTap: widget.onExitFullscreen,
+                      child: const Icon(Icons.fullscreen_exit, color: Colors.white, size: 22),
                     ),
                   ],
                 ),
-              ),
-              const SizedBox(height: 8),
-              // 底部按钮
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  // 左侧按钮组
-                  Expanded(
-                    child: SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: Row(
-                        children: [
-                          _buildBottomButton(
-                            icon: Icons.skip_previous,
-                            label: '上一集',
-                            onTap: _playPreviousEpisode,
-                            iconOnly: true,
-                          ),
-                          const SizedBox(width: 12),
-                          _buildBottomButton(
-                            icon: _isPlaying ? Icons.pause : Icons.play_arrow,
-                            label: _isPlaying ? '暂停' : '播放',
-                            onTap: _togglePlayPause,
-                            iconOnly: true,
-                          ),
-                          const SizedBox(width: 12),
-                          _buildBottomButton(
-                            icon: Icons.skip_next,
-                            label: '下一集',
-                            onTap: _playNextEpisode,
-                            iconOnly: true,
-                          ),
-                          const SizedBox(width: 24),
-                          _buildDanmakuButton(),
-                          const SizedBox(width: 12),
-                          _buildDanmakuSettingButton(),
-                          if (_showDanmakuInput) ...[
-                            const SizedBox(width: 12),
-                            _buildDanmakuInputInline(),
-                          ],
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  // 右侧按钮组
-                  Row(
-                    children: [
-                      Container(
-                        key: _speedButtonKey,
-                        child: _buildBottomButton(
-                          icon: Icons.speed,
-                          label: '${_playbackSpeed}x',
-                          onTap: _showSpeedSelector,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      _buildBottomButton(
-                        icon: Icons.playlist_play,
-                        label: '选集',
-                        onTap: _showEpisodeSelector,
-                      ),
-                      const SizedBox(width: 12),
-                      GestureDetector(
-                        onTap: widget.onExitFullscreen,
-                        child: const Icon(
-                          Icons.fullscreen_exit,
-                          color: Colors.white,
-                          size: 20,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ],
+              ],
+            ),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildBottomButton({
-    required IconData icon,
-    required String label,
-    required VoidCallback onTap,
-    bool iconOnly = false,
-    bool noPaddingRight = false,
-  }) {
+  Widget _buildIconBtn(IconData icon, VoidCallback onTap) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: iconOnly
-            ? EdgeInsets.fromLTRB(8, 8, noPaddingRight ? 0 : 8, 8)
-            : const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
           color: Colors.white.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(iconOnly ? 8 : 16),
+          borderRadius: BorderRadius.circular(8),
         ),
-        child: iconOnly
-            ? Icon(icon, color: Colors.white, size: 20)
-            : Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(icon, color: Colors.white, size: 18),
-                  const SizedBox(width: 4),
-                  Text(
-                    label,
-                    style: const TextStyle(color: Colors.white, fontSize: 13),
-                  ),
-                ],
-              ),
+        child: Icon(icon, color: Colors.white, size: 20),
       ),
     );
   }
+
+  Widget _buildTextBtn(String label, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: Text(
+          label,
+          style: const TextStyle(color: Colors.white, fontSize: 13),
+        ),
+      ),
+    );
+  }
+
+  // 旧方法已由 _buildBottomControls({...}) 替代，此处占位已删除
 
   Widget _buildDanmakuButton() {
     return GestureDetector(
@@ -797,7 +766,7 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
 
   Widget _buildLockButton() {
     return Positioned(
-      right: 16,
+      right: _kSideMargin,
       top: MediaQuery.of(context).size.height / 2 - 24,
       child: GestureDetector(
         onTap: () {
