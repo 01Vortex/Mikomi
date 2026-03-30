@@ -10,6 +10,7 @@ import 'package:mikomi/features/video/ui/widgets/video_fit.dart';
 import 'package:mikomi/core/models/episode.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 import 'package:mikomi/features/settings/danmaku/danmaku_setting_service.dart';
+import 'package:mikomi/features/settings/video_play/service/play_setting_service.dart';
 
 class FullscreenVideoPage extends StatefulWidget {
   final VideoPlaybackService playerController;
@@ -38,6 +39,7 @@ class FullscreenVideoPage extends StatefulWidget {
 class _FullscreenVideoPageState extends State<FullscreenVideoPage> {
   late FullscreenVideoState _state;
   DanmakuController? _fullscreenDanmakuController;
+  final PlaySettingsService _playSettingsService = PlaySettingsService();
   VideoFitMode _fitMode = VideoFitMode.contain;
 
   @override
@@ -45,7 +47,14 @@ class _FullscreenVideoPageState extends State<FullscreenVideoPage> {
     super.initState();
     _state = widget.stateNotifier.value;
     widget.stateNotifier.addListener(_onStateChanged);
+    _loadFitMode();
     _enterFullscreen();
+  }
+
+  Future<void> _loadFitMode() async {
+    final mode = await _playSettingsService.getVideoFitMode();
+    if (!mounted) return;
+    setState(() => _fitMode = mode);
   }
 
   void _onStateChanged() {
@@ -140,7 +149,10 @@ class _FullscreenVideoPageState extends State<FullscreenVideoPage> {
               isDanmakuEnabled: _state.isDanmakuEnabled,
               danmakuController: _state.danmakuController,
               fitMode: _fitMode,
-              onFitModeChanged: (mode) => setState(() => _fitMode = mode),
+              onFitModeChanged: (mode) async {
+                setState(() => _fitMode = mode);
+                await _playSettingsService.setVideoFitMode(mode);
+              },
               onExitFullscreen: () => Navigator.of(context).pop(),
               onNextEpisode: widget.onNextEpisode,
               onPreviousEpisode: widget.onPreviousEpisode,

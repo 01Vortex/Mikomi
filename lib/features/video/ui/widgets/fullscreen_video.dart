@@ -456,12 +456,12 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
               onTap: widget.onExitFullscreen,
               behavior: HitTestBehavior.opaque,
               child: const SizedBox(
-                width: 22,
-                height: 22,
-                child: Icon(Icons.arrow_back, color: Colors.white, size: 22),
+                width: 28,
+                height: 28,
+                child: Icon(Icons.arrow_back, color: Colors.white, size: 28),
               ),
             ),
-            const SizedBox(width: 10),
+            const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -471,7 +471,7 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
                     widget.title,
                     style: const TextStyle(
                       color: Colors.white,
-                      fontSize: 16,
+                      fontSize: 18,
                       fontWeight: FontWeight.w600,
                     ),
                     maxLines: 1,
@@ -484,7 +484,7 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
                       '第${widget.currentEpisode}集 ${widget.episodeTitle}',
                       style: TextStyle(
                         color: Colors.white.withValues(alpha: 0.8),
-                        fontSize: 13,
+                        fontSize: 15,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,

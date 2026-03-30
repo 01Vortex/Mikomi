@@ -670,18 +670,19 @@ class _SmallscreenVideoState extends State<SmallscreenVideo> {
       left: 0,
       right: 0,
       child: Padding(
-        padding: const EdgeInsets.only(left: 4, right: 4, top: 10),
+        padding: const EdgeInsets.only(left: 8, right: 4, top: 10),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            IconButton(
-              icon: const Icon(Icons.arrow_back, color: Colors.white),
-              onPressed: widget.onBack ?? () => Navigator.of(context).pop(),
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(),
-              iconSize: 24,
+            GestureDetector(
+              onTap: widget.onBack ?? () => Navigator.of(context).pop(),
+              behavior: HitTestBehavior.opaque,
+              child: const Padding(
+                padding: EdgeInsets.all(4),
+                child: Icon(Icons.arrow_back, color: Colors.white, size: 24),
+              ),
             ),
-            const SizedBox(width: 4),
+            const SizedBox(width: 2),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
