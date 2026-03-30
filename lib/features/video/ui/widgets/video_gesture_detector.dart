@@ -21,24 +21,32 @@ class VideoGestureDetector extends StatefulWidget {
   State<VideoGestureDetector> createState() => _VideoGestureDetectorState();
 }
 
-enum _GestureType { none, brightness, volume }
+enum _GestureType { none, brightness, volume, seek }
 
 class _VideoGestureDetectorState extends State<VideoGestureDetector>
     with TickerProviderStateMixin {
   _GestureType _gestureType = _GestureType.none;
   double _startDragY = 0;
+  double _startDragX = 0;
   double _startValue = 0;
+  double _startPosition = 0; // 拖动开始时的播放进度（秒）
+  double _seekPosition = 0;  // 当前拖动目标进度（秒）
+  double _totalDuration = 0;
 
   bool _showBrightnessHud = false;
   bool _showVolumeHud = false;
   bool _showSpeedHud = false;
+  bool _showSeekHud = false;
   double _brightness = 0.5;
   double _volume = 0.5;
   double _normalSpeed = 1.0;
   bool _isLongPressing = false;
   bool _isDragging = false;
-  // 手势拖动期间忽略系统音量回调，防止抖动
   bool _isAdjusting = false;
+
+  // 节流：限制音量/亮度系统调用频率
+  DateTime _lastSystemCall = DateTime(0);
+  static const _throttleMs = 50;
 
   Timer? _hudHideTimer;
 
@@ -84,10 +92,10 @@ class _VideoGestureDetectorState extends State<VideoGestureDetector>
   }
 
   void _showHud(_GestureType type) {
-    // 拖动期间不重置 timer，只在拖动结束后才开始倒计时隐藏
     setState(() {
       _showBrightnessHud = type == _GestureType.brightness;
       _showVolumeHud = type == _GestureType.volume;
+      _showSeekHud = type == _GestureType.seek;
     });
   }
 
@@ -98,6 +106,7 @@ class _VideoGestureDetectorState extends State<VideoGestureDetector>
         setState(() {
           _showBrightnessHud = false;
           _showVolumeHud = false;
+          _showSeekHud = false;
           _isDragging = false;
         });
       }
@@ -105,6 +114,41 @@ class _VideoGestureDetectorState extends State<VideoGestureDetector>
   }
 
   bool _isLeftSide(Offset pos, BoxConstraints c) => pos.dx < c.maxWidth / 2;
+
+  void _onHorizontalDragStart(DragStartDetails d, BoxConstraints c) {
+    if (!widget.enabled) return;
+    _startDragX = d.localPosition.dx;
+    _isDragging = true;
+    _gestureType = _GestureType.seek;
+    final player = widget.playerController?.player;
+    if (player != null) {
+      _totalDuration = player.state.duration.inSeconds.toDouble();
+      _startPosition = player.state.position.inSeconds.toDouble();
+      _seekPosition = _startPosition;
+    }
+    HapticFeedback.selectionClick();
+  }
+
+  void _onHorizontalDragUpdate(DragUpdateDetails d, BoxConstraints c) {
+    if (!widget.enabled || _gestureType != _GestureType.seek) return;
+    if (_totalDuration <= 0) return;
+    final dx = d.localPosition.dx - _startDragX;
+    // 全屏宽度对应最多 90 秒快进/后退
+    final delta = (dx / c.maxWidth) * 90.0;
+    _seekPosition = (_startPosition + delta).clamp(0.0, _totalDuration);
+    setState(() {});
+    _showHud(_GestureType.seek);
+  }
+
+  void _onHorizontalDragEnd(DragEndDetails _) {
+    if (_gestureType != _GestureType.seek) return;
+    final player = widget.playerController?.player;
+    if (player != null && _totalDuration > 0) {
+      player.seek(Duration(seconds: _seekPosition.round()));
+    }
+    _gestureType = _GestureType.none;
+    _scheduleHudHide();
+  }
 
   void _onVerticalDragStart(DragStartDetails d, BoxConstraints c) {
     if (!widget.enabled) return;
@@ -114,7 +158,6 @@ class _VideoGestureDetectorState extends State<VideoGestureDetector>
     final isLeft = _isLeftSide(d.localPosition, c);
     _gestureType = isLeft ? _GestureType.brightness : _GestureType.volume;
     HapticFeedback.selectionClick();
-    // 直接使用已缓存的值，避免异步延迟导致拖动初始段计算错误
     _startValue = isLeft ? _brightness : _volume;
   }
 
@@ -123,13 +166,22 @@ class _VideoGestureDetectorState extends State<VideoGestureDetector>
     final dy = _startDragY - d.localPosition.dy;
     final delta = dy / (c.maxHeight * 0.7);
     final newVal = (_startValue + delta).clamp(0.0, 1.0);
+    // 节流：限制系统调用频率，避免卡顿
+    final now = DateTime.now();
+    final shouldCall = now.difference(_lastSystemCall).inMilliseconds >= _throttleMs;
     if (_gestureType == _GestureType.brightness) {
-      ScreenBrightness().setScreenBrightness(newVal);
       setState(() => _brightness = newVal);
+      if (shouldCall) {
+        _lastSystemCall = now;
+        ScreenBrightness().setScreenBrightness(newVal);
+      }
       _showHud(_GestureType.brightness);
     } else {
-      VolumeController().setVolume(newVal);
       setState(() => _volume = newVal);
+      if (shouldCall) {
+        _lastSystemCall = now;
+        VolumeController().setVolume(newVal);
+      }
       _showHud(_GestureType.volume);
     }
   }
@@ -137,7 +189,6 @@ class _VideoGestureDetectorState extends State<VideoGestureDetector>
   void _onVerticalDragEnd(DragEndDetails _) {
     _gestureType = _GestureType.none;
     _isAdjusting = false;
-    // 拖动结束后再开始倒计时隐藏 HUD
     _scheduleHudHide();
   }
 
@@ -171,6 +222,20 @@ class _VideoGestureDetectorState extends State<VideoGestureDetector>
         onVerticalDragStart: (d) => _onVerticalDragStart(d, constraints),
         onVerticalDragUpdate: (d) => _onVerticalDragUpdate(d, constraints),
         onVerticalDragEnd: _onVerticalDragEnd,
+        onHorizontalDragStart: (d) => _onHorizontalDragStart(d, constraints),
+        onHorizontalDragUpdate: (d) => _onHorizontalDragUpdate(d, constraints),
+        onHorizontalDragEnd: _onHorizontalDragEnd,
+        onDoubleTap: () {
+          if (!widget.enabled) return;
+          final player = widget.playerController?.player;
+          if (player == null) return;
+          if (player.state.playing) {
+            player.pause();
+          } else {
+            player.play();
+          }
+          HapticFeedback.lightImpact();
+        },
         onLongPressStart: _onLongPressStart,
         onLongPressEnd: _onLongPressEnd,
         child: Stack(
@@ -257,17 +322,60 @@ class _VideoGestureDetectorState extends State<VideoGestureDetector>
                 ),
               ),
 
+            // Seek HUD
+            if (_showSeekHud)
+              Positioned(
+                top: 24, left: 0, right: 0,
+                child: Center(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.6),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          _seekPosition >= _startPosition
+                              ? Icons.fast_forward_rounded
+                              : Icons.fast_rewind_rounded,
+                          color: Colors.white,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          _formatDuration(_seekPosition),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        if (_totalDuration > 0) ...[
+                          Text(
+                            ' / ${_formatDuration(_totalDuration)}',
+                            style: TextStyle(
+                              color: Colors.white.withValues(alpha: 0.6),
+                              fontSize: 13,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+
             // 加速 HUD
-            AnimatedOpacity(
-              opacity: _showSpeedHud ? 1 : 0,
-              duration: const Duration(milliseconds: 200),
-              child: _showSpeedHud
-                  ? Positioned(
-                      top: 20,
-                      left: 0, right: 0,
-                      child: Center(child: _buildSpeedHud()),
-                    )
-                  : const SizedBox.shrink(),
+            Positioned(
+              top: 24,
+              left: 0, right: 0,
+              child: AnimatedOpacity(
+                opacity: _showSpeedHud ? 1 : 0,
+                duration: const Duration(milliseconds: 200),
+                child: Center(child: _buildSpeedHud()),
+              ),
             ),
           ],
         ),
@@ -348,24 +456,24 @@ class _VideoGestureDetectorState extends State<VideoGestureDetector>
     );
   }
 
+  String _formatDuration(double seconds) {
+    final s = seconds.round();
+    final m = s ~/ 60;
+    final h = m ~/ 60;
+    if (h > 0) {
+      return '${h.toString().padLeft(2, '0')}:${(m % 60).toString().padLeft(2, '0')}:${(s % 60).toString().padLeft(2, '0')}';
+    }
+    return '${m.toString().padLeft(2, '0')}:${(s % 60).toString().padLeft(2, '0')}';
+  }
+
   Widget _buildSpeedHud() {
     return ScaleTransition(
       scale: _pulseAnim,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.18),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: Colors.white.withValues(alpha: 0.3),
-            width: 0.8,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.25),
-              blurRadius: 8,
-            )
-          ],
+          color: Colors.black.withValues(alpha: 0.6),
+          borderRadius: BorderRadius.circular(12),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -373,16 +481,15 @@ class _VideoGestureDetectorState extends State<VideoGestureDetector>
             const Icon(
               Icons.fast_forward_rounded,
               color: Colors.white,
-              size: 15,
+              size: 20,
             ),
-            const SizedBox(width: 5),
-            Text(
+            const SizedBox(width: 8),
+            const Text(
               '2× 倍速',
               style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.95),
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                letterSpacing: 0.3,
+                color: Colors.white,
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
               ),
             ),
           ],
