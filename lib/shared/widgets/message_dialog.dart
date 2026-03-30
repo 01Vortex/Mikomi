@@ -129,40 +129,32 @@ class _MessageDialogWidgetState extends State<_MessageDialogWidget>
   Color _getBackgroundColor() {
     switch (widget.type) {
       case MessageType.success:
-        return const Color(0xFF00FF00).withValues(alpha: 0.15); // 浅绿色
+        return const Color(0xFFF3FEF3);
       case MessageType.error:
-        return const Color(0xFFFF0000).withValues(alpha: 0.15); // 浅红色
+        return const Color(0xFFFEF3F3);
       case MessageType.warning:
-        return const Color(0xFFFFFF00).withValues(alpha: 0.15); // 浅黄色
+        return const Color(0xFFFEFEF3);
       case MessageType.info:
-        return const Color(0xFF00BFFF).withValues(alpha: 0.15); // 浅蓝色
+        return const Color(0xFFF3FEFE);
     }
   }
 
   Color _getTextColor() {
     switch (widget.type) {
       case MessageType.success:
-        return const Color(0xFF00AA00); // 深绿色文字
+        return const Color(0xFF25EE25);
       case MessageType.error:
-        return const Color(0xFFCC0000); // 深红色文字
+        return const Color(0xFFEE2525);
       case MessageType.warning:
-        return const Color(0xFFCC9900); // 深黄色文字
+        return const Color(0xFFEEEE25);
       case MessageType.info:
-        return const Color(0xFF0088CC); // 深蓝色文字
+        return const Color(0xFF2525EE);
     }
   }
 
   Color _getIconBackgroundColor() {
-    switch (widget.type) {
-      case MessageType.success:
-        return const Color(0xFF00AA00).withValues(alpha: 0.15);
-      case MessageType.error:
-        return const Color(0xFFCC0000).withValues(alpha: 0.15);
-      case MessageType.warning:
-        return const Color(0xFFCC9900).withValues(alpha: 0.15);
-      case MessageType.info:
-        return const Color(0xFF0088CC).withValues(alpha: 0.15);
-    }
+    final color = _getTextColor();
+    return color.withValues(alpha: 0.12);
   }
 
   IconData _getIcon() {
@@ -204,6 +196,10 @@ class _MessageDialogWidgetState extends State<_MessageDialogWidget>
                   decoration: BoxDecoration(
                     color: _getBackgroundColor(),
                     borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: textColor,
+                      width: 1,
+                    ),
                     boxShadow: [
                       BoxShadow(
                         color: Colors.black.withValues(alpha: 0.08),
