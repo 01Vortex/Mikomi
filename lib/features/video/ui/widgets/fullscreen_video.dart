@@ -441,7 +441,7 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
       child: Padding(
         padding: EdgeInsets.fromLTRB(
           leftPad,
-          safePadding.top + 10,
+          safePadding.top + 20,
           rightPad,
           10,
         ),

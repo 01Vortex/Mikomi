@@ -37,6 +37,8 @@ class _VideoGestureDetectorState extends State<VideoGestureDetector>
   double _normalSpeed = 1.0;
   bool _isLongPressing = false;
   bool _isDragging = false;
+  // 手势拖动期间忽略系统音量回调，防止抖动
+  bool _isAdjusting = false;
 
   Timer? _hudHideTimer;
 
@@ -55,8 +57,11 @@ class _VideoGestureDetectorState extends State<VideoGestureDetector>
       CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
     );
 
+    // 禁用系统音量UI，使用自定义HUD
+    VolumeController().showSystemUI = false;
     VolumeController().listener((v) {
-      if (mounted) setState(() => _volume = v);
+      // 拖动期间忽略系统回调，防止与手势计算互相抖动
+      if (mounted && !_isAdjusting) setState(() => _volume = v);
     });
     VolumeController().getVolume().then((v) {
       if (mounted) setState(() => _volume = v);
@@ -68,19 +73,27 @@ class _VideoGestureDetectorState extends State<VideoGestureDetector>
 
   @override
   void dispose() {
+    // 恢复系统音量UI控制
+    VolumeController().showSystemUI = true;
     VolumeController().removeListener();
+    // 退出播放器时恢复系统亮度
+    ScreenBrightness().resetScreenBrightness();
     _hudHideTimer?.cancel();
     _pulseController.dispose();
     super.dispose();
   }
 
   void _showHud(_GestureType type) {
-    _hudHideTimer?.cancel();
+    // 拖动期间不重置 timer，只在拖动结束后才开始倒计时隐藏
     setState(() {
       _showBrightnessHud = type == _GestureType.brightness;
       _showVolumeHud = type == _GestureType.volume;
     });
-    _hudHideTimer = Timer(const Duration(milliseconds: 1500), () {
+  }
+
+  void _scheduleHudHide() {
+    _hudHideTimer?.cancel();
+    _hudHideTimer = Timer(const Duration(milliseconds: 1200), () {
       if (mounted) {
         setState(() {
           _showBrightnessHud = false;
@@ -97,14 +110,12 @@ class _VideoGestureDetectorState extends State<VideoGestureDetector>
     if (!widget.enabled) return;
     _startDragY = d.localPosition.dy;
     _isDragging = true;
+    _isAdjusting = true;
     final isLeft = _isLeftSide(d.localPosition, c);
     _gestureType = isLeft ? _GestureType.brightness : _GestureType.volume;
     HapticFeedback.selectionClick();
-    if (isLeft) {
-      ScreenBrightness().current.then((v) => _startValue = v);
-    } else {
-      VolumeController().getVolume().then((v) => _startValue = v);
-    }
+    // 直接使用已缓存的值，避免异步延迟导致拖动初始段计算错误
+    _startValue = isLeft ? _brightness : _volume;
   }
 
   void _onVerticalDragUpdate(DragUpdateDetails d, BoxConstraints c) {
@@ -125,7 +136,9 @@ class _VideoGestureDetectorState extends State<VideoGestureDetector>
 
   void _onVerticalDragEnd(DragEndDetails _) {
     _gestureType = _GestureType.none;
-    _isDragging = false;
+    _isAdjusting = false;
+    // 拖动结束后再开始倒计时隐藏 HUD
+    _scheduleHudHide();
   }
 
   void _onLongPressStart(LongPressStartDetails _) {
