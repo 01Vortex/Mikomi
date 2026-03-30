@@ -31,7 +31,7 @@ class PluginHTTPItem {
   }
 }
 
-class PluginHTTPService {
+class PluginShopService {
   static const String _pluginShopUrl =
       'https://raw.githubusercontent.com/Predidit/KazumiRules/main/';
   static const String _pluginShopMirrorUrl =

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:mikomi/features/settings/video_play/service/plugin_http_service.dart';
+import 'package:mikomi/features/settings/video_play/service/plugin_shop_service.dart';
 import 'package:mikomi/features/settings/video_play/service/plugin_manager_service.dart';
 import 'package:mikomi/shared/widgets/message_dialog.dart';
 
@@ -11,7 +11,7 @@ class PluginShopPage extends StatefulWidget {
 }
 
 class _PluginShopPageState extends State<PluginShopPage> {
-  final PluginHTTPService _httpService = PluginHTTPService();
+  final PluginShopService _httpService = PluginShopService();
   final VideoPluginManager _pluginManager = VideoPluginManager();
   late Future<List<PluginHTTPItem>> _pluginListFuture;
   bool _sortByName = false;

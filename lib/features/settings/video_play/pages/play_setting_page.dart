@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:mikomi/features/settings/video_play/service/video_basis_service.dart';
+import 'package:mikomi/features/settings/video_play/service/play_setting_service.dart';
 
 class VideoBasisPage extends StatefulWidget {
   const VideoBasisPage({super.key});
@@ -9,7 +9,7 @@ class VideoBasisPage extends StatefulWidget {
 }
 
 class _VideoBasisPageState extends State<VideoBasisPage> {
-  final VideoBasisService _service = VideoBasisService();
+  final PlaySettingsService _service = PlaySettingsService();
 
   bool _autoPlayNext = true;
   double _playSpeed = 1.0;

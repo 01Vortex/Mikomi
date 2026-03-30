@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:card_settings_ui/card_settings_ui.dart';
 import 'package:provider/provider.dart';
-import 'package:mikomi/features/settings/video_play/service/video_basis_service.dart';
+import 'package:mikomi/features/settings/video_play/service/play_setting_service.dart';
 import 'package:mikomi/features/settings/video_play/service/hardware_decode_service.dart';
 import 'package:mikomi/features/settings/account/account_manage_page.dart';
 import 'package:mikomi/core/services/auth_service.dart';
@@ -15,7 +15,7 @@ class SettingsPage extends StatefulWidget {
 }
 
 class _SettingsPageState extends State<SettingsPage> {
-  final VideoBasisService _basisService = VideoBasisService();
+  final PlaySettingsService _basisService = PlaySettingsService();
   final HardwareDecodeService _hwService = HardwareDecodeService();
 
   bool _autoPlayNext = true;

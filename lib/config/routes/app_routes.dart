@@ -10,7 +10,7 @@ import '../../features/settings/video_play/pages/plugin_test_page.dart';
 import '../../features/settings/video_play/pages/plugin_shop_page.dart';
 import '../../features/auth/ui/pages/login_page.dart';
 import '../../features/settings/video_play/pages/hardware_decode_page.dart';
-import '../../features/settings/video_play/pages/video_basis_page.dart';
+import '../../features/settings/video_play/pages/play_setting_page.dart';
 import '../../core/models/bangumi_item.dart';
 import '../../core/models/video_plugin.dart';
 

@@ -1,6 +1,6 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
-class VideoBasisService {
+class PlaySettingsService {
   static const String _keyAutoPlayNext = 'auto_play_next';
   static const String _keyPlaySpeed = 'play_speed';
 

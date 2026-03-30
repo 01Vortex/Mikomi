@@ -2,7 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 import 'package:mikomi/features/settings/video_play/service/hardware_decode_service.dart';
-import 'package:mikomi/features/settings/video_play/service/video_basis_service.dart';
+import 'package:mikomi/features/settings/video_play/service/play_setting_service.dart';
 
 class VideoPlaybackService {
   Player? _player;
@@ -10,7 +10,7 @@ class VideoPlaybackService {
   bool _isInitialized = false;
   bool _isDisposing = false;
   final HardwareDecodeService _hwService = HardwareDecodeService();
-  final VideoBasisService _basisService = VideoBasisService();
+  final PlaySettingsService _basisService = PlaySettingsService();
 
   bool get isInitialized => _isInitialized;
   Player? get player => _player;
