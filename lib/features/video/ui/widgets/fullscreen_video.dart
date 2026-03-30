@@ -333,8 +333,9 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
   @override
   Widget build(BuildContext context) {
     final safePadding = MediaQuery.of(context).viewPadding;
-    final double leftPad = safePadding.left + _kSideMargin;
-    final double rightPad = safePadding.right + _kSideMargin;
+    // 全屏横屏时安全区左右不对称（刘海/摄像头），直接用固定边距保证两侧完全对称
+    const double leftPad = _kSideMargin;
+    const double rightPad = _kSideMargin;
 
     return VideoGestureDetector(
       playerController: widget.playerController,
@@ -447,9 +448,15 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
+            // 返回按钮：GestureDetector 不添加额外尺寸
             GestureDetector(
               onTap: widget.onExitFullscreen,
-              child: const Icon(Icons.arrow_back, color: Colors.white, size: 22),
+              behavior: HitTestBehavior.opaque,
+              child: const SizedBox(
+                width: 22,
+                height: 22,
+                child: Icon(Icons.arrow_back, color: Colors.white, size: 22),
+              ),
             ),
             const SizedBox(width: 10),
             Expanded(
@@ -484,9 +491,15 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
               ),
             ),
             const SizedBox(width: 10),
+            // 更多按钮：与返回按钮等宽等高，确保两侧图标到屏幕边缘距离相同
             GestureDetector(
               onTap: () {},
-              child: const Icon(Icons.more_vert, color: Colors.white, size: 22),
+              behavior: HitTestBehavior.opaque,
+              child: const SizedBox(
+                width: 22,
+                height: 22,
+                child: Icon(Icons.more_vert, color: Colors.white, size: 22),
+              ),
             ),
           ],
         ),
