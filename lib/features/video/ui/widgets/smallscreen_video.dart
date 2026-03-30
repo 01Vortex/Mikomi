@@ -586,8 +586,9 @@ class _SmallscreenVideoState extends State<SmallscreenVideo> {
           // 底部渐变遮罩
           if (showPlayer && _showControls && !_lockPanel) _buildBottomGradient(),
 
-          // 顶部控制栏（始终显示，不受加载/错误状态影响）
-          _buildTopControls(),
+          // 顶部控制栏：播放中跟随控制栏显隐；加载/错误时始终显示
+          if (!showPlayer || (_showControls && !_lockPanel))
+            _buildTopControls(),
 
           // 底部控制栏（仅播放中显示）
           if (showPlayer && _showControls && !_lockPanel) _buildBottomControls(),

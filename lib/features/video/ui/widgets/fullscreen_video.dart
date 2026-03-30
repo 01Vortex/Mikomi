@@ -272,6 +272,7 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
 
   void _showEpisodeSelector() {
     final outerContext = context;
+    bool isDescending = widget.isDescending;
     showGeneralDialog(
       context: outerContext,
       useRootNavigator: true,
@@ -290,16 +291,23 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
                     curve: Curves.easeOutCubic,
                   ),
                 ),
-            child: FullscreenEpisodeSelector(
-              episodes: widget.episodes,
-              currentEpisode: widget.currentEpisode,
-              onEpisodeSelected: (episode) {
-                Navigator.of(dialogContext).pop(); // 只关闭选集面板
-                widget.onEpisodeSelected?.call(episode);
+            child: StatefulBuilder(
+              builder: (context, setDialogState) {
+                return FullscreenEpisodeSelector(
+                  episodes: widget.episodes,
+                  currentEpisode: widget.currentEpisode,
+                  onEpisodeSelected: (episode) {
+                    Navigator.of(dialogContext).pop();
+                    widget.onEpisodeSelected?.call(episode);
+                  },
+                  isLoading: widget.isLoadingEpisodes,
+                  isDescending: isDescending,
+                  onToggleSort: () {
+                    setDialogState(() => isDescending = !isDescending);
+                    widget.onToggleSort?.call();
+                  },
+                );
               },
-              isLoading: widget.isLoadingEpisodes,
-              isDescending: widget.isDescending,
-              onToggleSort: widget.onToggleSort ?? () {},
             ),
           ),
         );
@@ -637,6 +645,7 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
                         icon: Icons.fullscreen_exit,
                         label: '退出全屏',
                         onTap: widget.onExitFullscreen,
+                        iconOnly: true,
                       ),
                     ],
                   ),

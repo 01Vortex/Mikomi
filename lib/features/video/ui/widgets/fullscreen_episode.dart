@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mikomi/core/models/episode.dart';
 import 'package:mikomi/shared/widgets/skeleton.dart';
-import 'package:mikomi/shared/widgets/scrolling_text.dart';
 import 'package:mikomi/shared/utils/theme_extensions.dart';
 
 class FullscreenEpisodeSelector extends StatefulWidget {
@@ -27,13 +26,15 @@ class FullscreenEpisodeSelector extends StatefulWidget {
       _FullscreenEpisodeSelectorState();
 }
 
-class _FullscreenEpisodeSelectorState extends State<FullscreenEpisodeSelector> {
+class _FullscreenEpisodeSelectorState
+    extends State<FullscreenEpisodeSelector> {
   final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToCurrentEpisode());
+    WidgetsBinding.instance
+        .addPostFrameCallback((_) => _scrollToCurrentEpisode());
   }
 
   @override
@@ -47,14 +48,13 @@ class _FullscreenEpisodeSelectorState extends State<FullscreenEpisodeSelector> {
     final episodes = widget.isDescending
         ? widget.episodes.reversed.toList()
         : widget.episodes;
-    final index = episodes.indexWhere((ep) => ep.number == widget.currentEpisode);
+    final index =
+        episodes.indexWhere((ep) => ep.number == widget.currentEpisode);
     if (index < 0) return;
-
-    // 每行3个，每个约 56px 高度（childAspectRatio=2.0, crossAxisSpacing=12, padding=16）
-    const crossAxisCount = 3;
-    const itemHeight = 56.0;
-    const mainAxisSpacing = 12.0;
-    const padding = 16.0;
+    const crossAxisCount = 4;
+    const itemHeight = 52.0;
+    const mainAxisSpacing = 10.0;
+    const padding = 20.0;
     final row = index ~/ crossAxisCount;
     final offset = padding + row * (itemHeight + mainAxisSpacing);
     _scrollController.animateTo(
@@ -66,22 +66,19 @@ class _FullscreenEpisodeSelectorState extends State<FullscreenEpisodeSelector> {
 
   @override
   Widget build(BuildContext context) {
-    debugPrint('========== 全屏选集面板 ==========');
-    debugPrint('剧集数量: ${widget.episodes.length}');
-    debugPrint('当前集数: ${widget.currentEpisode}');
-    debugPrint('是否加载中: ${widget.isLoading}');
-    debugPrint('==================================');
-
     return Material(
       color: Colors.transparent,
       child: Container(
-        width: 400,
-        height: MediaQuery.of(context).size.height * 0.8,
+        width: 380,
+        height: double.infinity,
         decoration: BoxDecoration(
-          color: context.colors.surface.withValues(alpha: 0.98),
-          borderRadius: const BorderRadius.only(
-            topLeft: Radius.circular(16),
-            bottomLeft: Radius.circular(16),
+          color: Colors.black.withValues(alpha: 0.88),
+          borderRadius:
+              const BorderRadius.horizontal(left: Radius.circular(24)),
+          border: Border(
+            left: BorderSide(
+              color: Colors.white.withValues(alpha: 0.06),
+            ),
           ),
         ),
         child: Column(
@@ -99,92 +96,90 @@ class _FullscreenEpisodeSelectorState extends State<FullscreenEpisodeSelector> {
   }
 
   Widget _buildHeader() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        border: Border(
-          bottom: BorderSide(color: context.colors.outlineVariant, width: 1),
-        ),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            '选集',
-            style: TextStyle(
-              color: context.colors.onSurface,
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
+    return SafeArea(
+      bottom: false,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 16, 16, 12),
+        child: Row(
+          children: [
+            const Text(
+              '选集',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 17,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.3,
+              ),
             ),
-          ),
-          Row(
-            children: [
-              GestureDetector(
-                onTap: widget.onToggleSort,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: context.colors.surfaceContainerHighest,
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        widget.isDescending
-                            ? Icons.arrow_downward
-                            : Icons.arrow_upward,
-                        size: 14,
-                        color: context.colors.onSurface,
+            const Spacer(),
+            // 排序按钮
+            GestureDetector(
+              onTap: widget.onToggleSort,
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 5,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      widget.isDescending
+                          ? Icons.arrow_downward_rounded
+                          : Icons.arrow_upward_rounded,
+                      size: 13,
+                      color: Colors.white.withValues(alpha: 0.85),
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      widget.isDescending ? '倒序' : '正序',
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.85),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
                       ),
-                      const SizedBox(width: 4),
-                      Text(
-                        widget.isDescending ? '倒序' : '正序',
-                        style: TextStyle(
-                          color: context.colors.onSurface,
-                          fontSize: 13,
-                        ),
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(width: 12),
-              GestureDetector(
-                onTap: () => Navigator.of(context, rootNavigator: false).pop(),
-                child: Container(
-                  padding: const EdgeInsets.all(6),
-                  decoration: BoxDecoration(
-                    color: context.colors.surfaceContainerHighest,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    Icons.close,
-                    color: context.colors.onSurface,
-                    size: 20,
-                  ),
+            ),
+            const SizedBox(width: 10),
+            // 关闭按钮
+            GestureDetector(
+              onTap: () => Navigator.of(context, rootNavigator: false).pop(),
+              child: Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.close_rounded,
+                  color: Colors.white.withValues(alpha: 0.85),
+                  size: 16,
                 ),
               ),
-            ],
-          ),
-        ],
+            ),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildLoadingSkeleton() {
     return GridView.builder(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(20, 4, 20, 20),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 3,
+        crossAxisCount: 4,
         childAspectRatio: 2.2,
-        crossAxisSpacing: 12,
-        mainAxisSpacing: 12,
+        crossAxisSpacing: 10,
+        mainAxisSpacing: 10,
       ),
-      itemCount: 12,
+      itemCount: 16,
       itemBuilder: (context, index) => const SkeletonEpisodeCard(),
     );
   }
@@ -197,15 +192,15 @@ class _FullscreenEpisodeSelectorState extends State<FullscreenEpisodeSelector> {
           children: [
             Icon(
               Icons.video_library_outlined,
-              size: 64,
-              color: context.colors.textLight,
+              size: 48,
+              color: Colors.white.withValues(alpha: 0.25),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
             Text(
               '暂无剧集',
               style: TextStyle(
-                color: context.colors.textSecondary,
-                fontSize: 14,
+                color: Colors.white.withValues(alpha: 0.4),
+                fontSize: 13,
               ),
             ),
           ],
@@ -219,18 +214,17 @@ class _FullscreenEpisodeSelectorState extends State<FullscreenEpisodeSelector> {
 
     return GridView.builder(
       controller: _scrollController,
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(20, 4, 20, 20),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 3,
-        childAspectRatio: 2.0,
-        crossAxisSpacing: 12,
-        mainAxisSpacing: 12,
+        crossAxisCount: 4,
+        childAspectRatio: 2.2,
+        crossAxisSpacing: 10,
+        mainAxisSpacing: 10,
       ),
       itemCount: sortedEpisodes.length,
       itemBuilder: (context, index) {
         final episode = sortedEpisodes[index];
         final isCurrent = episode.number == widget.currentEpisode;
-
         return _buildEpisodeCard(episode, isCurrent);
       },
     );
@@ -238,52 +232,48 @@ class _FullscreenEpisodeSelectorState extends State<FullscreenEpisodeSelector> {
 
   Widget _buildEpisodeCard(Episode episode, bool isCurrent) {
     return GestureDetector(
-      onTap: () {
-        widget.onEpisodeSelected(episode);
-      },
-      child: Container(
+      onTap: () => widget.onEpisodeSelected(episode),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        curve: Curves.easeOut,
         decoration: BoxDecoration(
           color: isCurrent
-              ? context.colors.primaryLight
-              : context.colors.surfaceContainerHighest,
-          borderRadius: BorderRadius.circular(8),
+              ? context.colors.primary.withValues(alpha: 0.25)
+              : Colors.white.withValues(alpha: 0.06),
+          borderRadius: BorderRadius.circular(10),
           border: Border.all(
             color: isCurrent
-                ? context.colors.primary
-                : context.colors.outlineVariant,
-            width: isCurrent ? 2 : 1,
+                ? context.colors.primary.withValues(alpha: 0.7)
+                : Colors.white.withValues(alpha: 0.08),
+            width: isCurrent ? 1.5 : 1,
           ),
         ),
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+        alignment: Alignment.center,
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
-              '第${episode.number}集',
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: isCurrent ? FontWeight.bold : FontWeight.w500,
-                color: isCurrent
-                    ? context.colors.primary
-                    : context.colors.textPrimary,
-              ),
-            ),
-            if (episode.title != null && episode.title!.isNotEmpty) ...[
-              const SizedBox(height: 4),
-              SizedBox(
-                width: double.infinity,
-                child: ScrollingText(
-                  text: episode.title!,
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: context.colors.textSecondary,
-                  ),
-                  height: 14,
+            if (isCurrent)
+              Container(
+                width: 18,
+                height: 3,
+                margin: const EdgeInsets.only(bottom: 4),
+                decoration: BoxDecoration(
+                  color: context.colors.primary,
+                  borderRadius: BorderRadius.circular(2),
                 ),
               ),
-            ],
+            Text(
+              '${episode.number}',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight:
+                    isCurrent ? FontWeight.w700 : FontWeight.w500,
+                color: isCurrent
+                    ? Colors.white
+                    : Colors.white.withValues(alpha: 0.75),
+              ),
+            ),
           ],
         ),
       ),
