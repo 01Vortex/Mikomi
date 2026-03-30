@@ -102,15 +102,6 @@ class _FullscreenEpisodeSelectorState
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
         child: Row(
           children: [
-            const Text(
-              '选集',
-              style: TextStyle(
-                color: Colors.black87,
-                fontSize: 17,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 0.3,
-              ),
-            ),
             const Spacer(),
             // 排序按钮
             GestureDetector(
@@ -249,32 +240,15 @@ class _FullscreenEpisodeSelectorState
           ),
         ),
         alignment: Alignment.center,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (isCurrent)
-              Container(
-                width: 18,
-                height: 3,
-                margin: const EdgeInsets.only(bottom: 4),
-                decoration: BoxDecoration(
-                  color: context.colors.primary,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            Text(
-              '${episode.number}',
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight:
-                    isCurrent ? FontWeight.w700 : FontWeight.w500,
-                color: isCurrent
-                    ? context.colors.primary
-                    : Colors.black54,
-              ),
-            ),
-          ],
+        child: Text(
+          '第${episode.number}集',
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: isCurrent ? FontWeight.w700 : FontWeight.w500,
+            color: isCurrent
+                ? context.colors.primary
+                : Colors.black54,
+          ),
         ),
       ),
     );

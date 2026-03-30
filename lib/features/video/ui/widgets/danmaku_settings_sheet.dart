@@ -375,10 +375,10 @@ class _DanmakuSettingsSidebarState extends State<DanmakuSettingsSidebar> {
   }
 
   Widget _sectionLabel(String text) => Padding(
-        padding: const EdgeInsets.fromLTRB(0, 16, 0, 4),
+        padding: const EdgeInsets.fromLTRB(0, 20, 0, 6),
         child: Text(text,
             style: TextStyle(
-              fontSize: 10, fontWeight: FontWeight.w700, letterSpacing: 1.2,
+              fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 1.2,
               color: Colors.black.withValues(alpha: 0.4),
             )),
       );
@@ -390,35 +390,38 @@ class _DanmakuSettingsSidebarState extends State<DanmakuSettingsSidebar> {
     required void Function(double) onChanged,
   }) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+      padding: const EdgeInsets.symmetric(vertical: 6),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Icon(icon, size: 13, color: Colors.black38),
-              const SizedBox(width: 6),
-              Text(label, style: TextStyle(fontSize: 12, color: Colors.black87)),
-              const Spacer(),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 1),
-                decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(6),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            child: Row(
+              children: [
+                Icon(icon, size: 16, color: Colors.black45),
+                const SizedBox(width: 8),
+                Text(label, style: const TextStyle(fontSize: 14, color: Colors.black87)),
+                const Spacer(),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(display, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Theme.of(context).colorScheme.primary)),
                 ),
-                child: Text(display, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Colors.black87)),
-              ),
-            ],
+              ],
+            ),
           ),
           SliderTheme(
             data: SliderThemeData(
-              trackHeight: 2,
-              thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 5),
-              overlayShape: const RoundSliderOverlayShape(overlayRadius: 12),
-              activeTrackColor: Colors.black87,
-              inactiveTrackColor: Colors.black.withValues(alpha: 0.15),
-              thumbColor: Colors.black87,
-              overlayColor: Colors.black.withValues(alpha: 0.08),
+              trackHeight: 3,
+              thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
+              overlayShape: const RoundSliderOverlayShape(overlayRadius: 14),
+              activeTrackColor: Theme.of(context).colorScheme.primary,
+              inactiveTrackColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.15),
+              thumbColor: Theme.of(context).colorScheme.primary,
+              overlayColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.12),
             ),
             child: Slider(
               value: value.clamp(min, max), min: min, max: max, divisions: divisions,
@@ -435,24 +438,23 @@ class _DanmakuSettingsSidebarState extends State<DanmakuSettingsSidebar> {
     required bool value, required void Function(bool) onChanged,
   }) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 2),
-      child: Row(
-        children: [
-          Icon(icon, size: 13, color: Colors.black38),
-          const SizedBox(width: 6),
-          Text(label, style: TextStyle(fontSize: 12, color: Colors.black87)),
-          const Spacer(),
-          Transform.scale(
-            scale: 0.75,
-            alignment: Alignment.centerRight,
-            child: Switch(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4),
+        child: Row(
+          children: [
+            Icon(icon, size: 16, color: Colors.black45),
+            const SizedBox(width: 8),
+            Text(label, style: const TextStyle(fontSize: 14, color: Colors.black87)),
+            const Spacer(),
+            Switch(
               value: value,
               onChanged: (v) { setState(() => onChanged(v)); _save(); },
-              activeTrackColor: Colors.black.withValues(alpha: 0.5),
+              activeTrackColor: Theme.of(context).colorScheme.primary,
               inactiveTrackColor: Colors.black.withValues(alpha: 0.15),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -462,7 +464,7 @@ class _DanmakuSettingsSidebarState extends State<DanmakuSettingsSidebar> {
     return Material(
       color: Colors.transparent,
       child: Container(
-        width: 220,
+        width: 280,
         height: double.infinity,
         decoration: BoxDecoration(
           color: Colors.white.withValues(alpha: 0.92),
@@ -475,7 +477,7 @@ class _DanmakuSettingsSidebarState extends State<DanmakuSettingsSidebar> {
           child: Column(
             children: [
               Padding(
-                padding: const EdgeInsets.fromLTRB(16, 14, 8, 0),
+                padding: const EdgeInsets.fromLTRB(8, 14, 8, 0),
                 child: Row(
                   children: [
                     const Text('弹幕设置',
@@ -500,7 +502,7 @@ class _DanmakuSettingsSidebarState extends State<DanmakuSettingsSidebar> {
                 child: !_loaded
                     ? Center(child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black38))
                     : ListView(
-                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+                        padding: const EdgeInsets.fromLTRB(4, 0, 8, 24),
                         children: [
                           _sectionLabel('样式'),
                           _sliderItem(icon: Icons.text_fields_rounded, label: '字体大小',
