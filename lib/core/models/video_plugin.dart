@@ -52,6 +52,7 @@ class AntiCrawlerConfig {
 }
 
 class VideoPlugin {
+  final String id;
   final String api;
   final String type;
   final String name;
@@ -74,6 +75,7 @@ class VideoPlugin {
   final AntiCrawlerConfig antiCrawlerConfig;
 
   VideoPlugin({
+    String? id,
     required this.api,
     required this.type,
     required this.name,
@@ -94,10 +96,16 @@ class VideoPlugin {
     required this.chapterResult,
     required this.referer,
     AntiCrawlerConfig? antiCrawlerConfig,
-  }) : antiCrawlerConfig = antiCrawlerConfig ?? AntiCrawlerConfig.empty();
+  })  : id = id ?? _generateId(),
+        antiCrawlerConfig = antiCrawlerConfig ?? AntiCrawlerConfig.empty();
+
+  static String _generateId() {
+    return '${DateTime.now().millisecondsSinceEpoch}_${DateTime.now().microsecond}';
+  }
 
   factory VideoPlugin.fromJson(Map<String, dynamic> json) {
     return VideoPlugin(
+      id: json['id'] as String?,
       api: json['api'] as String,
       type: json['type'] as String,
       name: json['name'] as String,
@@ -152,6 +160,7 @@ class VideoPlugin {
 
   Map<String, dynamic> toJson() {
     return {
+      'id': id,
       'api': api,
       'type': type,
       'name': name,
@@ -176,6 +185,7 @@ class VideoPlugin {
   }
 
   VideoPlugin copyWith({
+    String? id,
     String? api,
     String? type,
     String? name,
@@ -198,6 +208,7 @@ class VideoPlugin {
     AntiCrawlerConfig? antiCrawlerConfig,
   }) {
     return VideoPlugin(
+      id: id ?? this.id,
       api: api ?? this.api,
       type: type ?? this.type,
       name: name ?? this.name,

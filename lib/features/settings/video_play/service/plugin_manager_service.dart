@@ -43,15 +43,23 @@ class VideoPluginManager {
     try {
       final assetManifest = await AssetManifest.loadFromAssetBundle(rootBundle);
       final assets = assetManifest.listAssets();
-      final jsonFiles = assets.where(
-        (String asset) =>
-            asset.startsWith('assets/plugins/') && asset.endsWith('.json'),
-      );
+      final jsonFiles = assets
+          .where(
+            (String asset) =>
+                asset.startsWith('assets/plugins/') && asset.endsWith('.json'),
+          )
+          .toList();
+
+      if (jsonFiles.isEmpty) {
+        print('未找到默认插件');
+        return;
+      }
 
       for (var filePath in jsonFiles) {
         try {
           final jsonString = await rootBundle.loadString(filePath);
-          final plugin = VideoPlugin.fromJson(jsonDecode(jsonString));
+          final json = jsonDecode(jsonString);
+          final plugin = VideoPlugin.fromJson(json);
           _plugins.add(plugin);
         } catch (e) {
           print('加载默认插件失败 $filePath: $e');
@@ -70,17 +78,22 @@ class VideoPluginManager {
   /// 加载所有插件
   Future<void> loadPlugins() async {
     _plugins.clear();
-    if (_pluginDirectory == null) return;
+    if (_pluginDirectory == null) {
+      return;
+    }
 
     final pluginsFile = File('${_pluginDirectory!.path}/$_pluginsFileName');
-    if (await pluginsFile.exists()) {
-      try {
-        final jsonString = await pluginsFile.readAsString();
-        final List<dynamic> jsonList = jsonDecode(jsonString);
-        _plugins = jsonList.map((json) => VideoPlugin.fromJson(json)).toList();
-      } catch (e) {
-        print('加载插件失败: $e');
-      }
+    if (!await pluginsFile.exists()) {
+      return;
+    }
+
+    try {
+      final jsonString = await pluginsFile.readAsString();
+      final List<dynamic> jsonList = jsonDecode(jsonString);
+      _plugins = jsonList.map((json) => VideoPlugin.fromJson(json)).toList();
+    } catch (e) {
+      print('加载插件失败: $e');
+      _plugins.clear();
     }
   }
 
@@ -88,15 +101,22 @@ class VideoPluginManager {
   Future<void> savePlugins() async {
     if (_pluginDirectory == null) return;
 
-    final pluginsFile = File('${_pluginDirectory!.path}/$_pluginsFileName');
-    final jsonList = _plugins.map((plugin) => plugin.toJson()).toList();
-    final jsonString = jsonEncode(jsonList);
-    await pluginsFile.writeAsString(jsonString);
+    try {
+      if (!await _pluginDirectory!.exists()) {
+        await _pluginDirectory!.create(recursive: true);
+      }
+      final pluginsFile = File('${_pluginDirectory!.path}/$_pluginsFileName');
+      final jsonList = _plugins.map((plugin) => plugin.toJson()).toList();
+      final jsonString = jsonEncode(jsonList);
+      await pluginsFile.writeAsString(jsonString);
+    } catch (e) {
+      print('保存插件失败: $e');
+    }
   }
 
   /// 添加或更新插件
   Future<void> updatePlugin(VideoPlugin plugin) async {
-    final index = _plugins.indexWhere((p) => p.name == plugin.name);
+    final index = _plugins.indexWhere((p) => p.id == plugin.id);
     if (index != -1) {
       _plugins[index] = plugin;
     } else {
@@ -107,13 +127,13 @@ class VideoPluginManager {
 
   /// 删除插件
   Future<void> removePlugin(VideoPlugin plugin) async {
-    _plugins.removeWhere((p) => p.name == plugin.name);
+    _plugins.removeWhere((p) => p.id == plugin.id);
     await savePlugins();
   }
 
   /// 批量删除插件
-  Future<void> removePlugins(Set<String> pluginNames) async {
-    _plugins.removeWhere((p) => pluginNames.contains(p.name));
+  Future<void> removePlugins(Set<String> pluginIds) async {
+    _plugins.removeWhere((p) => pluginIds.contains(p.id));
     await savePlugins();
   }
 
@@ -131,6 +151,15 @@ class VideoPluginManager {
   VideoPlugin? getPluginByName(String name) {
     try {
       return _plugins.firstWhere((p) => p.name == name);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /// 根据ID查找插件
+  VideoPlugin? getPluginById(String id) {
+    try {
+      return _plugins.firstWhere((p) => p.id == id);
     } catch (e) {
       return null;
     }

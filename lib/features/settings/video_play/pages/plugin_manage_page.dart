@@ -12,14 +12,15 @@ class PluginManagePage extends StatefulWidget {
 }
 
 class _PluginManagePageState extends State<PluginManagePage> {
-  final VideoPluginManager _pluginManager = VideoPluginManager();
+  late final VideoPluginManager _pluginManager;
   bool _isMultiSelectMode = false;
-  final Set<String> _selectedNames = {};
+  final Set<String> _selectedIds = {};
   bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
+    _pluginManager = VideoPluginManager();
     _loadPlugins();
   }
 
@@ -142,7 +143,7 @@ class _PluginManagePageState extends State<PluginManagePage> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('删除规则'),
-        content: Text('确定要删除选中的 ${_selectedNames.length} 条规则吗？'),
+        content: Text('确定要删除选中的 ${_selectedIds.length} 条规则吗？'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -150,12 +151,12 @@ class _PluginManagePageState extends State<PluginManagePage> {
           ),
           TextButton(
             onPressed: () async {
-              await _pluginManager.removePlugins(_selectedNames);
+              await _pluginManager.removePlugins(_selectedIds);
               if (mounted) {
                 Navigator.pop(context);
                 setState(() {
                   _isMultiSelectMode = false;
-                  _selectedNames.clear();
+                  _selectedIds.clear();
                 });
               }
             },
@@ -176,14 +177,14 @@ class _PluginManagePageState extends State<PluginManagePage> {
         if (_isMultiSelectMode) {
           setState(() {
             _isMultiSelectMode = false;
-            _selectedNames.clear();
+            _selectedIds.clear();
           });
         }
       },
       child: Scaffold(
         appBar: AppBar(
           title: _isMultiSelectMode
-              ? Text('已选择 ${_selectedNames.length} 项')
+              ? Text('已选择 ${_selectedIds.length} 项')
               : const Text('数据源管理'),
           centerTitle: true,
           leading: _isMultiSelectMode
@@ -192,7 +193,7 @@ class _PluginManagePageState extends State<PluginManagePage> {
                   onPressed: () {
                     setState(() {
                       _isMultiSelectMode = false;
-                      _selectedNames.clear();
+                      _selectedIds.clear();
                     });
                   },
                 )
@@ -200,7 +201,7 @@ class _PluginManagePageState extends State<PluginManagePage> {
           actions: [
             if (_isMultiSelectMode)
               IconButton(
-                onPressed: _selectedNames.isEmpty ? null : _handleDelete,
+                onPressed: _selectedIds.isEmpty ? null : _handleDelete,
                 icon: const Icon(Icons.delete_outline),
                 tooltip: '删除',
               )
@@ -256,10 +257,10 @@ class _PluginManagePageState extends State<PluginManagePage> {
                     itemCount: _pluginManager.plugins.length,
                     itemBuilder: (context, index) {
                       final plugin = _pluginManager.plugins[index];
-                      final isSelected = _selectedNames.contains(plugin.name);
+                      final isSelected = _selectedIds.contains(plugin.id);
 
                       return _PluginCard(
-                        key: ValueKey(plugin.name),
+                        key: ValueKey(plugin.id),
                         plugin: plugin,
                         isSelected: isSelected,
                         isMultiSelectMode: _isMultiSelectMode,
@@ -267,7 +268,7 @@ class _PluginManagePageState extends State<PluginManagePage> {
                           if (!_isMultiSelectMode) {
                             setState(() {
                               _isMultiSelectMode = true;
-                              _selectedNames.add(plugin.name);
+                              _selectedIds.add(plugin.id);
                             });
                           }
                         },
@@ -275,12 +276,12 @@ class _PluginManagePageState extends State<PluginManagePage> {
                           if (_isMultiSelectMode) {
                             setState(() {
                               if (isSelected) {
-                                _selectedNames.remove(plugin.name);
-                                if (_selectedNames.isEmpty) {
+                                _selectedIds.remove(plugin.id);
+                                if (_selectedIds.isEmpty) {
                                   _isMultiSelectMode = false;
                                 }
                               } else {
-                                _selectedNames.add(plugin.name);
+                                _selectedIds.add(plugin.id);
                               }
                             });
                           }
@@ -288,10 +289,10 @@ class _PluginManagePageState extends State<PluginManagePage> {
                         onCheckboxChanged: (value) {
                           setState(() {
                             if (value == true) {
-                              _selectedNames.add(plugin.name);
+                              _selectedIds.add(plugin.id);
                             } else {
-                              _selectedNames.remove(plugin.name);
-                              if (_selectedNames.isEmpty) {
+                              _selectedIds.remove(plugin.id);
+                              if (_selectedIds.isEmpty) {
                                 _isMultiSelectMode = false;
                               }
                             }
