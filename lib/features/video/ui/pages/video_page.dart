@@ -510,7 +510,10 @@ class _VideoPageState extends State<VideoPage>
                                   isDanmakuEnabled: _isDanmakuEnabled,
                                   animeTitle: widget.animeTitle,
                                   bangumiId: widget.bangumiId,
-                                  onDanmakuToggle: (enabled) => setState(() => _isDanmakuEnabled = enabled),
+                                  onDanmakuToggle: (enabled) {
+                                    setState(() => _isDanmakuEnabled = enabled);
+                                    DanmakuSettingService().setShowDanmaku(enabled);
+                                  },
                                 ),
                               if (hasError && !isLoading)
                                 Positioned.fill(
@@ -600,6 +603,7 @@ class _VideoPageState extends State<VideoPage>
                                         _danmakuController.clear();
                                       }
                                     });
+                                    DanmakuSettingService().setShowDanmaku(_isDanmakuEnabled);
                                   },
                                   onDanmakuInputTap: () => setState(() => _isDanmakuInputExpanded = true),
                                   onVideoSourceTap: _showVideoSourceSelector,

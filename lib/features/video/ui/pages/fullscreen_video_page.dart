@@ -8,6 +8,7 @@ import 'package:mikomi/features/video/ui/widgets/fullscreen_video.dart';
 import 'package:mikomi/features/video/ui/widgets/smallscreen_video.dart';
 import 'package:mikomi/core/models/episode.dart';
 import 'package:media_kit_video/media_kit_video.dart';
+import 'package:mikomi/features/settings/danmaku/danmaku_setting_service.dart';
 
 class FullscreenVideoPage extends StatefulWidget {
   final VideoPlaybackService playerController;
@@ -147,6 +148,7 @@ class _FullscreenVideoPageState extends State<FullscreenVideoPage> {
               isDescending: _state.isDescending,
               onToggleSort: widget.onToggleSort,
               onDanmakuToggle: (enabled) {
+                DanmakuSettingService().setShowDanmaku(enabled);
                 widget.stateNotifier.value = FullscreenVideoState(
                   currentEpisode: _state.currentEpisode,
                   episodes: _state.episodes,
