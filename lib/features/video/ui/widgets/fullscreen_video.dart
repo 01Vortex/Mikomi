@@ -8,6 +8,7 @@ import 'package:mikomi/features/video/ui/widgets/danmaku_settings_sheet.dart';
 import 'package:mikomi/features/video/ui/widgets/fullscreen_episode.dart';
 import 'package:mikomi/features/video/ui/widgets/video_gesture_detector.dart';
 import 'package:mikomi/core/models/episode.dart';
+import 'package:mikomi/features/settings/video_play/service/play_setting_service.dart';
 
 class FullscreenVideoControls extends StatefulWidget {
   final VideoPlaybackService playerController;
@@ -70,6 +71,8 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
   StreamSubscription<bool>? _bufferingSub;
   StreamSubscription<Duration>? _positionSub;
   StreamSubscription<Duration>? _durationSub;
+  StreamSubscription<bool>? _completedSub;
+  final PlaySettingsService _playSettingsService = PlaySettingsService();
   final GlobalKey _speedButtonKey = GlobalKey();
 
   @override
@@ -97,10 +100,12 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
     _bufferingSub?.cancel();
     _positionSub?.cancel();
     _durationSub?.cancel();
+    _completedSub?.cancel();
     _playingSub = null;
     _bufferingSub = null;
     _positionSub = null;
     _durationSub = null;
+    _completedSub = null;
   }
 
   @override
@@ -144,6 +149,18 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
     player.stream.rate.listen((rate) {
       if (mounted) {
         setState(() => _playbackSpeed = rate);
+      }
+    });
+
+    _completedSub = player.stream.completed.listen((completed) async {
+      if (!completed || !mounted) return;
+      // 确认进度接近结尾才触发(避免误触)
+      final pos = player.state.position.inSeconds;
+      final dur = player.state.duration.inSeconds;
+      if (dur <= 0 || pos < dur - 3) return;
+      final autoPlayNext = await _playSettingsService.getAutoPlayNext();
+      if (autoPlayNext && widget.hasNextEpisode) {
+        widget.onNextEpisode?.call();
       }
     });
   }

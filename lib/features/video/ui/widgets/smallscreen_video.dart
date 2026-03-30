@@ -9,6 +9,7 @@ import 'package:mikomi/features/video/controller/danmaku_broadcaster.dart';
 import 'package:mikomi/features/video/ui/pages/fullscreen_video_page.dart';
 import 'package:mikomi/features/video/ui/widgets/video_gesture_detector.dart';
 import 'package:mikomi/core/models/episode.dart';
+import 'package:mikomi/features/settings/video_play/service/play_setting_service.dart';
 
 class SmallscreenVideo extends StatefulWidget {
   final String videoUrl;
@@ -99,6 +100,8 @@ class _SmallscreenVideoState extends State<SmallscreenVideo> {
   StreamSubscription<bool>? _playingSub;
   StreamSubscription<Duration>? _positionSub;
   StreamSubscription<Duration>? _durationSub;
+  StreamSubscription<bool>? _completedSub;
+  final PlaySettingsService _playSettingsService = PlaySettingsService();
 
   @override
   void initState() {
@@ -173,10 +176,12 @@ class _SmallscreenVideoState extends State<SmallscreenVideo> {
     _playingSub?.cancel();
     _positionSub?.cancel();
     _durationSub?.cancel();
+    _completedSub?.cancel();
     _bufferingSub = null;
     _playingSub = null;
     _positionSub = null;
     _durationSub = null;
+    _completedSub = null;
   }
 
   @override
@@ -358,6 +363,19 @@ class _SmallscreenVideoState extends State<SmallscreenVideo> {
                   }
                 });
               }
+            }
+          });
+
+          _completedSub = player.stream.completed.listen((completed) async {
+            if (!completed || !mounted) return;
+            // 确认进度接近结尾才触发(避免误触)
+            final pos = player.state.position.inSeconds;
+            final dur = player.state.duration.inSeconds;
+            if (dur <= 0 || pos < dur - 3) return;
+            final autoPlayNext =
+                await _playSettingsService.getAutoPlayNext();
+            if (autoPlayNext && widget.hasNextEpisode) {
+              widget.onNextEpisode?.call();
             }
           });
         }
