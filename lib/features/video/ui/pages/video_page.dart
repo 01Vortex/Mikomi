@@ -485,10 +485,11 @@ class _VideoPageState extends State<VideoPage>
                       children: [
                         Container(
                           width: MediaQuery.of(context).size.width,
-                          height: MediaQuery.of(context).size.width * 9 / 16,
                           color: Colors.black,
-                          child: Stack(
-                            children: [
+                          child: AspectRatio(
+                            aspectRatio: 16 / 9,
+                            child: Stack(
+                              children: [
                               if (videoUrl.isNotEmpty)
                                 SmallscreenVideo(
                                   videoUrl: videoUrl,
@@ -585,6 +586,7 @@ class _VideoPageState extends State<VideoPage>
                                 ),
                             ],
                           ),
+                        ),
                         ),
                         Expanded(
                           child: Container(

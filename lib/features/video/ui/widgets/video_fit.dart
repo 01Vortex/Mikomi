@@ -67,8 +67,8 @@ class VideoFitButton extends StatelessWidget {
         pos.dx + size.width,
         pos.dy,
       ),
-      color: Colors.black.withValues(alpha: 0.9),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      color: Colors.white.withValues(alpha: 0.92),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       constraints: const BoxConstraints(minWidth: 120, maxWidth: 120),
       items: VideoFitMode.values.map((mode) {
         final selected = mode == fitMode;
@@ -83,7 +83,7 @@ class VideoFitButton extends StatelessWidget {
               style: TextStyle(
                 color: selected
                     ? Theme.of(context).colorScheme.primary
-                    : Colors.white,
+                    : Colors.black87,
                 fontSize: 15,
                 fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
               ),

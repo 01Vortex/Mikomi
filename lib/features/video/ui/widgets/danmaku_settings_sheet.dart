@@ -379,7 +379,7 @@ class _DanmakuSettingsSidebarState extends State<DanmakuSettingsSidebar> {
         child: Text(text,
             style: TextStyle(
               fontSize: 10, fontWeight: FontWeight.w700, letterSpacing: 1.2,
-              color: Colors.white.withValues(alpha: 0.4),
+              color: Colors.black.withValues(alpha: 0.4),
             )),
       );
 
@@ -396,17 +396,17 @@ class _DanmakuSettingsSidebarState extends State<DanmakuSettingsSidebar> {
         children: [
           Row(
             children: [
-              Icon(icon, size: 13, color: Colors.white.withValues(alpha: 0.5)),
+              Icon(icon, size: 13, color: Colors.black38),
               const SizedBox(width: 6),
-              Text(label, style: TextStyle(fontSize: 12, color: Colors.white.withValues(alpha: 0.85))),
+              Text(label, style: TextStyle(fontSize: 12, color: Colors.black87)),
               const Spacer(),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 1),
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.12),
+                  color: Colors.black.withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(6),
                 ),
-                child: Text(display, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Colors.white)),
+                child: Text(display, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Colors.black87)),
               ),
             ],
           ),
@@ -415,10 +415,10 @@ class _DanmakuSettingsSidebarState extends State<DanmakuSettingsSidebar> {
               trackHeight: 2,
               thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 5),
               overlayShape: const RoundSliderOverlayShape(overlayRadius: 12),
-              activeTrackColor: Colors.white.withValues(alpha: 0.9),
-              inactiveTrackColor: Colors.white.withValues(alpha: 0.18),
-              thumbColor: Colors.white,
-              overlayColor: Colors.white.withValues(alpha: 0.15),
+              activeTrackColor: Colors.black87,
+              inactiveTrackColor: Colors.black.withValues(alpha: 0.15),
+              thumbColor: Colors.black87,
+              overlayColor: Colors.black.withValues(alpha: 0.08),
             ),
             child: Slider(
               value: value.clamp(min, max), min: min, max: max, divisions: divisions,
@@ -438,9 +438,9 @@ class _DanmakuSettingsSidebarState extends State<DanmakuSettingsSidebar> {
       padding: const EdgeInsets.symmetric(vertical: 2),
       child: Row(
         children: [
-          Icon(icon, size: 13, color: Colors.white.withValues(alpha: 0.5)),
+          Icon(icon, size: 13, color: Colors.black38),
           const SizedBox(width: 6),
-          Text(label, style: TextStyle(fontSize: 12, color: Colors.white.withValues(alpha: 0.85))),
+          Text(label, style: TextStyle(fontSize: 12, color: Colors.black87)),
           const Spacer(),
           Transform.scale(
             scale: 0.75,
@@ -448,10 +448,8 @@ class _DanmakuSettingsSidebarState extends State<DanmakuSettingsSidebar> {
             child: Switch(
               value: value,
               onChanged: (v) { setState(() => onChanged(v)); _save(); },
-              activeThumbColor: Colors.white,
-              activeTrackColor: Colors.white.withValues(alpha: 0.4),
-              inactiveTrackColor: Colors.white.withValues(alpha: 0.15),
-              inactiveThumbColor: Colors.white.withValues(alpha: 0.5),
+              activeTrackColor: Colors.black.withValues(alpha: 0.5),
+              inactiveTrackColor: Colors.black.withValues(alpha: 0.15),
             ),
           ),
         ],
@@ -467,10 +465,10 @@ class _DanmakuSettingsSidebarState extends State<DanmakuSettingsSidebar> {
         width: 220,
         height: double.infinity,
         decoration: BoxDecoration(
-          color: Colors.black.withValues(alpha: 0.85),
+          color: Colors.white.withValues(alpha: 0.92),
           borderRadius: const BorderRadius.horizontal(left: Radius.circular(20)),
           border: Border(
-            left: BorderSide(color: Colors.white.withValues(alpha: 0.08)),
+            left: BorderSide(color: Colors.black.withValues(alpha: 0.06)),
           ),
         ),
         child: SafeArea(
@@ -481,7 +479,7 @@ class _DanmakuSettingsSidebarState extends State<DanmakuSettingsSidebar> {
                 child: Row(
                   children: [
                     const Text('弹幕设置',
-                        style: TextStyle(color: Colors.white, fontSize: 15,
+                        style: TextStyle(color: Colors.black87, fontSize: 15,
                             fontWeight: FontWeight.w700, letterSpacing: 0.3)),
                     const Spacer(),
                     GestureDetector(
@@ -489,10 +487,10 @@ class _DanmakuSettingsSidebarState extends State<DanmakuSettingsSidebar> {
                       child: Container(
                         padding: const EdgeInsets.all(6),
                         decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.08),
+                          color: Colors.black.withValues(alpha: 0.06),
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: Icon(Icons.close, size: 16, color: Colors.white.withValues(alpha: 0.7)),
+                        child: Icon(Icons.close, size: 16, color: Colors.black54),
                       ),
                     ),
                   ],
@@ -500,7 +498,7 @@ class _DanmakuSettingsSidebarState extends State<DanmakuSettingsSidebar> {
               ),
               Expanded(
                 child: !_loaded
-                    ? Center(child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white.withValues(alpha: 0.6)))
+                    ? Center(child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black38))
                     : ListView(
                         padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
                         children: [

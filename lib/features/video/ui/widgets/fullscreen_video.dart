@@ -241,12 +241,12 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
       context: context,
       position: RelativeRect.fromLTRB(
         buttonPosition.dx,
-        buttonPosition.dy - 280,
+        buttonPosition.dy - 268,
         buttonPosition.dx + buttonSize.width,
         buttonPosition.dy,
       ),
-      color: Colors.black.withValues(alpha: 0.9),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      color: Colors.white.withValues(alpha: 0.92),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       constraints: const BoxConstraints(minWidth: 100, maxWidth: 100),
       items: [0.5, 0.75, 1.0, 1.25, 1.5, 2.0].map((speed) {
         return PopupMenuItem(
@@ -260,7 +260,7 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
               style: TextStyle(
                 color: _playbackSpeed == speed
                     ? Theme.of(context).colorScheme.primary
-                    : Colors.white,
+                    : Colors.black87,
                 fontSize: 15,
                 fontWeight: _playbackSpeed == speed
                     ? FontWeight.w600

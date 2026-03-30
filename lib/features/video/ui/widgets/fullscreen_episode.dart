@@ -51,7 +51,7 @@ class _FullscreenEpisodeSelectorState
     final index =
         episodes.indexWhere((ep) => ep.number == widget.currentEpisode);
     if (index < 0) return;
-    const crossAxisCount = 4;
+    const crossAxisCount = 3;
     const itemHeight = 52.0;
     const mainAxisSpacing = 10.0;
     const padding = 20.0;
@@ -72,12 +72,12 @@ class _FullscreenEpisodeSelectorState
         width: 380,
         height: double.infinity,
         decoration: BoxDecoration(
-          color: Colors.black.withValues(alpha: 0.88),
+          color: Colors.white.withValues(alpha: 0.92),
           borderRadius:
               const BorderRadius.horizontal(left: Radius.circular(24)),
           border: Border(
             left: BorderSide(
-              color: Colors.white.withValues(alpha: 0.06),
+              color: Colors.black.withValues(alpha: 0.06),
             ),
           ),
         ),
@@ -99,13 +99,13 @@ class _FullscreenEpisodeSelectorState
     return SafeArea(
       bottom: false,
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 16, 16, 12),
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
         child: Row(
           children: [
             const Text(
               '选集',
               style: TextStyle(
-                color: Colors.white,
+                color: Colors.black87,
                 fontSize: 17,
                 fontWeight: FontWeight.w700,
                 letterSpacing: 0.3,
@@ -121,7 +121,7 @@ class _FullscreenEpisodeSelectorState
                   vertical: 5,
                 ),
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.1),
+                  color: Colors.black.withValues(alpha: 0.06),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Row(
@@ -132,13 +132,13 @@ class _FullscreenEpisodeSelectorState
                           ? Icons.arrow_downward_rounded
                           : Icons.arrow_upward_rounded,
                       size: 13,
-                      color: Colors.white.withValues(alpha: 0.85),
+                      color: Colors.black54,
                     ),
                     const SizedBox(width: 4),
                     Text(
                       widget.isDescending ? '倒序' : '正序',
                       style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.85),
+                        color: Colors.black54,
                         fontSize: 12,
                         fontWeight: FontWeight.w500,
                       ),
@@ -154,12 +154,12 @@ class _FullscreenEpisodeSelectorState
               child: Container(
                 padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.1),
+                  color: Colors.black.withValues(alpha: 0.06),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
                   Icons.close_rounded,
-                  color: Colors.white.withValues(alpha: 0.85),
+                  color: Colors.black54,
                   size: 16,
                 ),
               ),
@@ -174,8 +174,8 @@ class _FullscreenEpisodeSelectorState
     return GridView.builder(
       padding: const EdgeInsets.fromLTRB(20, 4, 20, 20),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 4,
-        childAspectRatio: 2.2,
+        crossAxisCount: 3,
+        childAspectRatio: 2.4,
         crossAxisSpacing: 10,
         mainAxisSpacing: 10,
       ),
@@ -193,13 +193,13 @@ class _FullscreenEpisodeSelectorState
             Icon(
               Icons.video_library_outlined,
               size: 48,
-              color: Colors.white.withValues(alpha: 0.25),
+              color: Colors.black.withValues(alpha: 0.2),
             ),
             const SizedBox(height: 12),
             Text(
               '暂无剧集',
               style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.4),
+                color: Colors.black.withValues(alpha: 0.35),
                 fontSize: 13,
               ),
             ),
@@ -216,8 +216,8 @@ class _FullscreenEpisodeSelectorState
       controller: _scrollController,
       padding: const EdgeInsets.fromLTRB(20, 4, 20, 20),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 4,
-        childAspectRatio: 2.2,
+        crossAxisCount: 3,
+        childAspectRatio: 2.4,
         crossAxisSpacing: 10,
         mainAxisSpacing: 10,
       ),
@@ -238,13 +238,13 @@ class _FullscreenEpisodeSelectorState
         curve: Curves.easeOut,
         decoration: BoxDecoration(
           color: isCurrent
-              ? context.colors.primary.withValues(alpha: 0.25)
-              : Colors.white.withValues(alpha: 0.06),
+              ? context.colors.primary.withValues(alpha: 0.15)
+              : Colors.black.withValues(alpha: 0.05),
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
             color: isCurrent
                 ? context.colors.primary.withValues(alpha: 0.7)
-                : Colors.white.withValues(alpha: 0.08),
+                : Colors.black.withValues(alpha: 0.08),
             width: isCurrent ? 1.5 : 1,
           ),
         ),
@@ -270,8 +270,8 @@ class _FullscreenEpisodeSelectorState
                 fontWeight:
                     isCurrent ? FontWeight.w700 : FontWeight.w500,
                 color: isCurrent
-                    ? Colors.white
-                    : Colors.white.withValues(alpha: 0.75),
+                    ? context.colors.primary
+                    : Colors.black54,
               ),
             ),
           ],
