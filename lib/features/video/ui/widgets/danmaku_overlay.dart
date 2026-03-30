@@ -150,44 +150,44 @@ class DanmakuInlineInput extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final inputWidth =
-        (MediaQuery.sizeOf(context).width * 0.3).clamp(120.0, 220.0);
+        (MediaQuery.sizeOf(context).width * 0.18).clamp(80.0, 150.0);
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
         Container(
           width: inputWidth,
-          padding: const EdgeInsets.symmetric(horizontal: 16),
+          padding: const EdgeInsets.symmetric(horizontal: 10),
           decoration: BoxDecoration(
             color: Colors.white.withValues(alpha: 0.15),
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(16),
           ),
           child: TextField(
             controller: controller,
-            style: const TextStyle(color: Colors.white, fontSize: 13),
+            style: const TextStyle(color: Colors.white, fontSize: 12),
             decoration: const InputDecoration(
-              hintText: '发个友善的弹幕见证当下',
-              hintStyle: TextStyle(color: Colors.white60, fontSize: 13),
+              hintText: '发弹幕',
+              hintStyle: TextStyle(color: Colors.white60, fontSize: 12),
               border: InputBorder.none,
               isDense: true,
-              contentPadding: EdgeInsets.symmetric(vertical: 8),
+              contentPadding: EdgeInsets.symmetric(vertical: 6),
             ),
             onSubmitted: (_) => onSend(),
           ),
         ),
-        const SizedBox(width: 8),
+        const SizedBox(width: 6),
         GestureDetector(
           onTap: onSend,
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
             decoration: BoxDecoration(
               color: Theme.of(context).colorScheme.primary,
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(16),
             ),
             child: const Text(
               '发送',
               style: TextStyle(
                 color: Colors.white,
-                fontSize: 13,
+                fontSize: 12,
                 fontWeight: FontWeight.w600,
               ),
             ),

@@ -423,7 +423,7 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
   }
 
   Widget _buildTopBar() {
-    final safePadding = MediaQuery.of(context).padding;
+    final safePadding = MediaQuery.of(context).viewPadding;
     return Positioned(
       top: 0,
       left: 0,
@@ -440,6 +440,8 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
             IconButton(
               icon: const Icon(Icons.arrow_back, color: Colors.white),
               onPressed: widget.onExitFullscreen,
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(),
             ),
             const SizedBox(width: 8),
             Expanded(
@@ -474,8 +476,10 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
               ),
             ),
             IconButton(
-              icon: const Icon(Icons.more_vert, color: Colors.white),
+              icon: const Icon(Icons.more_vert, color: Colors.white, size: 20),
               onPressed: () {},
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(),
             ),
           ],
         ),
@@ -505,7 +509,7 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
   }
 
   Widget _buildBottomControls() {
-    final safePadding = MediaQuery.of(context).padding;
+    final safePadding = MediaQuery.of(context).viewPadding;
     return Positioned(
       bottom: 0,
       left: 0,
@@ -519,6 +523,7 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
         ),
         child: Column(
             mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               // 进度条
               GestureDetector(
@@ -534,6 +539,7 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
                       child: SliderTheme(
                         data: SliderThemeData(
                           trackHeight: 3,
+                          trackShape: const RectangularSliderTrackShape(),
                           thumbShape: const RoundSliderThumbShape(
                             enabledThumbRadius: 6,
                           ),
@@ -644,11 +650,13 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
                         onTap: _showEpisodeSelector,
                       ),
                       const SizedBox(width: 12),
-                      _buildBottomButton(
-                        icon: Icons.fullscreen_exit,
-                        label: '退出全屏',
+                      GestureDetector(
                         onTap: widget.onExitFullscreen,
-                        iconOnly: true,
+                        child: const Icon(
+                          Icons.fullscreen_exit,
+                          color: Colors.white,
+                          size: 20,
+                        ),
                       ),
                     ],
                   ),
@@ -665,12 +673,13 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
     required String label,
     required VoidCallback onTap,
     bool iconOnly = false,
+    bool noPaddingRight = false,
   }) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
         padding: iconOnly
-            ? const EdgeInsets.all(8)
+            ? EdgeInsets.fromLTRB(8, 8, noPaddingRight ? 0 : 8, 8)
             : const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         decoration: BoxDecoration(
           color: Colors.white.withValues(alpha: 0.1),
