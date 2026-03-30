@@ -1,22 +1,22 @@
 import 'package:canvas_danmaku/canvas_danmaku.dart';
 import 'package:flutter/material.dart';
-import 'package:mikomi/features/video/services/danmaku_settings_service.dart';
+import 'package:mikomi/features/settings/danmaku/danmaku_setting_service.dart';
 
-class DanmakuSettingsSheet extends StatefulWidget {
+class DanmakuSettingsBottomSheet extends StatefulWidget {
   final DanmakuController? danmakuController;
   final void Function(DanmakuConfig config)? onConfigChanged;
 
-  const DanmakuSettingsSheet({
+  const DanmakuSettingsBottomSheet({
     super.key,
     this.danmakuController,
     this.onConfigChanged,
   });
 
   @override
-  State<DanmakuSettingsSheet> createState() => _DanmakuSettingsSheetState();
+  State<DanmakuSettingsBottomSheet> createState() => _DanmakuSettingsBottomSheetState();
 }
 
-class _DanmakuSettingsSheetState extends State<DanmakuSettingsSheet>
+class _DanmakuSettingsBottomSheetState extends State<DanmakuSettingsBottomSheet>
     with SingleTickerProviderStateMixin {
   late double _fontSize;
   late double _opacity;
@@ -48,7 +48,7 @@ class _DanmakuSettingsSheetState extends State<DanmakuSettingsSheet>
   }
 
   Future<void> _loadConfig() async {
-    final config = await DanmakuSettingsService.loadAll();
+    final config = await DanmakuSettingService.loadAll();
     if (!mounted) return;
     setState(() {
       _fontSize = config.fontSize;
@@ -91,7 +91,6 @@ class _DanmakuSettingsSheetState extends State<DanmakuSettingsSheet>
     }
     widget.onConfigChanged?.call(_currentConfig);
   }
-// PART2
 
   Widget _pill(String label) => Container(
         margin: const EdgeInsets.only(bottom: 6),
@@ -208,7 +207,6 @@ class _DanmakuSettingsSheetState extends State<DanmakuSettingsSheet>
       ],
     );
   }
-// PART3
 
   @override
   Widget build(BuildContext context) {
@@ -267,17 +265,17 @@ class _DanmakuSettingsSheetState extends State<DanmakuSettingsSheet>
                                     value: _fontSize, min: 10, max: 32,
                                     display: '${_fontSize.floor()}',
                                     onChanged: (v) => _fontSize = v.floorToDouble(),
-                                    onSave: (v) => DanmakuSettingsService.setFontSize(v.floorToDouble())),
+                                    onSave: (v) => DanmakuSettingService.setFontSize(v.floorToDouble())),
                                 _sliderRow(icon: Icons.opacity_rounded, label: '不透明度',
                                     value: _opacity, min: 0.1, max: 1.0, divisions: 18,
                                     display: '${(_opacity * 100).round()}%',
                                     onChanged: (v) => _opacity = v,
-                                    onSave: (v) => DanmakuSettingsService.setOpacity(v)),
+                                    onSave: DanmakuSettingService.setOpacity),
                                 _sliderRow(icon: Icons.border_color_rounded, label: '描边粗细',
                                     value: _strokeWidth, min: 0.0, max: 3.0, divisions: 30,
                                     display: _strokeWidth.toStringAsFixed(1),
                                     onChanged: (v) => _strokeWidth = v,
-                                    onSave: (v) => DanmakuSettingsService.setStrokeWidth(v),
+                                    onSave: DanmakuSettingService.setStrokeWidth,
                                     last: true),
                               ]),
                               const SizedBox(height: 16),
@@ -287,12 +285,12 @@ class _DanmakuSettingsSheetState extends State<DanmakuSettingsSheet>
                                     value: _area, min: 0.1, max: 1.0, divisions: 9,
                                     display: '${(_area * 100).round()}%',
                                     onChanged: (v) => _area = v,
-                                    onSave: (v) => DanmakuSettingsService.setArea(v)),
+                                    onSave: DanmakuSettingService.setArea),
                                 _sliderRow(icon: Icons.timer_outlined, label: '持续时间',
                                     value: _duration, min: 2, max: 16, divisions: 14,
                                     display: '${_duration.round()}s',
                                     onChanged: (v) => _duration = v.roundToDouble(),
-                                    onSave: (v) => DanmakuSettingsService.setDuration(v.roundToDouble()),
+                                    onSave: (v) => DanmakuSettingService.setDuration(v.roundToDouble()),
                                     last: true),
                               ]),
                               const SizedBox(height: 16),
@@ -300,13 +298,13 @@ class _DanmakuSettingsSheetState extends State<DanmakuSettingsSheet>
                               _card([
                                 _switchRow(icon: Icons.vertical_align_top_rounded, label: '顶部弹幕',
                                     value: _showTop, onChanged: (v) => _showTop = v,
-                                    onSave: DanmakuSettingsService.setShowTop),
+                                    onSave: DanmakuSettingService.setShowTop),
                                 _switchRow(icon: Icons.vertical_align_bottom_rounded, label: '底部弹幕',
                                     value: _showBottom, onChanged: (v) => _showBottom = v,
-                                    onSave: DanmakuSettingsService.setShowBottom),
+                                    onSave: DanmakuSettingService.setShowBottom),
                                 _switchRow(icon: Icons.swap_horiz_rounded, label: '滚动弹幕',
                                     value: _showScroll, onChanged: (v) => _showScroll = v,
-                                    onSave: DanmakuSettingsService.setShowScroll, last: true),
+                                    onSave: DanmakuSettingService.setShowScroll, last: true),
                               ]),
                             ],
                           ),
@@ -321,16 +319,16 @@ class _DanmakuSettingsSheetState extends State<DanmakuSettingsSheet>
   }
 }
 
-// ── 全屏右侧弹幕设置侧边栏 ─────────────────────────────────────────
+// ── 全屏右侧弹幕设置侧边栏 ───────────────────────────────────────────────────
 
-class DanmakuSettingsSidebar extends StatefulWidget {
+class DanmakuSettingsSidePanel extends StatefulWidget {
   final VoidCallback? onClose;
-  const DanmakuSettingsSidebar({super.key, this.onClose});
+  const DanmakuSettingsSidePanel({super.key, this.onClose});
   @override
-  State<DanmakuSettingsSidebar> createState() => _DanmakuSettingsSidebarState();
+  State<DanmakuSettingsSidePanel> createState() => _DanmakuSettingsSidePanelState();
 }
 
-class _DanmakuSettingsSidebarState extends State<DanmakuSettingsSidebar> {
+class _DanmakuSettingsSidePanelState extends State<DanmakuSettingsSidePanel> {
   late double _fontSize;
   late double _opacity;
   late double _area;
@@ -348,7 +346,7 @@ class _DanmakuSettingsSidebarState extends State<DanmakuSettingsSidebar> {
   }
 
   Future<void> _loadConfig() async {
-    final config = await DanmakuSettingsService.loadAll();
+    final config = await DanmakuSettingService.loadAll();
     if (!mounted) return;
     setState(() {
       _fontSize = config.fontSize;
@@ -364,14 +362,14 @@ class _DanmakuSettingsSidebarState extends State<DanmakuSettingsSidebar> {
   }
 
   void _save() {
-    DanmakuSettingsService.setFontSize(_fontSize);
-    DanmakuSettingsService.setOpacity(_opacity);
-    DanmakuSettingsService.setArea(_area);
-    DanmakuSettingsService.setDuration(_duration);
-    DanmakuSettingsService.setStrokeWidth(_strokeWidth);
-    DanmakuSettingsService.setShowTop(_showTop);
-    DanmakuSettingsService.setShowBottom(_showBottom);
-    DanmakuSettingsService.setShowScroll(_showScroll);
+    DanmakuSettingService.setFontSize(_fontSize);
+    DanmakuSettingService.setOpacity(_opacity);
+    DanmakuSettingService.setArea(_area);
+    DanmakuSettingService.setDuration(_duration);
+    DanmakuSettingService.setStrokeWidth(_strokeWidth);
+    DanmakuSettingService.setShowTop(_showTop);
+    DanmakuSettingService.setShowBottom(_showBottom);
+    DanmakuSettingService.setShowScroll(_showScroll);
   }
 
   Widget _sectionLabel(String text) => Padding(
@@ -408,7 +406,10 @@ class _DanmakuSettingsSidebarState extends State<DanmakuSettingsSidebar> {
                     color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: Text(display, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Theme.of(context).colorScheme.primary)),
+                  child: Text(display, style: TextStyle(
+                    fontSize: 13, fontWeight: FontWeight.w700,
+                    color: Theme.of(context).colorScheme.primary,
+                  )),
                 ),
               ],
             ),
@@ -492,7 +493,7 @@ class _DanmakuSettingsSidebarState extends State<DanmakuSettingsSidebar> {
                           color: Colors.black.withValues(alpha: 0.06),
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: Icon(Icons.close, size: 16, color: Colors.black54),
+                        child: const Icon(Icons.close, size: 16, color: Colors.black54),
                       ),
                     ),
                   ],
@@ -500,7 +501,7 @@ class _DanmakuSettingsSidebarState extends State<DanmakuSettingsSidebar> {
               ),
               Expanded(
                 child: !_loaded
-                    ? Center(child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black38))
+                    ? const Center(child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black38))
                     : ListView(
                         padding: const EdgeInsets.fromLTRB(4, 0, 8, 24),
                         children: [
@@ -543,6 +544,4 @@ class _DanmakuSettingsSidebarState extends State<DanmakuSettingsSidebar> {
     );
   }
 }
-
-
-
+                                

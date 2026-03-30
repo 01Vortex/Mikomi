@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:mikomi/features/settings/danmaku/danmaku_setting_service.dart';
-import 'package:mikomi/features/video/services/danmaku_settings_service.dart';
 
 class DanmakuSettingPage extends StatefulWidget {
   const DanmakuSettingPage({super.key});
@@ -31,7 +30,7 @@ class _DanmakuSettingPageState extends State<DanmakuSettingPage> {
 
   Future<void> _load() async {
     final showDanmaku = await _service.getShowDanmaku();
-    final config = await DanmakuSettingsService.loadAll();
+    final config = await DanmakuSettingService.loadAll();
     if (!mounted) return;
     setState(() {
       _showDanmaku = showDanmaku;
@@ -91,7 +90,7 @@ class _DanmakuSettingPageState extends State<DanmakuSettingPage> {
                         max: 32,
                         display: '${_fontSize.floor()}',
                         onChanged: (v) => setState(() => _fontSize = v.floorToDouble()),
-                        onSave: (v) => DanmakuSettingsService.setFontSize(v.floorToDouble()),
+                        onSave: (v) => DanmakuSettingService.setFontSize(v.floorToDouble()),
                       ),
                       _divider(context),
                       _sliderTile(
@@ -104,7 +103,7 @@ class _DanmakuSettingPageState extends State<DanmakuSettingPage> {
                         divisions: 18,
                         display: '${(_opacity * 100).round()}%',
                         onChanged: (v) => setState(() => _opacity = v),
-                        onSave: DanmakuSettingsService.setOpacity,
+                        onSave: DanmakuSettingService.setOpacity,
                       ),
                       _divider(context),
                       _sliderTile(
@@ -117,7 +116,7 @@ class _DanmakuSettingPageState extends State<DanmakuSettingPage> {
                         divisions: 30,
                         display: _strokeWidth.toStringAsFixed(1),
                         onChanged: (v) => setState(() => _strokeWidth = v),
-                        onSave: DanmakuSettingsService.setStrokeWidth,
+                        onSave: DanmakuSettingService.setStrokeWidth,
                         last: true,
                       ),
                     ],
@@ -135,7 +134,7 @@ class _DanmakuSettingPageState extends State<DanmakuSettingPage> {
                         divisions: 9,
                         display: '${(_area * 100).round()}%',
                         onChanged: (v) => setState(() => _area = v),
-                        onSave: DanmakuSettingsService.setArea,
+                        onSave: DanmakuSettingService.setArea,
                       ),
                       _divider(context),
                       _sliderTile(
@@ -148,7 +147,7 @@ class _DanmakuSettingPageState extends State<DanmakuSettingPage> {
                         divisions: 14,
                         display: '${_duration.round()}s',
                         onChanged: (v) => setState(() => _duration = v.roundToDouble()),
-                        onSave: (v) => DanmakuSettingsService.setDuration(v.roundToDouble()),
+                        onSave: (v) => DanmakuSettingService.setDuration(v.roundToDouble()),
                         last: true,
                       ),
                     ],
@@ -163,7 +162,7 @@ class _DanmakuSettingPageState extends State<DanmakuSettingPage> {
                         value: _showTop,
                         onChanged: (v) {
                           setState(() => _showTop = v);
-                          DanmakuSettingsService.setShowTop(v);
+                          DanmakuSettingService.setShowTop(v);
                         },
                       ),
                       _divider(context),
@@ -174,7 +173,7 @@ class _DanmakuSettingPageState extends State<DanmakuSettingPage> {
                         value: _showBottom,
                         onChanged: (v) {
                           setState(() => _showBottom = v);
-                          DanmakuSettingsService.setShowBottom(v);
+                          DanmakuSettingService.setShowBottom(v);
                         },
                       ),
                       _divider(context),
@@ -185,7 +184,7 @@ class _DanmakuSettingPageState extends State<DanmakuSettingPage> {
                         value: _showScroll,
                         onChanged: (v) {
                           setState(() => _showScroll = v);
-                          DanmakuSettingsService.setShowScroll(v);
+                          DanmakuSettingService.setShowScroll(v);
                         },
                       ),
                     ],

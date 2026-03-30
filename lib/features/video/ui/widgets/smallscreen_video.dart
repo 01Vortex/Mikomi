@@ -10,6 +10,7 @@ import 'package:mikomi/features/video/ui/pages/fullscreen_video_page.dart';
 import 'package:mikomi/features/video/ui/widgets/video_gesture_detector.dart';
 import 'package:mikomi/core/models/episode.dart';
 import 'package:mikomi/features/settings/video_play/service/play_setting_service.dart';
+import 'package:mikomi/features/settings/danmaku/danmaku_setting_service.dart';
 
 class SmallscreenVideo extends StatefulWidget {
   final String videoUrl;
@@ -102,10 +103,12 @@ class _SmallscreenVideoState extends State<SmallscreenVideo> {
   StreamSubscription<Duration>? _durationSub;
   StreamSubscription<bool>? _completedSub;
   final PlaySettingsService _playSettingsService = PlaySettingsService();
+  DanmakuConfig _danmakuConfig = const DanmakuConfig();
 
   @override
   void initState() {
     super.initState();
+    _loadDanmakuConfig();
     _fullscreenNotifier = ValueNotifier(FullscreenVideoState(
       currentEpisode: widget.currentEpisode,
       episodes: widget.episodes,
@@ -195,6 +198,12 @@ class _SmallscreenVideoState extends State<SmallscreenVideo> {
     _doubleTapTimer?.cancel();
     _danmakuController.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadDanmakuConfig() async {
+    final config = await DanmakuSettingService.loadAll();
+    if (!mounted) return;
+    setState(() => _danmakuConfig = config);
   }
 
   Future<void> _loadDanmaku() async {
@@ -532,6 +541,14 @@ class _SmallscreenVideoState extends State<SmallscreenVideo> {
                     );
                   });
                 },
+                fontSize: _danmakuConfig.fontSize,
+                opacity: _danmakuConfig.opacity,
+                speed: _danmakuConfig.duration,
+                area: _danmakuConfig.area,
+                strokeWidth: _danmakuConfig.strokeWidth,
+                hideTop: !_danmakuConfig.showTop,
+                hideBottom: !_danmakuConfig.showBottom,
+                hideScroll: !_danmakuConfig.showScroll,
               ),
             ),
 

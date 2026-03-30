@@ -1,0 +1,18 @@
+{
+    "api": "5",
+    "type": "anime",
+    "name": "luman",
+    "version": "1.0",
+    "muliSources": true,
+    "useWebview": true,
+    "useNativePlayer": true,
+    "userAgent": "",
+    "adBlocker": true,
+    "baseURL": "https://www.lmm85.com/",
+    "searchURL": "https://www.lmm85.com/vod/search.html?wd=@keyword",
+    "searchList": "//div[@id=\"mdym\"]/div[contains(@class, 'col-')]",
+    "searchName": ".//h6[@class=\"title\"]/a/text()",
+    "searchResult": ".//h6[@class=\"title\"]/a/@href",
+    "chapterRoads": "//div[contains(@class,'module-list') and contains(@class,'tab-list') and contains(@class,'selected')]//div[contains(@class,'scroll-content')]",
+    "chapterResult": ".//a/@href"
+}

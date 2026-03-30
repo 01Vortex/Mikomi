@@ -41,6 +41,7 @@ class _FullscreenVideoPageState extends State<FullscreenVideoPage> {
   DanmakuController? _fullscreenDanmakuController;
   final PlaySettingsService _playSettingsService = PlaySettingsService();
   VideoFitMode _fitMode = VideoFitMode.contain;
+  DanmakuConfig _danmakuConfig = const DanmakuConfig();
 
   @override
   void initState() {
@@ -48,6 +49,7 @@ class _FullscreenVideoPageState extends State<FullscreenVideoPage> {
     _state = widget.stateNotifier.value;
     widget.stateNotifier.addListener(_onStateChanged);
     _loadFitMode();
+    _loadDanmakuConfig();
     _enterFullscreen();
   }
 
@@ -55,6 +57,12 @@ class _FullscreenVideoPageState extends State<FullscreenVideoPage> {
     final mode = await _playSettingsService.getVideoFitMode();
     if (!mounted) return;
     setState(() => _fitMode = mode);
+  }
+
+  Future<void> _loadDanmakuConfig() async {
+    final config = await DanmakuSettingService.loadAll();
+    if (!mounted) return;
+    setState(() => _danmakuConfig = config);
   }
 
   void _onStateChanged() {
@@ -139,6 +147,14 @@ class _FullscreenVideoPageState extends State<FullscreenVideoPage> {
               Positioned.fill(
                 child: DanmakuLayer(
                   onControllerCreated: _registerFullscreenController,
+                  fontSize: _danmakuConfig.fontSize,
+                  opacity: _danmakuConfig.opacity,
+                  speed: _danmakuConfig.duration,
+                  area: _danmakuConfig.area,
+                  strokeWidth: _danmakuConfig.strokeWidth,
+                  hideTop: !_danmakuConfig.showTop,
+                  hideBottom: !_danmakuConfig.showBottom,
+                  hideScroll: !_danmakuConfig.showScroll,
                 ),
               ),
             FullscreenVideoControls(

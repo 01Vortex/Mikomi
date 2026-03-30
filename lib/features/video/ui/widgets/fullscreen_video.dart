@@ -743,7 +743,7 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
               parent: animation,
               curve: Curves.easeOutCubic,
             )),
-            child: DanmakuSettingsSidebar(
+            child: DanmakuSettingsSidePanel(
               onClose: () => Navigator.of(dialogContext).pop(),
             ),
           ),
