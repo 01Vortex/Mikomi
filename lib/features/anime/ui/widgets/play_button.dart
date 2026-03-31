@@ -284,7 +284,7 @@ class _PlayButtonState extends State<PlayButton> {
               ),
             )
           : const Icon(Icons.play_arrow_rounded),
-      label: const Text('开始观看'),
+      label: const Text('追番'),
       onPressed: _isLoading ? null : () => _showVideoSourceSelector(context),
     );
   }

@@ -6,6 +6,7 @@ import 'package:mikomi/features/video/ui/pages/video_page.dart';
 import 'package:mikomi/shared/utils/theme_extensions.dart';
 import 'package:mikomi/shared/widgets/cached_image.dart';
 import 'package:mikomi/shared/widgets/skeleton.dart';
+import 'package:mikomi/shared/widgets/scrolling_text.dart';
 
 class HistoryTabContent extends StatelessWidget {
   final List<WatchHistory> histories;
@@ -34,7 +35,6 @@ class HistoryTabContent extends StatelessWidget {
       ),
       child: Column(
         children: [
-          // 排序和更多按钮
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -78,7 +78,6 @@ class HistoryTabContent extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 16),
-          // 内容区域
           if (isLoading)
             const Padding(
               padding: EdgeInsets.all(32),
@@ -109,7 +108,6 @@ class HistoryTabContent extends StatelessWidget {
   }
 }
 
-// 历史记录项组件
 class _HistoryItem extends StatefulWidget {
   final WatchHistory history;
 
@@ -199,38 +197,35 @@ class _HistoryItemState extends State<_HistoryItem> {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 封面图
             ClipRRect(
               borderRadius: BorderRadius.circular(8),
               child: _coverUrl == null
                   ? SkeletonLoader(
-                      width: 140,
-                      height: 80,
+                      width: 80,
+                      height: 110,
                       borderRadius: BorderRadius.circular(8),
                     )
                   : CachedImage(
                       imageUrl: _coverUrl!,
-                      width: 140,
-                      height: 80,
+                      width: 80,
+                      height: 110,
                       fit: BoxFit.cover,
                     ),
             ),
             const SizedBox(width: 12),
-            // 信息
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    widget.history.displayName,
+                  ScrollingText(
+                    text: widget.history.displayName,
                     style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w500,
                       color: context.colors.onSurface,
                     ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
+                    height: 22,
                   ),
                   const SizedBox(height: 4),
                   Text(
@@ -270,7 +265,6 @@ class _HistoryItemState extends State<_HistoryItem> {
   String _formatTime(DateTime time) {
     final now = DateTime.now();
     final diff = now.difference(time);
-
     if (diff.inDays > 3) {
       return '${time.year}-${time.month.toString().padLeft(2, '0')}-${time.day.toString().padLeft(2, '0')}';
     } else if (diff.inDays > 0) {

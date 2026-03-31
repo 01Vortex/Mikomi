@@ -10,6 +10,7 @@ import 'package:mikomi/core/models/watch_history.dart';
 import 'package:mikomi/shared/utils/theme_extensions.dart';
 import 'package:mikomi/features/my/ui/widgets/profile_action_tabs.dart';
 import 'package:mikomi/features/my/ui/widgets/history_tab_content.dart';
+import 'package:mikomi/features/my/ui/widgets/collect_tab_content.dart';
 
 class MyPage extends StatefulWidget {
   const MyPage({super.key});
@@ -258,7 +259,7 @@ class _MyPageState extends State<MyPage> {
           onMoreTap: _onMoreTap,
         );
       case 1: // 收藏
-        return _buildPlaceholder('收藏功能开发中');
+        return const CollectTabContent();
       case 2: // 下载
         return _buildPlaceholder('下载功能开发中');
       case 3: // 我的评论

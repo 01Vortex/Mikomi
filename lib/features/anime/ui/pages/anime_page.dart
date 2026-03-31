@@ -7,6 +7,8 @@ import 'package:mikomi/features/anime/ui/widgets/anime_detail_tab.dart';
 import 'package:mikomi/features/anime/ui/widgets/anime_teasing_tab.dart';
 import 'package:mikomi/features/anime/selector/collection_status_selector.dart';
 import 'package:mikomi/features/anime/ui/widgets/play_button.dart';
+import 'package:mikomi/core/models/collection_item.dart';
+import 'package:mikomi/core/services/collection_service.dart';
 import 'package:mikomi/features/anime/selector/video_source_selector.dart';
 import 'package:mikomi/features/settings/video_play/service/plugin_manager_service.dart';
 import 'package:mikomi/shared/utils/theme_extensions.dart';
@@ -26,6 +28,7 @@ class _AnimePageState extends State<AnimePage>
   final ScrollController _scrollController = ScrollController();
   final BangumiDetailService _detailService = BangumiDetailService();
   final VideoPluginManager _pluginManager = VideoPluginManager();
+  final CollectionService _collectionService = CollectionService();
 
   bool _showTitle = false;
   late BangumiItem _bangumiItem;
@@ -42,6 +45,39 @@ class _AnimePageState extends State<AnimePage>
     _scrollController.addListener(_onScroll);
     _loadVideoSources();
     _loadDetailInfo();
+    _loadCollectionStatus();
+  }
+
+  Future<void> _loadCollectionStatus() async {
+    final collected = await _collectionService.isCollected(_bangumiItem.id);
+    if (mounted) {
+      setState(() {
+        _collectionStatus = collected
+            ? CollectionStatus.collected
+            : CollectionStatus.notCollected;
+      });
+    }
+  }
+
+  Future<void> _onCollectionChanged(CollectionStatus status) async {
+    if (status == CollectionStatus.collected) {
+      await _collectionService.addCollection(
+        CollectionItem(
+          bangumiId: _bangumiItem.id,
+          bangumiName: _bangumiItem.name,
+          bangumiNameCn: _bangumiItem.nameCn,
+          coverUrl: _bangumiItem.coverUrl,
+          collectedAt: DateTime.now(),
+        ),
+      );
+    } else {
+      await _collectionService.removeCollection(_bangumiItem.id);
+    }
+    if (mounted) {
+      setState(() {
+        _collectionStatus = status;
+      });
+    }
   }
 
   Future<void> _loadVideoSources() async {
@@ -177,11 +213,7 @@ class _AnimePageState extends State<AnimePage>
           children: [
             CollectionStatusSelector(
               currentStatus: _collectionStatus,
-              onStatusChanged: (status) {
-                setState(() {
-                  _collectionStatus = status;
-                });
-              },
+              onStatusChanged: _onCollectionChanged,
             ),
             const SizedBox(height: 16),
             PlayButton(
