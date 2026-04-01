@@ -2,7 +2,7 @@ import 'dart:math' as math;
 
 import 'package:mikomi/core/models/bangumi_item.dart';
 
-class SliderImageAlgorithm {
+class SliderImageService {
   /// 轮播图选择算法：
   /// - 基于综合评分选择高质量条目
   /// - 增加时效性与时间槽轮换因子，避免长期霸榜

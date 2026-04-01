@@ -2,7 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:mikomi/core/network/dio_client.dart';
 import 'package:mikomi/core/network/api_constants.dart';
 import 'package:mikomi/core/models/bangumi_item.dart';
-import 'package:mikomi/core/utils/search_algorithm.dart';
+import 'package:mikomi/features/search/service/search_service.dart';
 
 class BangumiService {
   final DioClient _dioClient = DioClient();
@@ -46,9 +46,9 @@ class BangumiService {
       final List<dynamic> data = response.data['data'] ?? [];
       final items = data.map((item) => BangumiItem.fromJson(item)).toList();
 
-      final sortedItems = SearchAlgorithm.sortByRelevance(items, keyword);
+      final sortedItems = SearchService.sortByRelevance(items, keyword);
 
-      final filteredItems = SearchAlgorithm.filterByRelevance(
+      final filteredItems = SearchService.filterByRelevance(
         sortedItems,
         keyword,
         minScore: 30,

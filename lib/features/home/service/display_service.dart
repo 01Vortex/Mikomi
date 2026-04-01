@@ -4,7 +4,7 @@ import 'dart:math';
 import 'package:mikomi/core/models/bangumi_item.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-class DisplayAlgorithm {
+class DisplayService {
   static const int _featuredCount = 12;
   static const String _featuredIdsKey = 'home_featured_ids';
   static const String _featuredTimeKey = 'home_featured_time';

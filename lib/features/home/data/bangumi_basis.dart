@@ -1,8 +1,8 @@
 import 'package:mikomi/core/models/bangumi_item.dart';
 import 'package:mikomi/core/network/api_constants.dart';
 import 'package:mikomi/core/network/dio_client.dart';
-import 'package:mikomi/core/utils/display_algorithm.dart';
-import 'package:mikomi/core/utils/slider_image_algorithm.dart';
+import 'package:mikomi/features/home/service/display_service.dart';
+import 'package:mikomi/features/home/service/slider_image_service.dart';
 
 class BangumiBasis {
   final DioClient _dioClient = DioClient();
@@ -22,7 +22,7 @@ class BangumiBasis {
       final List<dynamic> data = response.data['data'] ?? [];
       final items = data.map((item) => BangumiItem.fromJson(item)).toList();
 
-      return DisplayAlgorithm.buildRecommendPage(
+      return DisplayService.buildRecommendPage(
         source: items,
         limit: limit,
         offset: offset,
@@ -42,7 +42,7 @@ class BangumiBasis {
       final List<dynamic> data = response.data['data'] ?? [];
       final items = data.map((item) => BangumiItem.fromJson(item)).toList();
 
-      return SliderImageAlgorithm.selectTopBanners(items, count: count);
+      return SliderImageService.selectTopBanners(items, count: count);
     } catch (e) {
       return [];
     }

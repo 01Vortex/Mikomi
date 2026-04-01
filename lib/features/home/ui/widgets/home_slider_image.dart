@@ -4,6 +4,7 @@ import 'package:mikomi/config/routes/app_routes.dart';
 import 'package:mikomi/config/themes/app_colors.dart';
 import 'package:mikomi/core/models/bangumi_item.dart';
 import 'package:mikomi/shared/widgets/cached_image.dart';
+import 'package:mikomi/shared/widgets/skeleton.dart';
 
 class BannerSection extends StatefulWidget {
   final List<BangumiItem> bannerList;
@@ -21,12 +22,10 @@ class _BannerSectionState extends State<BannerSection> {
       return Container(
         margin: const EdgeInsets.all(16),
         height: 180,
-        decoration: BoxDecoration(
-          color: AppColors.placeholder,
+        child: SkeletonLoader(
+          width: double.infinity,
+          height: 180,
           borderRadius: BorderRadius.circular(12),
-        ),
-        child: const Center(
-          child: Icon(Icons.image, size: 60, color: AppColors.placeholderIcon),
         ),
       );
     }

@@ -1,6 +1,6 @@
 import 'package:mikomi/core/models/bangumi_item.dart';
 
-class SearchAlgorithm {
+class SearchService {
   /// 精准搜索排序
   /// 匹配优先级:
   /// 1. 完全匹配 (100分)

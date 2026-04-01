@@ -3,7 +3,7 @@ import 'package:mikomi/config/themes/app_colors.dart';
 import 'package:mikomi/core/services/bangumi_service.dart';
 import 'package:mikomi/core/services/search_history_service.dart';
 import 'package:mikomi/core/models/bangumi_item.dart';
-import 'package:mikomi/core/utils/popularity_algorithm.dart';
+import 'package:mikomi/features/search/service/hot_search_service.dart';
 import 'package:mikomi/features/search/data/bangumi_search.dart';
 import 'package:mikomi/features/search/ui/widgets/search_app_bar.dart';
 import 'package:mikomi/features/search/ui/widgets/search_history_view.dart';
@@ -59,7 +59,7 @@ class _SearchPageState extends State<SearchPage> {
     setState(() => _isLoadingRankings = true);
 
     final allItems = await _bangumiService.getTrendsList(limit: 50);
-    final rankings = PopularityAlgorithm.getPopularityRanking(
+    final rankings = HotSearchService.getPopularityRanking(
       allItems,
       limit: 10,
     );
