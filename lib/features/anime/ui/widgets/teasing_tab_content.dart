@@ -124,8 +124,7 @@ class _AnimeTeasingContentState extends State<AnimeTeasingContent> {
       controller: _scrollController,
       padding: const EdgeInsets.symmetric(vertical: 8),
       itemCount: _comments.length + (_isLoading && _hasMore ? 3 : 0),
-      separatorBuilder: (context, index) =>
-          const Divider(height: 1, indent: 68, endIndent: 16),
+      separatorBuilder: (context, index) => const SizedBox.shrink(),
       itemBuilder: (context, index) {
         if (index >= _comments.length) {
           return _buildSkeletonComment();
@@ -139,8 +138,7 @@ class _AnimeTeasingContentState extends State<AnimeTeasingContent> {
     return ListView.separated(
       padding: const EdgeInsets.symmetric(vertical: 8),
       itemCount: 5,
-      separatorBuilder: (context, index) =>
-          const Divider(height: 1, indent: 68, endIndent: 16),
+      separatorBuilder: (context, index) => const SizedBox.shrink(),
       itemBuilder: (context, index) => _buildSkeletonComment(),
     );
   }
