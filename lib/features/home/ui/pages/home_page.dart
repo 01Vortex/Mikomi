@@ -2,12 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:mikomi/features/home/ui/widgets/home_header_bar.dart';
 import 'package:mikomi/features/home/ui/widgets/home_slider_image.dart';
 import 'package:mikomi/features/home/ui/widgets/home_button_tab.dart';
-import 'package:mikomi/features/home/ui/widgets/home_recommend.dart';
+import 'package:mikomi/features/home/ui/widgets/home_display.dart';
 import 'package:mikomi/features/home/data/bangumi_basis.dart';
 import 'package:mikomi/core/models/bangumi_item.dart';
 import 'package:mikomi/shared/widgets/skeleton.dart';
 import 'package:mikomi/config/themes/app_colors.dart';
-import 'package:mikomi/config/localization/app_localizations.dart';
 import 'package:mikomi/config/routes/app_routes.dart';
 
 class HomePage extends StatefulWidget {
@@ -28,7 +27,7 @@ class _HomePageState extends State<HomePage>
   bool _isLoadingMore = false;
   int _currentOffset = 0;
   final int _pageSize = 12;
-  int _selectedTab = 0;
+  final int _selectedTab = 0;
 
   @override
   bool get wantKeepAlive => true;
@@ -61,15 +60,23 @@ class _HomePageState extends State<HomePage>
 
     _currentOffset = 0;
 
-    final recommended = await _homeRepository.getRecommendedList(
-      limit: _pageSize,
-      offset: _currentOffset,
-    );
+    final results = await Future.wait([
+      _homeRepository.getRecommendedList(
+        limit: _pageSize,
+        offset: _currentOffset,
+      ),
+      _homeRepository.getBannerList(count: 5),
+    ]);
+
+    final recommended = results[0];
+    final banners = results[1];
+    final resolvedBanners =
+        banners.isNotEmpty ? banners : recommended.take(5).toList();
 
     if (mounted) {
       setState(() {
         _trendsList = recommended;
-        _bannerList = recommended.take(5).toList();
+        _bannerList = resolvedBanners;
         _isLoading = false;
         _currentOffset = _pageSize;
       });
@@ -99,14 +106,6 @@ class _HomePageState extends State<HomePage>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
-          child: Text(
-            AppLocalizations.of(context).recommend,
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
-        ),
-        const SizedBox(height: 7),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: GridView.builder(
@@ -161,7 +160,7 @@ class _HomePageState extends State<HomePage>
             SliverToBoxAdapter(
               child: _isLoading
                   ? _buildRecommendSkeleton()
-                  : RecommendSection(
+                  : HomeDisplay(
                       bangumiList: _trendsList,
                       isLoading: _isLoadingMore,
                       onLoadMore: _loadMoreData,

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:card_swiper/card_swiper.dart';
+import 'package:mikomi/config/routes/app_routes.dart';
 import 'package:mikomi/config/themes/app_colors.dart';
 import 'package:mikomi/core/models/bangumi_item.dart';
 import 'package:mikomi/shared/widgets/cached_image.dart';
@@ -45,7 +46,11 @@ class _BannerSectionState extends State<BannerSection> {
             final item = widget.bannerList[index];
             return GestureDetector(
               onTap: () {
-                // TODO: 跳转到详情页
+                Navigator.pushNamed(
+                  context,
+                  AppRoutes.bangumiDetail,
+                  arguments: item,
+                );
               },
               child: Container(
                 margin: const EdgeInsets.symmetric(horizontal: 4),

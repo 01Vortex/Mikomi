@@ -1,15 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:mikomi/core/models/bangumi_item.dart';
 import 'package:mikomi/shared/widgets/anime_grid_card.dart';
-import 'package:mikomi/config/localization/app_localizations.dart';
 import 'package:mikomi/config/routes/app_routes.dart';
 
-class RecommendSection extends StatelessWidget {
+class HomeDisplay extends StatelessWidget {
   final List<BangumiItem> bangumiList;
   final VoidCallback? onLoadMore;
   final bool isLoading;
 
-  const RecommendSection({
+  const HomeDisplay({
     super.key,
     required this.bangumiList,
     this.onLoadMore,
@@ -25,14 +24,6 @@ class RecommendSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
-          child: Text(
-            AppLocalizations.of(context).recommend,
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
-        ),
-        const SizedBox(height: 7),
         if (bangumiList.isNotEmpty)
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),

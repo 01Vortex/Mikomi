@@ -66,7 +66,13 @@ class BangumiItem {
 
   String get displayName => nameCn.isNotEmpty ? nameCn : name;
 
-  String get coverUrl => images['large'] ?? images['common'] ?? '';
+  String get coverUrl =>
+      images['large'] ??
+      images['common'] ??
+      images['medium'] ??
+      images['small'] ??
+      images['grid'] ??
+      '';
 
   // 添加copyWith方法用于数据迁移
   BangumiItem copyWith({

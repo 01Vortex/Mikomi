@@ -1,7 +1,8 @@
-import 'package:mikomi/core/network/dio_client.dart';
-import 'package:mikomi/core/network/api_constants.dart';
 import 'package:mikomi/core/models/bangumi_item.dart';
-import 'package:mikomi/core/utils/recommendation_algorithm.dart';
+import 'package:mikomi/core/network/api_constants.dart';
+import 'package:mikomi/core/network/dio_client.dart';
+import 'package:mikomi/core/utils/display_algorithm.dart';
+import 'package:mikomi/core/utils/slider_image_algorithm.dart';
 
 class BangumiBasis {
   final DioClient _dioClient = DioClient();
@@ -11,26 +12,37 @@ class BangumiBasis {
     int offset = 0,
   }) async {
     try {
-      final fetchLimit = limit * 2;
+      final fetchLimit = offset + limit + 24;
 
       final response = await _dioClient.get(
         ApiConstants.bangumiApiNextDomain + ApiConstants.bangumiTrends,
-        queryParameters: {'type': 2, 'limit': fetchLimit, 'offset': offset},
+        queryParameters: {'type': 2, 'limit': fetchLimit, 'offset': 0},
       );
 
       final List<dynamic> data = response.data['data'] ?? [];
       final items = data.map((item) => BangumiItem.fromJson(item)).toList();
 
-      final filteredItems = RecommendationAlgorithm.filterByUpdateTime(
-        items,
-        maxDaysAgo: 365,
+      return DisplayAlgorithm.buildRecommendPage(
+        source: items,
+        limit: limit,
+        offset: offset,
+      );
+    } catch (e) {
+      return [];
+    }
+  }
+
+  Future<List<BangumiItem>> getBannerList({int count = 5}) async {
+    try {
+      final response = await _dioClient.get(
+        ApiConstants.bangumiApiNextDomain + ApiConstants.bangumiTrends,
+        queryParameters: {'type': 2, 'limit': 60, 'offset': 0},
       );
 
-      final sortedItems = RecommendationAlgorithm.sortByRecommendation(
-        filteredItems,
-      );
+      final List<dynamic> data = response.data['data'] ?? [];
+      final items = data.map((item) => BangumiItem.fromJson(item)).toList();
 
-      return sortedItems.take(limit).toList();
+      return SliderImageAlgorithm.selectTopBanners(items, count: count);
     } catch (e) {
       return [];
     }
