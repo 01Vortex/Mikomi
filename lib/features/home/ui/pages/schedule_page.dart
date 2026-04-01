@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:mikomi/features/home/service/home_content_service.dart';
+import 'package:mikomi/features/home/service/schedule_service.dart';
 import 'package:mikomi/features/home/models/home_anime_model.dart';
 import 'package:mikomi/config/app_routes.dart';
 import 'package:mikomi/shared/theme_extensions.dart';
@@ -16,7 +16,7 @@ class SchedulePage extends StatefulWidget {
 
 class _SchedulePageState extends State<SchedulePage>
     with SingleTickerProviderStateMixin {
-  final HomeFeedData _homeRepository = HomeFeedData();
+  final ScheduleService _scheduleService = ScheduleService();
   TabController? _tabController;
   PageController? _pageController;
   List<List<HomeAnimeModel>> _weekSchedule = [];
@@ -58,21 +58,12 @@ class _SchedulePageState extends State<SchedulePage>
 
   Future<void> _loadSchedule() async {
     setState(() => _isLoading = true);
-    try {
-      final schedule = await _homeRepository.getCalendar();
-      if (mounted) {
-        setState(() {
-          _weekSchedule = schedule;
-          _isLoading = false;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _weekSchedule = List.generate(7, (_) => []);
-          _isLoading = false;
-        });
-      }
+    final schedule = await _scheduleService.getWeekSchedule();
+    if (mounted) {
+      setState(() {
+        _weekSchedule = schedule;
+        _isLoading = false;
+      });
     }
   }
 

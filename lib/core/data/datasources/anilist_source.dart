@@ -1,5 +1,5 @@
 import 'package:mikomi/core/network/dio_client.dart';
-import 'package:mikomi/features/home/data/graphql/anilist_queries.dart';
+import 'package:mikomi/core/data/graphql/anilist_queries.dart';
 
 class AniListSource {
   final DioClient _dioClient = DioClient();

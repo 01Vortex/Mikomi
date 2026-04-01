@@ -1,4 +1,4 @@
-import 'package:mikomi/features/home/data/repositories/home_repository.dart';
+import 'package:mikomi/features/home/repositories/home_repository.dart';
 import 'package:mikomi/features/home/models/home_anime_model.dart';
 
 enum RankCategory { play, collection, chinese, japanese }

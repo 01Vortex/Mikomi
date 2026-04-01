@@ -1,7 +1,7 @@
 import 'package:html/parser.dart' as html_parser;
-import 'package:mikomi/features/home/data/datasources/anilist_source.dart';
-import 'package:mikomi/features/home/data/datasources/bangumi_source.dart';
-import 'package:mikomi/features/home/data/datasources/tencent_source.dart';
+import 'package:mikomi/core/data/datasources/anilist_source.dart';
+import 'package:mikomi/core/data/datasources/bangumi_source.dart';
+import 'package:mikomi/core/data/datasources/tencent_source.dart';
 import 'package:mikomi/features/home/models/home_anime_model.dart';
 import 'package:mikomi/features/home/service/display_service.dart';
 import 'package:mikomi/features/home/service/slider_image_service.dart';
