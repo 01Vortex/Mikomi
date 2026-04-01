@@ -28,7 +28,12 @@ class FullscreenEpisodeSelector extends StatefulWidget {
 
 class _FullscreenEpisodeSelectorState
     extends State<FullscreenEpisodeSelector> {
+  static const int _crossAxisCount = 3;
+  static const double _itemHeight = 52.0;
+  static const double _mainAxisSpacing = 10.0;
+  static const double _gridTopPadding = 4.0;
   final ScrollController _scrollController = ScrollController();
+  final GlobalKey _currentEpisodeKey = GlobalKey();
 
   @override
   void initState() {
@@ -38,29 +43,58 @@ class _FullscreenEpisodeSelectorState
   }
 
   @override
+  void didUpdateWidget(covariant FullscreenEpisodeSelector oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final shouldRescroll =
+        oldWidget.currentEpisode != widget.currentEpisode ||
+        oldWidget.isDescending != widget.isDescending ||
+        oldWidget.episodes.length != widget.episodes.length;
+    if (shouldRescroll) {
+      WidgetsBinding.instance
+          .addPostFrameCallback((_) => _scrollToCurrentEpisode());
+    }
+  }
+
+  @override
   void dispose() {
     _scrollController.dispose();
     super.dispose();
   }
 
   void _scrollToCurrentEpisode() {
+    final currentContext = _currentEpisodeKey.currentContext;
+    if (currentContext != null) {
+      Scrollable.ensureVisible(
+        currentContext,
+        alignment: 0.5,
+        duration: const Duration(milliseconds: 320),
+        curve: Curves.easeOutCubic,
+      );
+      return;
+    }
+
     if (!_scrollController.hasClients) return;
+
     final episodes = widget.isDescending
         ? widget.episodes.reversed.toList()
         : widget.episodes;
-    final index =
-        episodes.indexWhere((ep) => ep.number == widget.currentEpisode);
+    final index = episodes.indexWhere((ep) => ep.number == widget.currentEpisode);
     if (index < 0) return;
-    const crossAxisCount = 3;
-    const itemHeight = 52.0;
-    const mainAxisSpacing = 10.0;
-    const padding = 20.0;
-    final row = index ~/ crossAxisCount;
-    final offset = padding + row * (itemHeight + mainAxisSpacing);
+
+    final row = index ~/ _crossAxisCount;
+    final itemExtent = _itemHeight + _mainAxisSpacing;
+    final viewport = _scrollController.position.viewportDimension;
+    final targetCenter = _gridTopPadding + row * itemExtent + (_itemHeight / 2);
+    final desiredOffset = targetCenter - (viewport / 2);
+    final clampedOffset = desiredOffset.clamp(
+      0.0,
+      _scrollController.position.maxScrollExtent,
+    );
+
     _scrollController.animateTo(
-      offset.clamp(0.0, _scrollController.position.maxScrollExtent),
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeOut,
+      clampedOffset,
+      duration: const Duration(milliseconds: 320),
+      curve: Curves.easeOutCubic,
     );
   }
 
@@ -216,7 +250,10 @@ class _FullscreenEpisodeSelectorState
       itemBuilder: (context, index) {
         final episode = sortedEpisodes[index];
         final isCurrent = episode.number == widget.currentEpisode;
-        return _buildEpisodeCard(episode, isCurrent);
+        return KeyedSubtree(
+          key: isCurrent ? _currentEpisodeKey : null,
+          child: _buildEpisodeCard(episode, isCurrent),
+        );
       },
     );
   }

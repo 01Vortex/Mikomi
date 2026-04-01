@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mikomi/features/video/ui/widgets/danmaku_overlay.dart';
@@ -395,6 +396,11 @@ class _VideoPageState extends State<VideoPage>
                   future: _currentVideoUrlFuture,
                   builder: (context, snapshot) {
                     final videoUrl = snapshot.data ?? '';
+                    final availableHeight =
+                        MediaQuery.of(context).size.height -
+                        MediaQuery.of(context).padding.top;
+                    final videoHeight =
+                        math.min(MediaQuery.of(context).size.width / (16 / 9), availableHeight);
                     final isLoading = snapshot.connectionState ==
                             ConnectionState.waiting ||
                         (_state.isLoadingEpisodes &&
@@ -404,6 +410,7 @@ class _VideoPageState extends State<VideoPage>
                     return Column(
                       children: [
                         VideoPlayerArea(
+                          videoHeight: videoHeight,
                           videoUrl: videoUrl,
                           title: widget.title,
                           currentEpisode: _state.currentEpisode,

@@ -4,6 +4,7 @@ import 'package:mikomi/features/video/services/video_playback_service.dart';
 import 'package:mikomi/core/models/episode.dart';
 
 class VideoPlayerArea extends StatelessWidget {
+  final double? videoHeight;
   final String videoUrl;
   final String title;
   final int currentEpisode;
@@ -31,6 +32,7 @@ class VideoPlayerArea extends StatelessWidget {
 
   const VideoPlayerArea({
     super.key,
+    this.videoHeight,
     required this.videoUrl,
     required this.title,
     required this.currentEpisode,
@@ -59,35 +61,40 @@ class VideoPlayerArea extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: MediaQuery.of(context).size.width,
-      color: Colors.black,
-      child: AspectRatio(
-        aspectRatio: 16 / 9,
+    final width = MediaQuery.of(context).size.width;
+    final height = videoHeight ?? (width / (16 / 9));
+
+    return SizedBox(
+      width: width,
+      height: height,
+      child: Container(
+        color: Colors.black,
         child: Stack(
           children: [
             if (videoUrl.isNotEmpty)
-              SmallscreenVideo(
-                videoUrl: videoUrl,
-                title: title,
-                currentEpisode: currentEpisode,
-                totalEpisodes: totalEpisodes,
-                playerController: playerController,
-                episodeTitle: episodeTitle,
-                onNextEpisode: onNextEpisode,
-                onPreviousEpisode: onPreviousEpisode,
-                hasNextEpisode: hasNextEpisode,
-                hasPreviousEpisode: hasPreviousEpisode,
-                initialProgress: initialProgress,
-                episodes: episodes,
-                onEpisodeSelected: onEpisodeSelected,
-                isLoadingEpisodes: isLoadingEpisodes,
-                isDescending: isDescending,
-                onToggleSort: onToggleSort,
-                isDanmakuEnabled: isDanmakuEnabled,
-                animeTitle: animeTitle,
-                bangumiId: bangumiId,
-                onDanmakuToggle: onDanmakuToggle,
+              Positioned.fill(
+                child: SmallscreenVideo(
+                  videoUrl: videoUrl,
+                  title: title,
+                  currentEpisode: currentEpisode,
+                  totalEpisodes: totalEpisodes,
+                  playerController: playerController,
+                  episodeTitle: episodeTitle,
+                  onNextEpisode: onNextEpisode,
+                  onPreviousEpisode: onPreviousEpisode,
+                  hasNextEpisode: hasNextEpisode,
+                  hasPreviousEpisode: hasPreviousEpisode,
+                  initialProgress: initialProgress,
+                  episodes: episodes,
+                  onEpisodeSelected: onEpisodeSelected,
+                  isLoadingEpisodes: isLoadingEpisodes,
+                  isDescending: isDescending,
+                  onToggleSort: onToggleSort,
+                  isDanmakuEnabled: isDanmakuEnabled,
+                  animeTitle: animeTitle,
+                  bangumiId: bangumiId,
+                  onDanmakuToggle: onDanmakuToggle,
+                ),
               ),
             if (hasError && !isLoading)
               Positioned.fill(

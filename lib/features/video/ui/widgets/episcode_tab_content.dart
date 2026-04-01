@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:mikomi/shared/widgets/skeleton.dart';
 import 'package:mikomi/core/models/episode.dart';
 import 'package:mikomi/features/video/ui/widgets/smallscreen_episcode.dart';
-import 'package:mikomi/shared/utils/theme_extensions.dart';
 
 class EpiscodeTabContent extends StatelessWidget {
   final bool isLoading;
@@ -57,74 +56,80 @@ class EpiscodeTabContent extends StatelessWidget {
     return Column(
       children: [
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
+              InkWell(
+                onTap: onToggleSort,
+                borderRadius: BorderRadius.circular(16),
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color:
+                        Theme.of(context).colorScheme.surfaceContainerHighest,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        isDescending
+                            ? Icons.arrow_downward
+                            : Icons.arrow_upward,
+                        size: 14,
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        isDescending ? '倒序' : '正序',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
               if (episodes.length > 12)
                 InkWell(
                   onTap: onToggleExpand,
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(16),
                   child: Container(
                     padding:
-                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
                       color: Theme.of(context)
                           .colorScheme
                           .surfaceContainerHighest,
-                      borderRadius: BorderRadius.circular(20),
+                      borderRadius: BorderRadius.circular(16),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Icon(
-                            isEpisodesExpanded
-                                ? Icons.expand_less
-                                : Icons.expand_more,
-                            size: 16,
-                            color: Theme.of(context).colorScheme.onSurface),
-                        const SizedBox(width: 6),
-                        Text(isEpisodesExpanded ? '收起' : '展开',
-                            style: TextStyle(
-                                fontSize: 14,
-                                color:
-                                    Theme.of(context).colorScheme.onSurface)),
+                          isEpisodesExpanded
+                              ? Icons.expand_less
+                              : Icons.expand_more,
+                          size: 14,
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          isEpisodesExpanded ? '收起' : '展开',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Theme.of(context).colorScheme.onSurface,
+                          ),
+                        ),
                       ],
                     ),
                   ),
                 )
               else
                 const SizedBox.shrink(),
-              InkWell(
-                onTap: onToggleSort,
-                borderRadius: BorderRadius.circular(20),
-                child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  decoration: BoxDecoration(
-                    color:
-                        Theme.of(context).colorScheme.surfaceContainerHighest,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                          isDescending
-                              ? Icons.arrow_downward
-                              : Icons.arrow_upward,
-                          size: 16,
-                          color: Theme.of(context).colorScheme.onSurface),
-                      const SizedBox(width: 6),
-                      Text(isDescending ? '倒序' : '正序',
-                          style: TextStyle(
-                              fontSize: 14,
-                              color:
-                                  Theme.of(context).colorScheme.onSurface)),
-                    ],
-                  ),
-                ),
-              ),
             ],
           ),
         ),
