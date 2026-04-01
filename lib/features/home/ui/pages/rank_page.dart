@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mikomi/config/routes/app_routes.dart';
-import 'package:mikomi/core/models/anime.dart';
+import 'package:mikomi/features/home/models/home_anime_model.dart';
 import 'package:mikomi/features/home/service/rank_service.dart';
 import 'package:mikomi/shared/theme_extensions.dart';
 import 'package:mikomi/shared/cached_image.dart';
@@ -24,7 +24,7 @@ class _RankPageState extends State<RankPage> {
   ];
 
   RankCategory _currentCategory = RankCategory.play;
-  List<Anime> _rankList = [];
+  List<HomeAnimeModel> _rankList = [];
   bool _isLoading = true;
 
   @override
@@ -143,7 +143,7 @@ class _RankPageState extends State<RankPage> {
     );
   }
 
-  Widget _buildRankItem(BuildContext context, int rank, Anime item) {
+  Widget _buildRankItem(BuildContext context, int rank, HomeAnimeModel item) {
     final rankColor = switch (rank) {
       1 => const Color(0xFFFFB300),
       2 => const Color(0xFF90A4AE),
@@ -161,7 +161,7 @@ class _RankPageState extends State<RankPage> {
           onTap: () {
             Navigator.pushNamed(
               context,
-              AppRoutes.bangumiDetail,
+              AppRoutes.animeDetail,
               arguments: item,
             );
           },

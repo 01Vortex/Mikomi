@@ -1,30 +1,30 @@
 import 'package:flutter/material.dart';
-import 'package:mikomi/core/models/anime.dart';
+import 'package:mikomi/features/home/models/home_anime_model.dart';
 import 'package:mikomi/shared/anime_grid_card.dart';
 import 'package:mikomi/config/routes/app_routes.dart';
 
 class HomeDisplay extends StatelessWidget {
-  final List<Anime> bangumiList;
+  final List<HomeAnimeModel> animeList;
   final VoidCallback? onLoadMore;
   final bool isLoading;
 
   const HomeDisplay({
     super.key,
-    required this.bangumiList,
+    required this.animeList,
     this.onLoadMore,
     this.isLoading = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    if (bangumiList.isEmpty && !isLoading) {
+    if (animeList.isEmpty && !isLoading) {
       return const SizedBox();
     }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (bangumiList.isNotEmpty)
+        if (animeList.isNotEmpty)
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: GridView.builder(
@@ -37,17 +37,17 @@ class HomeDisplay extends StatelessWidget {
                 mainAxisSpacing: 12,
                 childAspectRatio: 0.58,
               ),
-              itemCount: bangumiList.length,
+              itemCount: animeList.length,
               itemBuilder: (context, index) {
-                final item = bangumiList[index];
+                final item = animeList[index];
                 return AnimeGridCard(
                   title: item.displayName,
                   imageUrl: item.coverUrl,
-                  heroTag: 'bangumi_${item.id}',
+                  heroTag: 'anime_${item.id}',
                   onTap: () {
                     Navigator.pushNamed(
                       context,
-                      AppRoutes.bangumiDetail,
+                      AppRoutes.animeDetail,
                       arguments: item,
                     );
                   },

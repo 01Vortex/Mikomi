@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:math';
 
-import 'package:mikomi/core/models/anime.dart';
+import 'package:mikomi/features/home/models/home_anime_model.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class DisplayService {
@@ -12,8 +12,8 @@ class DisplayService {
   /// 返回首页推荐展示页：
   /// - 第 1 页固定展示随机 12 条（每天 00:00 和 12:00 自动刷新）
   /// - 后续页展示剔除随机 12 条后的滚动列表
-  static Future<List<Anime>> buildRecommendPage({
-    required List<Anime> source,
+  static Future<List<HomeAnimeModel>> buildRecommendPage({
+    required List<HomeAnimeModel> source,
     required int limit,
     required int offset,
   }) async {
@@ -44,7 +44,7 @@ class DisplayService {
     return normalItems.sublist(start, end);
   }
 
-  static Future<List<int>> _getOrCreateFeaturedIds(List<Anime> source) async {
+  static Future<List<int>> _getOrCreateFeaturedIds(List<HomeAnimeModel> source) async {
     final prefs = await SharedPreferences.getInstance();
     final now = DateTime.now();
     final currentSlotStart = _getCurrentSlotStart(now);
@@ -92,8 +92,8 @@ class DisplayService {
     }
   }
 
-  static List<int> _createRandomIds(List<Anime> source, int count) {
-    final unique = <int, Anime>{};
+  static List<int> _createRandomIds(List<HomeAnimeModel> source, int count) {
+    final unique = <int, HomeAnimeModel>{};
     for (final item in source) {
       unique[item.id] = item;
     }
@@ -102,11 +102,11 @@ class DisplayService {
     return items.take(count).map((e) => e.id).toList();
   }
 
-  static List<Anime> _orderedItemsByIds(
-    List<Anime> source,
+  static List<HomeAnimeModel> _orderedItemsByIds(
+    List<HomeAnimeModel> source,
     List<int> ids,
   ) {
     final map = {for (final item in source) item.id: item};
-    return ids.map((id) => map[id]).whereType<Anime>().toList();
+    return ids.map((id) => map[id]).whereType<HomeAnimeModel>().toList();
   }
 }

@@ -1,13 +1,13 @@
-import 'package:mikomi/core/models/anime.dart';
+import 'package:mikomi/features/home/models/home_anime_model.dart';
 import 'package:mikomi/core/network/api_constants.dart';
 import 'package:mikomi/core/network/dio_client.dart';
 import 'package:mikomi/features/home/service/display_service.dart';
 import 'package:mikomi/features/home/service/slider_image_service.dart';
 
-class BangumiBasis {
+class HomeFeedData {
   final DioClient _dioClient = DioClient();
 
-  Future<List<Anime>> getRecommendedList({
+  Future<List<HomeAnimeModel>> getRecommendedList({
     int limit = 12,
     int offset = 0,
   }) async {
@@ -20,19 +20,19 @@ class BangumiBasis {
       );
 
       final List<dynamic> data = response.data['data'] ?? [];
-      final items = data.map((item) => Anime.fromJson(item)).toList();
+      final items = data.map((item) => HomeAnimeModel.fromJson(item)).toList();
 
       return DisplayService.buildRecommendPage(
         source: items,
         limit: limit,
         offset: offset,
       );
-    } catch (e) {
+    } catch (_) {
       return [];
     }
   }
 
-  Future<List<Anime>> getBannerList({int count = 5}) async {
+  Future<List<HomeAnimeModel>> getBannerList({int count = 5}) async {
     try {
       final response = await _dioClient.get(
         ApiConstants.bangumiApiNextDomain + ApiConstants.bangumiTrends,
@@ -40,40 +40,38 @@ class BangumiBasis {
       );
 
       final List<dynamic> data = response.data['data'] ?? [];
-      final items = data.map((item) => Anime.fromJson(item)).toList();
+      final items = data.map((item) => HomeAnimeModel.fromJson(item)).toList();
 
       return SliderImageService.selectTopBanners(items, count: count);
-    } catch (e) {
+    } catch (_) {
       return [];
     }
   }
 
-  Future<List<List<Anime>>> getCalendar() async {
+  Future<List<List<HomeAnimeModel>>> getCalendar() async {
     try {
       final response = await _dioClient.get(
         ApiConstants.bangumiApiNextDomain + ApiConstants.bangumiCalendar,
       );
 
-      List<List<Anime>> calendar = [];
+      final calendar = <List<HomeAnimeModel>>[];
       final jsonData = response.data;
 
-      for (int i = 1; i <= 7; i++) {
-        List<Anime> dayList = [];
+      for (var i = 1; i <= 7; i++) {
+        final dayList = <HomeAnimeModel>[];
         final jsonList = jsonData['$i'] ?? [];
-        for (dynamic jsonItem in jsonList) {
+        for (final jsonItem in jsonList) {
           try {
             final subjectData = jsonItem['subject'] ?? jsonItem;
-            dayList.add(Anime.fromJson(subjectData));
-          } catch (e) {
-            // 忽略解析失败的项
-          }
+            dayList.add(HomeAnimeModel.fromJson(subjectData));
+          } catch (_) {}
         }
         calendar.add(dayList);
       }
 
       return calendar;
-    } catch (e) {
-      return List.generate(7, (_) => <Anime>[]);
+    } catch (_) {
+      return List.generate(7, (_) => <HomeAnimeModel>[]);
     }
   }
 }

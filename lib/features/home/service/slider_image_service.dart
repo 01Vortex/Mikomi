@@ -1,20 +1,20 @@
 import 'dart:math' as math;
 
-import 'package:mikomi/core/models/anime.dart';
+import 'package:mikomi/features/home/models/home_anime_model.dart';
 
 class SliderImageService {
   /// 轮播图选择算法：
   /// - 基于综合评分选择高质量条目
   /// - 增加时效性与时间槽轮换因子，避免长期霸榜
-  static List<Anime> selectTopBanners(
-    List<Anime> items, {
+  static List<HomeAnimeModel> selectTopBanners(
+    List<HomeAnimeModel> items, {
     int count = 5,
   }) {
     if (items.isEmpty || count <= 0) {
       return [];
     }
 
-    final uniqueMap = <int, Anime>{};
+    final uniqueMap = <int, HomeAnimeModel>{};
     for (final item in items) {
       if (item.coverUrl.isEmpty) {
         continue;
@@ -38,7 +38,7 @@ class SliderImageService {
     return scored.take(count).map((e) => e.key).toList();
   }
 
-  static double _calculateCompositeScore(Anime item, int slotSeed) {
+  static double _calculateCompositeScore(HomeAnimeModel item, int slotSeed) {
     final ratingScore = (item.ratingScore.clamp(0, 10) / 10.0) * 100;
 
     double rankScore = 0;

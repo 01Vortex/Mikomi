@@ -1,7 +1,7 @@
-import 'package:mikomi/core/models/anime.dart';
+import 'package:mikomi/features/home/models/home_anime_model.dart';
 
 class RankRecord {
-  final Anime item;
+  final HomeAnimeModel item;
   final int metric;
 
   const RankRecord({required this.item, required this.metric});

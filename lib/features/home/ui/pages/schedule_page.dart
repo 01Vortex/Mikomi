@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:mikomi/features/home/data/bangumi_basis.dart';
-import 'package:mikomi/core/models/anime.dart';
+import 'package:mikomi/features/home/data/home_feed_data.dart';
+import 'package:mikomi/features/home/models/home_anime_model.dart';
 import 'package:mikomi/config/routes/app_routes.dart';
 import 'package:mikomi/shared/theme_extensions.dart';
 import 'package:mikomi/shared/cached_image.dart';
@@ -16,10 +16,10 @@ class SchedulePage extends StatefulWidget {
 
 class _SchedulePageState extends State<SchedulePage>
     with SingleTickerProviderStateMixin {
-  final BangumiBasis _homeRepository = BangumiBasis();
+  final HomeFeedData _homeRepository = HomeFeedData();
   TabController? _tabController;
   PageController? _pageController;
-  List<List<Anime>> _weekSchedule = [];
+  List<List<HomeAnimeModel>> _weekSchedule = [];
   bool _isLoading = true;
   final int _currentDay = DateTime.now().weekday - 1;
 
@@ -128,14 +128,14 @@ class _SchedulePageState extends State<SchedulePage>
                 final daySchedule =
                     _weekSchedule.isNotEmpty && index < _weekSchedule.length
                     ? _weekSchedule[index]
-                    : <Anime>[];
+                    : <HomeAnimeModel>[];
                 return _buildDayGrid(context, daySchedule);
               },
             ),
     );
   }
 
-  Widget _buildDayGrid(BuildContext context, List<Anime> bangumiList) {
+  Widget _buildDayGrid(BuildContext context, List<HomeAnimeModel> animeList) {
     final screenWidth = MediaQuery.of(context).size.width;
     int crossCount = 1;
     if (screenWidth > 600) crossCount = 2;
@@ -143,7 +143,7 @@ class _SchedulePageState extends State<SchedulePage>
 
     final cardHeight = screenWidth > 600 ? 160.0 : 120.0;
 
-    if (bangumiList.isEmpty) {
+    if (animeList.isEmpty) {
       return Center(
         child: Text(
           '暂无新番',
@@ -160,17 +160,17 @@ class _SchedulePageState extends State<SchedulePage>
         crossAxisSpacing: 8,
         mainAxisExtent: cardHeight + 12,
       ),
-      itemCount: bangumiList.length,
+      itemCount: animeList.length,
       itemBuilder: (context, index) {
-        final bangumi = bangumiList[index];
-        return _buildScheduleCard(context, bangumi, cardHeight);
+        final anime = animeList[index];
+        return _buildScheduleCard(context, anime, cardHeight);
       },
     );
   }
 
   Widget _buildScheduleCard(
     BuildContext context,
-    Anime Anime,
+    HomeAnimeModel anime,
     double cardHeight,
   ) {
     final imageWidth = cardHeight * 0.7;
@@ -184,8 +184,8 @@ class _SchedulePageState extends State<SchedulePage>
         onTap: () {
           Navigator.pushNamed(
             context,
-            AppRoutes.bangumiDetail,
-            arguments: Anime,
+            AppRoutes.animeDetail,
+            arguments: anime,
           );
         },
         child: SizedBox(
@@ -196,12 +196,12 @@ class _SchedulePageState extends State<SchedulePage>
               ClipRRect(
                 borderRadius: BorderRadius.circular(8),
                 child: Hero(
-                  tag: 'bangumi_${Anime.id}',
+                  tag: 'anime_${anime.id}',
                   transitionOnUserGestures: true,
                   flightShuttleBuilder:
                       AnimationProvider.buildHeroFlightShuttle,
                   child: CachedImage(
-                    imageUrl: Anime.coverUrl,
+                    imageUrl: anime.coverUrl,
                     width: imageWidth,
                     height: cardHeight,
                     fit: BoxFit.cover,
@@ -218,7 +218,7 @@ class _SchedulePageState extends State<SchedulePage>
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       ScrollingText(
-                        text: Anime.displayName,
+                        text: anime.displayName,
                         style: context.textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.w600,
                         ),
@@ -226,8 +226,8 @@ class _SchedulePageState extends State<SchedulePage>
                         height: 40,
                       ),
                       const SizedBox(height: 4),
-                      if ((Anime.info.isNotEmpty) ||
-                          (Anime.summary.isNotEmpty))
+                      if ((anime.info.isNotEmpty) ||
+                          (anime.summary.isNotEmpty))
                         Expanded(
                           child: Padding(
                             padding: const EdgeInsets.only(bottom: 2),
@@ -242,9 +242,9 @@ class _SchedulePageState extends State<SchedulePage>
                                 borderRadius: BorderRadius.circular(6),
                               ),
                               child: Text(
-                                Anime.info.isNotEmpty
-                                    ? Anime.info
-                                    : Anime.summary,
+                                anime.info.isNotEmpty
+                                    ? anime.info
+                                    : anime.summary,
                                 style: context.textTheme.labelMedium?.copyWith(
                                   color: context.colors.primary,
                                   fontWeight: FontWeight.w500,
@@ -259,7 +259,7 @@ class _SchedulePageState extends State<SchedulePage>
                       const Spacer(),
                       Row(
                         children: [
-                          if (Anime.ratingScore > 0) ...[
+                          if (anime.ratingScore > 0) ...[
                             Icon(
                               Icons.star_rounded,
                               size: 15,
@@ -267,13 +267,13 @@ class _SchedulePageState extends State<SchedulePage>
                             ),
                             const SizedBox(width: 2),
                             Text(
-                              Anime.ratingScore.toStringAsFixed(1),
+                              anime.ratingScore.toStringAsFixed(1),
                               style: context.textTheme.bodySmall?.copyWith(
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
                           ],
-                          if (Anime.rank > 0) ...[
+                          if (anime.rank > 0) ...[
                             const SizedBox(width: 8),
                             Icon(
                               Icons.leaderboard,
@@ -282,16 +282,16 @@ class _SchedulePageState extends State<SchedulePage>
                             ),
                             const SizedBox(width: 2),
                             Text(
-                              'Rank ${Anime.rank}',
+                              'Rank ${anime.rank}',
                               style: context.textTheme.bodySmall?.copyWith(
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
                           ],
                           const Spacer(),
-                          if (Anime.ratingCount > 0)
+                          if (anime.ratingCount > 0)
                             Text(
-                              '${Anime.ratingCount}人',
+                              '${anime.ratingCount}人',
                               style: context.textTheme.bodySmall?.copyWith(
                                 color: context.colors.onSurfaceVariant,
                               ),

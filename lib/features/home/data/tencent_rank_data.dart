@@ -1,5 +1,5 @@
 import 'package:html/parser.dart' as html_parser;
-import 'package:mikomi/core/models/anime.dart';
+import 'package:mikomi/features/home/models/home_anime_model.dart';
 import 'package:mikomi/core/network/dio_client.dart';
 import 'package:mikomi/features/home/data/rank_record.dart';
 
@@ -49,7 +49,7 @@ class TencentRankData {
         }
 
         final id = _stableId(href.isEmpty ? '$title-$i' : href);
-        final item = Anime(
+        final item = HomeAnimeModel(
           id: id,
           name: title,
           nameCn: title,
@@ -65,7 +65,7 @@ class TencentRankData {
           ratingScore: 0,
           ratingCount: 0,
           rank: i + 1,
-          tags: [BangumiTag(name: '国漫', count: 0)],
+          tags: [HomeAnimeTag(name: '国漫', count: 0)],
           info: '',
         );
 

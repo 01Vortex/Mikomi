@@ -3,8 +3,8 @@ import 'package:mikomi/features/home/ui/widgets/home_header_bar.dart';
 import 'package:mikomi/features/home/ui/widgets/home_slider_image.dart';
 import 'package:mikomi/features/home/ui/widgets/home_button_tab.dart';
 import 'package:mikomi/features/home/ui/widgets/home_display.dart';
-import 'package:mikomi/features/home/data/bangumi_basis.dart';
-import 'package:mikomi/core/models/anime.dart';
+import 'package:mikomi/features/home/data/home_feed_data.dart';
+import 'package:mikomi/features/home/models/home_anime_model.dart';
 import 'package:mikomi/shared/skeleton.dart';
 import 'package:mikomi/config/themes/app_colors.dart';
 import 'package:mikomi/config/routes/app_routes.dart';
@@ -18,11 +18,11 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage>
     with AutomaticKeepAliveClientMixin {
-  final BangumiBasis _homeRepository = BangumiBasis();
+  final HomeFeedData _homeRepository = HomeFeedData();
   final ScrollController _scrollController = ScrollController();
 
-  List<Anime> _trendsList = [];
-  List<Anime> _bannerList = [];
+  List<HomeAnimeModel> _trendsList = [];
+  List<HomeAnimeModel> _bannerList = [];
   bool _isLoading = true;
   bool _isLoadingMore = false;
   int _currentOffset = 0;
@@ -161,7 +161,7 @@ class _HomePageState extends State<HomePage>
               child: _isLoading
                   ? _buildRecommendSkeleton()
                   : HomeDisplay(
-                      bangumiList: _trendsList,
+                      animeList: _trendsList,
                       isLoading: _isLoadingMore,
                       onLoadMore: _loadMoreData,
                     ),

@@ -1,4 +1,4 @@
-import 'package:mikomi/core/models/anime.dart';
+import 'package:mikomi/features/home/models/home_anime_model.dart';
 import 'package:mikomi/core/network/dio_client.dart';
 import 'package:mikomi/features/home/data/rank_record.dart';
 
@@ -76,7 +76,7 @@ class AniListRankData {
             .map((e) => e.toString())
             .toList();
 
-        final item = Anime(
+        final item = HomeAnimeModel(
           id: id,
           name:
               titleMap['romaji']?.toString() ??
@@ -100,7 +100,7 @@ class AniListRankData {
           ratingScore: (score100 / 10).clamp(0, 10),
           ratingCount: (media['popularity'] as num?)?.toInt() ?? 0,
           rank: 0,
-          tags: genres.map((g) => BangumiTag(name: g, count: 0)).toList(),
+          tags: genres.map((g) => HomeAnimeTag(name: g, count: 0)).toList(),
           info: '',
         );
 

@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:card_swiper/card_swiper.dart';
 import 'package:mikomi/config/routes/app_routes.dart';
 import 'package:mikomi/config/themes/app_colors.dart';
-import 'package:mikomi/core/models/anime.dart';
+import 'package:mikomi/features/home/models/home_anime_model.dart';
 import 'package:mikomi/shared/cached_image.dart';
 import 'package:mikomi/shared/skeleton.dart';
 
 class BannerSection extends StatefulWidget {
-  final List<Anime> bannerList;
+  final List<HomeAnimeModel> bannerList;
 
   const BannerSection({super.key, this.bannerList = const []});
 
@@ -47,7 +47,7 @@ class _BannerSectionState extends State<BannerSection> {
               onTap: () {
                 Navigator.pushNamed(
                   context,
-                  AppRoutes.bangumiDetail,
+                  AppRoutes.animeDetail,
                   arguments: item,
                 );
               },
