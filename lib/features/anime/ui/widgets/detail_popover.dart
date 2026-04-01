@@ -7,7 +7,7 @@ import 'package:mikomi/core/models/person_comment.dart';
 import 'package:mikomi/core/network/dio_client.dart';
 import 'package:mikomi/features/anime/data/bangumi_detail.dart';
 import 'package:mikomi/features/anime/ui/widgets/dy_comment.dart';
-import 'package:mikomi/features/anime/ui/widgets/detail_person_info.dart';
+import 'package:mikomi/features/anime/ui/widgets/detail_popover_info.dart';
 
 enum InfoType { character, person }
 
@@ -129,7 +129,7 @@ class _DetailPopoverState extends State<DetailPopover>
 
   Widget _buildInfo() {
     if (widget.type == InfoType.character) {
-      return DetailPersonInfo(
+      return DetailPopoverInfo(
         imageUrl: _character?.image ?? '',
         name: _character?.name ?? '',
         nameCN: _character?.nameCN ?? '',
@@ -140,7 +140,7 @@ class _DetailPopoverState extends State<DetailPopover>
         onRetry: _loadInfo,
       );
     } else {
-      return DetailPersonInfo(
+      return DetailPopoverInfo(
         imageUrl: _person?.image ?? '',
         name: _person?.name ?? '',
         nameCN: _person?.nameCN ?? '',

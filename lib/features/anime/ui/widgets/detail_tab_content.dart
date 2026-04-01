@@ -147,44 +147,33 @@ class _DetailTabContentState extends State<DetailTabContent> {
   }
 
   Widget _buildHorizontalGrid<T>(List<T> items, Widget Function(T) builder) {
-    // 交替分配到两行，保持重要角色在前面的同时分散到两行
-    final firstRow = <T>[];
-    final secondRow = <T>[];
+    final columnCount = (items.length / 2).ceil();
 
-    for (int i = 0; i < items.length; i++) {
-      if (i % 2 == 0) {
-        firstRow.add(items[i]);
-      } else {
-        secondRow.add(items[i]);
-      }
-    }
+    return SizedBox(
+      height: 168,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: EdgeInsets.zero,
+        itemCount: columnCount,
+        separatorBuilder: (context, index) => const SizedBox(width: 12),
+        itemBuilder: (context, index) {
+          final firstIndex = index * 2;
+          final secondIndex = firstIndex + 1;
 
-    return Column(
-      children: [
-        SizedBox(
-          height: 80,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            padding: EdgeInsets.zero,
-            itemCount: firstRow.length,
-            separatorBuilder: (context, index) => const SizedBox(width: 12),
-            itemBuilder: (context, index) => builder(firstRow[index]),
-          ),
-        ),
-        if (secondRow.isNotEmpty) ...[
-          const SizedBox(height: 8),
-          SizedBox(
-            height: 80,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              padding: EdgeInsets.zero,
-              itemCount: secondRow.length,
-              separatorBuilder: (context, index) => const SizedBox(width: 12),
-              itemBuilder: (context, index) => builder(secondRow[index]),
-            ),
-          ),
-        ],
-      ],
+          return Column(
+            children: [
+              SizedBox(height: 80, child: builder(items[firstIndex])),
+              const SizedBox(height: 8),
+              SizedBox(
+                height: 80,
+                child: secondIndex < items.length
+                    ? builder(items[secondIndex])
+                    : const SizedBox(width: 160),
+              ),
+            ],
+          );
+        },
+      ),
     );
   }
 
