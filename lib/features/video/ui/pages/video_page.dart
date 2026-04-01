@@ -123,7 +123,7 @@ class _VideoPageState extends State<VideoPage>
       if (mounted) setState(() => _state.showTimeoutHint = true);
     });
     _saveHistoryTimer = Timer.periodic(const Duration(seconds: 2), (_) {
-      _saveWatchHistory();
+      _saveHistoryModel();
     });
   }
 
@@ -226,7 +226,7 @@ class _VideoPageState extends State<VideoPage>
 
   Future<void> _playEpisode(Episode episode) async {
     if (episode.number == _state.currentEpisode) return;
-    _saveWatchHistory();
+    _saveHistoryModel();
     await _playerController.stop();
     if (!mounted) return;
     setState(() {
@@ -307,8 +307,8 @@ class _VideoPageState extends State<VideoPage>
     await _pluginManager.init();
   }
 
-  void _saveWatchHistory() {
-    _historyManager.saveWatchHistory(
+  void _saveHistoryModel() {
+    _historyManager.saveHistoryModel(
       bangumiId: widget.bangumiId,
       title: widget.title,
       animeTitle: widget.animeTitle,
@@ -342,7 +342,7 @@ class _VideoPageState extends State<VideoPage>
   void dispose() {
     _timeoutTimer?.cancel();
     _saveHistoryTimer?.cancel();
-    _saveWatchHistory();
+    _saveHistoryModel();
     try {
       _playerController.dispose();
     } catch (e) {

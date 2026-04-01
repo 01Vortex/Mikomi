@@ -1,20 +1,19 @@
-class WatchHistory {
-  final int bangumiId;
-  final String bangumiName;
-  final String bangumiNameCn;
+import 'package:mikomi/features/my/models/my_anime_ref_model.dart';
+
+class HistoryModel extends MyAnimeRefModel {
   final int lastWatchEpisode;
   final String lastWatchEpisodeName;
   final DateTime lastWatchTime;
   final String pluginName;
   final Duration progress;
-  final Duration duration; // 视频总时长
+  final Duration duration;
   final String cachedPlayUrl;
   final DateTime? cachedPlayUrlTime;
 
-  WatchHistory({
-    required this.bangumiId,
-    required this.bangumiName,
-    required this.bangumiNameCn,
+  HistoryModel({
+    required super.bangumiId,
+    required super.bangumiName,
+    required super.bangumiNameCn,
     required this.lastWatchEpisode,
     required this.lastWatchEpisodeName,
     required this.lastWatchTime,
@@ -24,11 +23,6 @@ class WatchHistory {
     this.cachedPlayUrl = '',
     this.cachedPlayUrlTime,
   });
-
-  String get displayName =>
-      bangumiNameCn.isNotEmpty ? bangumiNameCn : bangumiName;
-
-  String get title => displayName;
 
   String get episodeDisplay => lastWatchEpisodeName.isNotEmpty
       ? lastWatchEpisodeName
@@ -44,9 +38,7 @@ class WatchHistory {
 
   Map<String, dynamic> toJson() {
     return {
-      'bangumiId': bangumiId,
-      'bangumiName': bangumiName,
-      'bangumiNameCn': bangumiNameCn,
+      ...toBaseJson(),
       'lastWatchEpisode': lastWatchEpisode,
       'lastWatchEpisodeName': lastWatchEpisodeName,
       'lastWatchTime': lastWatchTime.toIso8601String(),
@@ -58,8 +50,8 @@ class WatchHistory {
     };
   }
 
-  factory WatchHistory.fromJson(Map<String, dynamic> json) {
-    return WatchHistory(
+  factory HistoryModel.fromJson(Map<String, dynamic> json) {
+    return HistoryModel(
       bangumiId: json['bangumiId'] ?? 0,
       bangumiName: json['bangumiName'] ?? '',
       bangumiNameCn: json['bangumiNameCn'] ?? '',

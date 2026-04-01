@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:mikomi/features/my/models/collection_item.dart';
+import 'package:mikomi/features/my/models/collection_model.dart';
 import 'package:mikomi/core/services/collection_service.dart';
 import 'package:mikomi/core/services/collection_notifier.dart';
 import 'package:mikomi/features/anime/ui/pages/anime_page.dart';
@@ -19,7 +19,7 @@ class CollectTabContent extends StatefulWidget {
 class _CollectTabContentState extends State<CollectTabContent> {
   final CollectionService _service = CollectionService();
   final CollectionNotifier _notifier = CollectionNotifier();
-  List<CollectionItem> _items = [];
+  List<CollectionModel> _items = [];
   bool _isLoading = true;
 
   @override
@@ -74,7 +74,7 @@ class _CollectTabContentState extends State<CollectTabContent> {
           : Column(
               children: _items
                   .map(
-                    (item) => _CollectionItemCard(
+                    (item) => _CollectionModelCard(
                       key: ValueKey(item.bangumiId),
                       item: item,
                       onDeleted: _load,
@@ -86,21 +86,21 @@ class _CollectTabContentState extends State<CollectTabContent> {
   }
 }
 
-class _CollectionItemCard extends StatefulWidget {
-  final CollectionItem item;
+class _CollectionModelCard extends StatefulWidget {
+  final CollectionModel item;
   final VoidCallback onDeleted;
 
-  const _CollectionItemCard({
+  const _CollectionModelCard({
     super.key,
     required this.item,
     required this.onDeleted,
   });
 
   @override
-  State<_CollectionItemCard> createState() => _CollectionItemCardState();
+  State<_CollectionModelCard> createState() => _CollectionModelCardState();
 }
 
-class _CollectionItemCardState extends State<_CollectionItemCard> {
+class _CollectionModelCardState extends State<_CollectionModelCard> {
   final BangumiService _bangumiService = BangumiService();
   final CollectionService _collectionService = CollectionService();
 

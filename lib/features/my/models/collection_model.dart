@@ -1,33 +1,27 @@
-class CollectionItem {
-  final int bangumiId;
-  final String bangumiName;
-  final String bangumiNameCn;
+import 'package:mikomi/features/my/models/my_anime_ref_model.dart';
+
+class CollectionModel extends MyAnimeRefModel {
   final String coverUrl;
   final DateTime collectedAt;
 
-  CollectionItem({
-    required this.bangumiId,
-    required this.bangumiName,
-    required this.bangumiNameCn,
+  CollectionModel({
+    required super.bangumiId,
+    required super.bangumiName,
+    required super.bangumiNameCn,
     required this.coverUrl,
     required this.collectedAt,
   });
 
-  String get displayName =>
-      bangumiNameCn.isNotEmpty ? bangumiNameCn : bangumiName;
-
   Map<String, dynamic> toJson() {
     return {
-      'bangumiId': bangumiId,
-      'bangumiName': bangumiName,
-      'bangumiNameCn': bangumiNameCn,
+      ...toBaseJson(),
       'coverUrl': coverUrl,
       'collectedAt': collectedAt.toIso8601String(),
     };
   }
 
-  factory CollectionItem.fromJson(Map<String, dynamic> json) {
-    return CollectionItem(
+  factory CollectionModel.fromJson(Map<String, dynamic> json) {
+    return CollectionModel(
       bangumiId: json['bangumiId'] ?? 0,
       bangumiName: json['bangumiName'] ?? '',
       bangumiNameCn: json['bangumiNameCn'] ?? '',

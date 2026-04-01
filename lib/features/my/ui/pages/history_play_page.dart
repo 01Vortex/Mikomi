@@ -1,21 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:mikomi/core/services/watch_history_service.dart';
-import 'package:mikomi/features/my/models/watch_history.dart';
+import 'package:mikomi/features/my/models/history_model.dart';
 import 'package:mikomi/features/video/ui/pages/video_page.dart';
 import 'package:mikomi/shared/cached_image.dart';
 import 'package:mikomi/shared/skeleton.dart';
 import 'package:mikomi/core/services/bangumi_service.dart';
 
-class WatchHistoryPage extends StatefulWidget {
-  const WatchHistoryPage({super.key});
+class HistoryModelPage extends StatefulWidget {
+  const HistoryModelPage({super.key});
 
   @override
-  State<WatchHistoryPage> createState() => _WatchHistoryPageState();
+  State<HistoryModelPage> createState() => _HistoryModelPageState();
 }
 
-class _WatchHistoryPageState extends State<WatchHistoryPage> {
-  final WatchHistoryService _historyService = WatchHistoryService();
-  List<WatchHistory> _histories = [];
+class _HistoryModelPageState extends State<HistoryModelPage> {
+  final HistoryModelService _historyService = HistoryModelService();
+  List<HistoryModel> _histories = [];
   final Set<int> _selectedIds = {};
   bool _isLoading = true;
   bool _isSelectionMode = false;
@@ -136,8 +136,8 @@ class _WatchHistoryPageState extends State<WatchHistoryPage> {
     }
   }
 
-  Map<String, List<WatchHistory>> _groupByDate() {
-    final Map<String, List<WatchHistory>> grouped = {};
+  Map<String, List<HistoryModel>> _groupByDate() {
+    final Map<String, List<HistoryModel>> grouped = {};
     final now = DateTime.now();
 
     for (var history in _histories) {
@@ -247,7 +247,7 @@ class _WatchHistoryPageState extends State<WatchHistoryPage> {
                             ),
                             const SizedBox(width: 12),
                             Expanded(
-                              child: _WatchHistoryCard(
+                              child: _HistoryModelCard(
                                 history: history,
                                 isSelected: _selectedIds.contains(
                                   history.bangumiId,
@@ -360,15 +360,15 @@ class _WatchHistoryPageState extends State<WatchHistoryPage> {
   }
 }
 
-class _WatchHistoryCard extends StatefulWidget {
-  final WatchHistory history;
+class _HistoryModelCard extends StatefulWidget {
+  final HistoryModel history;
   final VoidCallback onTap;
   final VoidCallback? onLongPress;
   final bool isSelected;
   final bool isSelectionMode;
   final double cardHeight;
 
-  const _WatchHistoryCard({
+  const _HistoryModelCard({
     required this.history,
     required this.onTap,
     this.onLongPress,
@@ -378,10 +378,10 @@ class _WatchHistoryCard extends StatefulWidget {
   });
 
   @override
-  State<_WatchHistoryCard> createState() => _WatchHistoryCardState();
+  State<_HistoryModelCard> createState() => _HistoryModelCardState();
 }
 
-class _WatchHistoryCardState extends State<_WatchHistoryCard> {
+class _HistoryModelCardState extends State<_HistoryModelCard> {
   final BangumiService _bangumiService = BangumiService();
   String? _coverUrl;
   bool _isLoading = true;

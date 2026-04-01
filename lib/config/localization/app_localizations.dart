@@ -269,7 +269,7 @@ class AppLocalizations {
   String get comingSoon => translate('coming_soon');
   String get noResults => translate('no_results');
   String get loading => translate('loading');
-  String get watchHistory => translate('watch_history');
+  String get HistoryModel => translate('watch_history');
   String get noHistory => translate('no_history');
   String get more => translate('more');
   String get recommend => translate('recommend');

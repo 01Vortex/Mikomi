@@ -1,14 +1,14 @@
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
-import 'package:mikomi/features/my/models/watch_history.dart';
+import 'package:mikomi/features/my/models/history_model.dart';
 import 'package:mikomi/core/services/history_notifier.dart';
 
-class WatchHistoryService {
+class HistoryModelService {
   static const String _key = 'watch_history';
   static const int _maxHistoryCount = 50;
   final HistoryNotifier _notifier = HistoryNotifier();
 
-  Future<List<WatchHistory>> getHistories() async {
+  Future<List<HistoryModel>> getHistories() async {
     try {
       final prefs = await SharedPreferences.getInstance();
       final String? historiesJson = prefs.getString(_key);
@@ -16,13 +16,13 @@ class WatchHistoryService {
       if (historiesJson == null) return [];
 
       final List<dynamic> decoded = json.decode(historiesJson);
-      return decoded.map((item) => WatchHistory.fromJson(item)).toList();
+      return decoded.map((item) => HistoryModel.fromJson(item)).toList();
     } catch (e) {
       return [];
     }
   }
 
-  Future<void> addHistory(WatchHistory history) async {
+  Future<void> addHistory(HistoryModel history) async {
     try {
       final prefs = await SharedPreferences.getInstance();
       final histories = await getHistories();

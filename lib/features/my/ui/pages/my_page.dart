@@ -6,7 +6,7 @@ import 'package:mikomi/features/my/ui/pages/history_play_page.dart';
 import 'package:mikomi/core/services/watch_history_service.dart';
 import 'package:mikomi/core/services/history_notifier.dart';
 import 'package:mikomi/core/services/auth_service.dart';
-import 'package:mikomi/features/my/models/watch_history.dart';
+import 'package:mikomi/features/my/models/history_model.dart';
 import 'package:mikomi/shared/theme_extensions.dart';
 import 'package:mikomi/features/my/ui/widgets/profile_action_tabs.dart';
 import 'package:mikomi/features/my/ui/widgets/history_tab_content.dart';
@@ -20,9 +20,9 @@ class MyPage extends StatefulWidget {
 }
 
 class _MyPageState extends State<MyPage> {
-  final WatchHistoryService _historyService = WatchHistoryService();
+  final HistoryModelService _historyService = HistoryModelService();
   final HistoryNotifier _historyNotifier = HistoryNotifier();
-  List<WatchHistory> _histories = [];
+  List<HistoryModel> _histories = [];
   bool _isLoading = true;
   bool _isDescending = true;
   int _selectedTab = 0;
@@ -55,7 +55,7 @@ class _MyPageState extends State<MyPage> {
     }
   }
 
-  List<WatchHistory> get _sortedHistories {
+  List<HistoryModel> get _sortedHistories {
     return _isDescending ? _histories : _histories.reversed.toList();
   }
 
@@ -74,7 +74,7 @@ class _MyPageState extends State<MyPage> {
   void _onMoreTap() {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => const WatchHistoryPage()),
+      MaterialPageRoute(builder: (context) => const HistoryModelPage()),
     );
   }
 

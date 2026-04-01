@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:mikomi/features/my/models/watch_history.dart';
+import 'package:mikomi/features/my/models/history_model.dart';
 import 'package:mikomi/core/services/watch_history_service.dart';
 import 'package:mikomi/core/services/bangumi_service.dart';
 import 'package:mikomi/features/video/ui/pages/video_page.dart';
@@ -9,7 +9,7 @@ import 'package:mikomi/shared/skeleton.dart';
 
 class ProfileTabContent extends StatelessWidget {
   final int selectedTab;
-  final List<WatchHistory> histories;
+  final List<HistoryModel> histories;
   final bool isLoading;
   final bool isDescending;
   final VoidCallback onSortToggle;
@@ -126,7 +126,7 @@ class ProfileTabContent extends StatelessWidget {
 
 // 历史记录项组件
 class _HistoryItem extends StatefulWidget {
-  final WatchHistory history;
+  final HistoryModel history;
 
   const _HistoryItem({required this.history});
 
@@ -136,7 +136,7 @@ class _HistoryItem extends StatefulWidget {
 
 class _HistoryItemState extends State<_HistoryItem> {
   final BangumiService _bangumiService = BangumiService();
-  final WatchHistoryService _historyService = WatchHistoryService();
+  final HistoryModelService _historyService = HistoryModelService();
   String? _coverUrl;
 
   @override
