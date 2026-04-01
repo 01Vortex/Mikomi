@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../../shared/widgets/main_page.dart';
 import '../../features/anime/ui/pages/anime_page.dart';
 import '../../features/home/ui/pages/schedule_page.dart';
-import '../../features/home/ui/pages/ranking_page.dart';
+import '../../features/home/ui/pages/rank_page.dart';
 import '../../features/home/ui/pages/category_page.dart';
 import '../../features/settings/video_play/pages/plugin_manage_page.dart';
 import '../../features/settings/video_play/pages/plugin_editor_page.dart';
@@ -36,7 +36,7 @@ class AppRoutes {
     return {
       main: (context) => const MainPage(),
       schedule: (context) => const SchedulePage(),
-      ranking: (context) => const RankingPage(),
+      ranking: (context) => const RankPage(),
       category: (context) => const CategoryPage(),
       pluginManage: (context) => const PluginManagePage(),
       pluginShop: (context) => const PluginShopPage(),
