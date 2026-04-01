@@ -342,6 +342,7 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
 
     return VideoGestureDetector(
       playerController: widget.playerController,
+      enabled: !_showControls && !_isLocked,
       child: Stack(
         children: [
           // 点击区域切换控制栏

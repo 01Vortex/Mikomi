@@ -498,7 +498,7 @@ class _SmallscreenVideoState extends State<SmallscreenVideo> {
 
     return VideoGestureDetector(
       playerController: widget.playerController,
-      enabled: showPlayer,
+      enabled: showPlayer && !_lockPanel,
       child: GestureDetector(
         onTap: showPlayer ? _handleTap : null,
         onDoubleTap: showPlayer ? _handleDoubleTap : null,
