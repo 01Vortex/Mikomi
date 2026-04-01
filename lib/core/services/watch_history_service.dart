@@ -1,6 +1,6 @@
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
-import 'package:mikomi/core/models/watch_history.dart';
+import 'package:mikomi/features/my/models/watch_history.dart';
 import 'package:mikomi/core/services/history_notifier.dart';
 
 class WatchHistoryService {

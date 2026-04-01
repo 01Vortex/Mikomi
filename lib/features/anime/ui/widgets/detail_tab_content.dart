@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:mikomi/config/themes/app_colors.dart';
 import 'package:mikomi/core/models/anime.dart';
-import 'package:mikomi/core/models/character_item.dart';
-import 'package:mikomi/core/models/staff_item.dart';
-import 'package:mikomi/core/network/dio_client.dart';
+import 'package:mikomi/features/anime/models/anime_related_info_model.dart';
+import 'package:mikomi/features/anime/models/staff_info_model.dart';
 import 'package:mikomi/features/anime/data/bangumi_detail.dart';
 import 'package:mikomi/features/anime/ui/widgets/detail_popover.dart';
 import 'package:mikomi/shared/scrolling_text.dart';
@@ -20,8 +19,8 @@ class DetailTabContent extends StatefulWidget {
 
 class _DetailTabContentState extends State<DetailTabContent> {
   late final BangumiDetail _repository;
-  List<CharacterItem> _characters = [];
-  List<StaffItem> _staff = [];
+  List<AnimeRelatedInfoModel> _characters = [];
+  List<StaffInfoModel> _staff = [];
   bool _isLoadingCharacters = false;
   bool _isLoadingStaff = false;
 
@@ -46,8 +45,8 @@ class _DetailTabContentState extends State<DetailTabContent> {
     ]);
 
     if (mounted) {
-      final characters = results[0] as List<CharacterItem>;
-      final staff = results[1] as List<StaffItem>;
+      final characters = results[0] as List<AnimeRelatedInfoModel>;
+      final staff = results[1] as List<StaffInfoModel>;
 
       print('加载完成 - 角色数量: ${characters.length}, 制作人员数量: ${staff.length}');
 
@@ -228,11 +227,11 @@ class _DetailTabContentState extends State<DetailTabContent> {
     );
   }
 
-  Widget _buildCharacterCard(CharacterItem character) {
+  Widget _buildCharacterCard(AnimeRelatedInfoModel character) {
     return InkWell(
       onTap: () {
         print('点击角色卡片: ${character.name}');
-        _showCharacterDetail(context, character.id);
+        _showCharacterInfoModel(context, character.id);
       },
       child: SizedBox(
         width: 160,
@@ -321,11 +320,11 @@ class _DetailTabContentState extends State<DetailTabContent> {
     );
   }
 
-  Widget _buildStaffCard(StaffItem staffItem) {
+  Widget _buildStaffCard(StaffInfoModel StaffInfoModel) {
     return InkWell(
       onTap: () {
-        print('点击制作人员卡片: ${staffItem.staff.name}');
-        _showPersonDetail(context, staffItem.staff.id);
+        print('点击制作人员卡片: ${StaffInfoModel.staff.name}');
+        _showPersonInfoModel(context, StaffInfoModel.staff.id);
       },
       child: SizedBox(
         width: 160,
@@ -339,9 +338,9 @@ class _DetailTabContentState extends State<DetailTabContent> {
                 color: Theme.of(context).colorScheme.surfaceContainerHighest,
               ),
               child: ClipOval(
-                child: (staffItem.staff.images?.grid ?? '').isNotEmpty
+                child: (StaffInfoModel.staff.images?.grid ?? '').isNotEmpty
                     ? Image.network(
-                        staffItem.staff.images!.grid,
+                        StaffInfoModel.staff.images!.grid,
                         width: 60,
                         height: 60,
                         fit: BoxFit.cover,
@@ -362,7 +361,7 @@ class _DetailTabContentState extends State<DetailTabContent> {
                     children: [
                       Expanded(
                         child: ScrollingText(
-                          text: staffItem.staff.name,
+                          text: StaffInfoModel.staff.name,
                           style: const TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w500,
@@ -370,7 +369,7 @@ class _DetailTabContentState extends State<DetailTabContent> {
                           height: 18,
                         ),
                       ),
-                      if (staffItem.positionText.isNotEmpty) ...[
+                      if (StaffInfoModel.positionText.isNotEmpty) ...[
                         const SizedBox(width: 4),
                         Flexible(
                           child: Container(
@@ -383,7 +382,7 @@ class _DetailTabContentState extends State<DetailTabContent> {
                               borderRadius: BorderRadius.circular(4),
                             ),
                             child: Text(
-                              staffItem.positionText,
+                              StaffInfoModel.positionText,
                               style: const TextStyle(
                                 fontSize: 10,
                                 color: AppColors.textSecondary,
@@ -396,10 +395,10 @@ class _DetailTabContentState extends State<DetailTabContent> {
                       ],
                     ],
                   ),
-                  if (staffItem.staff.nameCN.isNotEmpty) ...[
+                  if (StaffInfoModel.staff.nameCN.isNotEmpty) ...[
                     const SizedBox(height: 4),
                     ScrollingText(
-                      text: staffItem.staff.nameCN,
+                      text: StaffInfoModel.staff.nameCN,
                       style: const TextStyle(
                         fontSize: 11,
                         color: AppColors.textSecondary,
@@ -417,7 +416,7 @@ class _DetailTabContentState extends State<DetailTabContent> {
   }
 }
 
-void _showCharacterDetail(BuildContext context, int characterId) {
+void _showCharacterInfoModel(BuildContext context, int characterId) {
   showModalBottomSheet(
     context: context,
     isScrollControlled: true,
@@ -429,7 +428,7 @@ void _showCharacterDetail(BuildContext context, int characterId) {
   );
 }
 
-void _showPersonDetail(BuildContext context, int personId) {
+void _showPersonInfoModel(BuildContext context, int personId) {
   showModalBottomSheet(
     context: context,
     isScrollControlled: true,

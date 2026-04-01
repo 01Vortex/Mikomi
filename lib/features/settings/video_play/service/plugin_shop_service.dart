@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:dio/dio.dart';
-import 'package:mikomi/core/models/video_plugin.dart';
+import 'package:mikomi/features/video/models/video_plugin.dart';
 
 class PluginHTTPItem {
   final String name;

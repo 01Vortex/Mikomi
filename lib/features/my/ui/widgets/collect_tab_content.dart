@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:mikomi/core/models/collection_item.dart';
+import 'package:mikomi/features/my/models/collection_item.dart';
 import 'package:mikomi/core/services/collection_service.dart';
 import 'package:mikomi/core/services/collection_notifier.dart';
 import 'package:mikomi/features/anime/ui/pages/anime_page.dart';

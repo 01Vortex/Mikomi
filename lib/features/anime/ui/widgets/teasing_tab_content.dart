@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mikomi/config/themes/app_colors.dart';
 import 'package:mikomi/core/models/anime.dart';
-import 'package:mikomi/core/models/comment_item.dart';
-import 'package:mikomi/core/network/dio_client.dart';
+import 'package:mikomi/features/anime/models/anime_teasing_model.dart';
 import 'package:mikomi/features/anime/data/bangumi_teasing.dart';
 import 'package:mikomi/shared/comment_card.dart';
 import 'package:mikomi/shared/skeleton.dart';

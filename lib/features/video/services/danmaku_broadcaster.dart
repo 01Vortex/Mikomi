@@ -1,5 +1,5 @@
 import 'package:canvas_danmaku/canvas_danmaku.dart';
-import 'package:mikomi/core/models/danmaku.dart';
+import 'package:mikomi/features/video/models/danmaku.dart';
 
 /// 弹幕广播管理器
 /// 小屏和全屏的 [DanmakuController] 都注册到这里

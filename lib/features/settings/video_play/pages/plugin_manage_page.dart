@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:mikomi/core/models/video_plugin.dart';
+import 'package:mikomi/features/video/models/video_plugin.dart';
 import 'package:mikomi/features/settings/video_play/service/plugin_manager_service.dart';
 import 'package:mikomi/shared/message_dialog.dart';
 

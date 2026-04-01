@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mikomi/shared/skeleton.dart';
-import 'package:mikomi/core/models/episode.dart';
+import 'package:mikomi/features/video/models/episode.dart';
 import 'package:mikomi/features/video/ui/widgets/smallscreen_episcode.dart';
 
 class EpiscodeTabContent extends StatelessWidget {

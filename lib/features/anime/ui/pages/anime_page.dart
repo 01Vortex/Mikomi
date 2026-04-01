@@ -7,7 +7,7 @@ import 'package:mikomi/features/anime/ui/widgets/detail_tab_content.dart';
 import 'package:mikomi/features/anime/ui/widgets/teasing_tab_content.dart';
 import 'package:mikomi/features/anime/selector/collection_status_selector.dart';
 import 'package:mikomi/features/anime/ui/widgets/play_button.dart';
-import 'package:mikomi/core/models/collection_item.dart';
+import 'package:mikomi/features/my/models/collection_item.dart';
 import 'package:mikomi/core/services/collection_service.dart';
 import 'package:mikomi/features/anime/selector/video_source_selector.dart';
 import 'package:mikomi/features/settings/video_play/service/plugin_manager_service.dart';

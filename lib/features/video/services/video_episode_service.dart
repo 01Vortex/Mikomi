@@ -1,5 +1,5 @@
 import 'package:flutter/foundation.dart';
-import 'package:mikomi/core/models/episode.dart';
+import 'package:mikomi/features/video/models/episode.dart';
 import 'package:mikomi/core/services/bangumi_episodes_service.dart';
 import 'package:mikomi/features/video/services/video_content_service.dart';
 import 'package:mikomi/features/video/services/video_source_provider.dart'

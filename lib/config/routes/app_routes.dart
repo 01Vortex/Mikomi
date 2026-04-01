@@ -14,7 +14,7 @@ import '../../features/settings/video_play/pages/hardware_decode_page.dart';
 import '../../features/settings/video_play/pages/play_setting_page.dart';
 import '../../features/settings/video_play/pages/video_renderer_page.dart';
 import '../../core/models/anime.dart';
-import '../../core/models/video_plugin.dart';
+import '../../features/video/models/video_plugin.dart';
 
 class AppRoutes {
   static const String main = '/';

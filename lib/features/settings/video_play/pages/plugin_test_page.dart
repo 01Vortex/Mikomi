@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
-import 'package:mikomi/core/models/video_plugin.dart';
+import 'package:mikomi/features/video/models/video_plugin.dart';
 import 'package:mikomi/core/models/road.dart';
 import 'package:mikomi/features/video/services/video_content_service.dart';
 import 'package:mikomi/features/settings/video_play/service/plugin_test_service.dart';

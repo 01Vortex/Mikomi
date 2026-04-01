@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:mikomi/config/themes/app_colors.dart';
-import 'package:mikomi/core/models/character_detail.dart';
-import 'package:mikomi/core/models/character_comment.dart';
-import 'package:mikomi/core/models/person_detail.dart';
-import 'package:mikomi/core/models/person_comment.dart';
-import 'package:mikomi/core/network/dio_client.dart';
+import 'package:mikomi/features/anime/models/character_info_model.dart';
+import 'package:mikomi/features/anime/models/character_teasing_model.dart';
+import 'package:mikomi/features/anime/models/person_info_model.dart';
+import 'package:mikomi/features/anime/models/person_teasing_model.dart';
 import 'package:mikomi/features/anime/data/bangumi_detail.dart';
 import 'package:mikomi/features/anime/ui/widgets/dy_comment.dart';
 import 'package:mikomi/features/anime/ui/widgets/detail_popover_info.dart';
@@ -26,8 +25,8 @@ class _DetailPopoverState extends State<DetailPopover>
   late final BangumiDetail _repository;
   late final TabController _tabController;
 
-  CharacterDetail? _character;
-  PersonDetail? _person;
+  CharacterInfoModel? _character;
+  PersonInfoModel? _person;
   List<dynamic> _comments = [];
   bool _isLoadingInfo = true;
   bool _isLoadingComments = true;
@@ -51,7 +50,7 @@ class _DetailPopoverState extends State<DetailPopover>
     setState(() => _isLoadingInfo = true);
 
     if (widget.type == InfoType.character) {
-      final character = await _repository.getCharacterDetail(widget.id);
+      final character = await _repository.getCharacterInfoModel(widget.id);
       if (mounted) {
         setState(() {
           _character = character;
@@ -59,7 +58,7 @@ class _DetailPopoverState extends State<DetailPopover>
         });
       }
     } else {
-      final person = await _repository.getPersonDetail(widget.id);
+      final person = await _repository.getPersonInfoModel(widget.id);
       if (mounted) {
         setState(() {
           _person = person;
@@ -73,7 +72,7 @@ class _DetailPopoverState extends State<DetailPopover>
     setState(() => _isLoadingComments = true);
 
     if (widget.type == InfoType.character) {
-      final comments = await _repository.getCharacterComments(widget.id);
+      final comments = await _repository.getCharacterTeasingModels(widget.id);
       if (mounted) {
         setState(() {
           _comments = comments;
@@ -81,7 +80,7 @@ class _DetailPopoverState extends State<DetailPopover>
         });
       }
     } else {
-      final comments = await _repository.getPersonComments(widget.id);
+      final comments = await _repository.getPersonTeasingModels(widget.id);
       if (mounted) {
         setState(() {
           _comments = comments;
@@ -155,8 +154,8 @@ class _DetailPopoverState extends State<DetailPopover>
 
   Widget _buildComments() {
     if (widget.type == InfoType.character) {
-      return DyComment<CharacterComment>(
-        comments: _comments.cast<CharacterComment>(),
+      return DyComment<CharacterTeasingModel>(
+        comments: _comments.cast<CharacterTeasingModel>(),
         isLoading: _isLoadingComments,
         onRetry: _loadComments,
         getUserNickname: (comment) => comment.user.nickname,
@@ -166,8 +165,8 @@ class _DetailPopoverState extends State<DetailPopover>
         getReplies: (comment) => comment.replies,
       );
     } else {
-      return DyComment<PersonComment>(
-        comments: _comments.cast<PersonComment>(),
+      return DyComment<PersonTeasingModel>(
+        comments: _comments.cast<PersonTeasingModel>(),
         isLoading: _isLoadingComments,
         onRetry: _loadComments,
         getUserNickname: (comment) => comment.user.nickname,

@@ -8,7 +8,7 @@ import 'package:mikomi/features/video/services/bangumi_danmaku_service.dart';
 import 'package:mikomi/features/video/services/danmaku_broadcaster.dart';
 import 'package:mikomi/features/video/ui/pages/fullscreen_video_page.dart';
 import 'package:mikomi/features/video/ui/widgets/video_gesture.dart';
-import 'package:mikomi/core/models/episode.dart';
+import 'package:mikomi/features/video/models/episode.dart';
 import 'package:mikomi/features/settings/video_play/service/play_setting_service.dart';
 import 'package:mikomi/features/settings/danmaku/danmaku_setting_service.dart';
 

@@ -1,4 +1,4 @@
-class CharacterDetail {
+class CharacterInfoModel {
   final int id;
   final String name;
   final String nameCN;
@@ -6,7 +6,7 @@ class CharacterDetail {
   final String summary;
   final String image;
 
-  CharacterDetail({
+  CharacterInfoModel({
     required this.id,
     required this.name,
     required this.nameCN,
@@ -15,8 +15,8 @@ class CharacterDetail {
     required this.image,
   });
 
-  factory CharacterDetail.fromJson(Map<String, dynamic> json) {
-    return CharacterDetail(
+  factory CharacterInfoModel.fromJson(Map<String, dynamic> json) {
+    return CharacterInfoModel(
       id: json['id'] ?? 0,
       name: json['name'] ?? '',
       nameCN: json['nameCN'] ?? '',

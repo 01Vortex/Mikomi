@@ -1,5 +1,5 @@
 import 'package:mikomi/core/network/dio_client.dart';
-import 'package:mikomi/core/models/pilgrimage_item.dart';
+import 'package:mikomi/features/pilgrimage/models/pilgrimage_item.dart';
 
 class PilgrimageService {
   final DioClient _dioClient = DioClient();

@@ -37,14 +37,14 @@ class Actor {
   }
 }
 
-class CharacterItem {
+class AnimeRelatedInfoModel {
   final int id;
   final String name;
   final String relation;
   final CharacterImages images;
   final List<Actor> actors;
 
-  CharacterItem({
+  AnimeRelatedInfoModel({
     required this.id,
     required this.name,
     required this.relation,
@@ -52,14 +52,14 @@ class CharacterItem {
     required this.actors,
   });
 
-  factory CharacterItem.fromJson(Map<String, dynamic> json) {
+  factory AnimeRelatedInfoModel.fromJson(Map<String, dynamic> json) {
     final actorsList =
         (json['actors'] as List?)
             ?.map((item) => Actor.fromJson(item as Map<String, dynamic>))
             .toList() ??
         [];
 
-    return CharacterItem(
+    return AnimeRelatedInfoModel(
       id: json['id'] ?? 0,
       name: json['name'] ?? '',
       relation: json['relation'] ?? '未知',

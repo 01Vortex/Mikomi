@@ -1,6 +1,6 @@
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
-import 'package:mikomi/core/models/collection_item.dart';
+import 'package:mikomi/features/my/models/collection_item.dart';
 import 'package:mikomi/core/services/collection_notifier.dart';
 
 class CollectionService {

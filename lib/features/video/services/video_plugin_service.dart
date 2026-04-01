@@ -1,5 +1,5 @@
 import 'package:flutter/foundation.dart';
-import 'package:mikomi/core/models/video_plugin.dart';
+import 'package:mikomi/features/video/models/video_plugin.dart';
 import 'package:mikomi/features/settings/video_play/service/plugin_manager_service.dart';
 
 class VideoPluginService {

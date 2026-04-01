@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mikomi/config/themes/app_colors.dart';
-import 'package:mikomi/core/models/comment_item.dart';
+import 'package:mikomi/features/anime/models/anime_teasing_model.dart';
 import 'package:mikomi/shared/cached_image.dart';
 
 class CommentCard extends StatelessWidget {
@@ -89,7 +89,7 @@ class CommentCard extends StatelessWidget {
                     ),
                   ),
                 Text(
-                  commentItem.comment.comment,
+                  commentItem.comment.content,
                   style: const TextStyle(
                     fontSize: 14,
                     height: 1.5,

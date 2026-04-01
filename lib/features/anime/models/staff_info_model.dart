@@ -59,20 +59,20 @@ class Position {
   }
 }
 
-class StaffItem {
+class StaffInfoModel {
   final Staff staff;
   final List<Position> positions;
 
-  StaffItem({required this.staff, required this.positions});
+  StaffInfoModel({required this.staff, required this.positions});
 
-  factory StaffItem.fromJson(Map<String, dynamic> json) {
+  factory StaffInfoModel.fromJson(Map<String, dynamic> json) {
     final positionsList =
         (json['positions'] as List?)
             ?.map((item) => Position.fromJson(item as Map<String, dynamic>))
             .toList() ??
         [];
 
-    return StaffItem(
+    return StaffInfoModel(
       staff: Staff.fromJson(json['staff'] as Map<String, dynamic>),
       positions: positionsList,
     );

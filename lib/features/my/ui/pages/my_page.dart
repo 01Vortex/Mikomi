@@ -6,7 +6,7 @@ import 'package:mikomi/features/my/ui/pages/history_play_page.dart';
 import 'package:mikomi/core/services/watch_history_service.dart';
 import 'package:mikomi/core/services/history_notifier.dart';
 import 'package:mikomi/core/services/auth_service.dart';
-import 'package:mikomi/core/models/watch_history.dart';
+import 'package:mikomi/features/my/models/watch_history.dart';
 import 'package:mikomi/shared/theme_extensions.dart';
 import 'package:mikomi/features/my/ui/widgets/profile_action_tabs.dart';
 import 'package:mikomi/features/my/ui/widgets/history_tab_content.dart';

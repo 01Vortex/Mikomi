@@ -1,5 +1,5 @@
 import 'package:dio/dio.dart';
-import 'package:mikomi/core/models/episode.dart';
+import 'package:mikomi/features/video/models/episode.dart';
 
 class BangumiEpisodesService {
   final Dio _dio = Dio(

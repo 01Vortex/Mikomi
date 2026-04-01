@@ -1,4 +1,4 @@
-import 'package:mikomi/core/models/watch_history.dart';
+import 'package:mikomi/features/my/models/watch_history.dart';
 import 'package:mikomi/core/services/watch_history_service.dart';
 import 'package:mikomi/features/video/services/video_playback_service.dart';
 

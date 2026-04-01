@@ -7,7 +7,7 @@ import 'package:mikomi/features/video/ui/widgets/comment_tab_content.dart';
 import 'package:mikomi/features/video/ui/widgets/video_tab.dart';
 import 'package:mikomi/features/anime/selector/video_source_selector.dart';
 import 'package:mikomi/features/settings/video_play/service/plugin_manager_service.dart';
-import 'package:mikomi/core/models/episode.dart';
+import 'package:mikomi/features/video/models/episode.dart';
 import 'package:mikomi/features/video/services/video_playback_service.dart';
 import 'package:mikomi/features/settings/danmaku/danmaku_setting_service.dart';
 import 'package:mikomi/features/video/state/video_state_manager.dart';

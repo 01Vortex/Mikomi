@@ -1,16 +1,16 @@
 import 'package:mikomi/core/network/dio_client.dart';
 import 'package:mikomi/core/network/api_constants.dart';
-import 'package:mikomi/core/models/character_item.dart';
-import 'package:mikomi/core/models/character_detail.dart';
-import 'package:mikomi/core/models/character_comment.dart';
-import 'package:mikomi/core/models/person_detail.dart';
-import 'package:mikomi/core/models/person_comment.dart';
-import 'package:mikomi/core/models/staff_item.dart';
+import 'package:mikomi/features/anime/models/anime_related_info_model.dart';
+import 'package:mikomi/features/anime/models/character_info_model.dart';
+import 'package:mikomi/features/anime/models/character_teasing_model.dart';
+import 'package:mikomi/features/anime/models/person_info_model.dart';
+import 'package:mikomi/features/anime/models/person_teasing_model.dart';
+import 'package:mikomi/features/anime/models/staff_info_model.dart';
 
 class BangumiDetail {
   final DioClient _dioClient = DioClient();
 
-  Future<List<CharacterItem>> getCharacters(int id) async {
+  Future<List<AnimeRelatedInfoModel>> getCharacters(int id) async {
     try {
       final url = ApiConstants.formatUrl(
         '${ApiConstants.bangumiApiDomain}/v0/subjects/{0}/characters',
@@ -21,14 +21,14 @@ class BangumiDetail {
       final data = response.data as List<dynamic>;
 
       return data
-          .map((item) => CharacterItem.fromJson(item as Map<String, dynamic>))
+          .map((item) => AnimeRelatedInfoModel.fromJson(item as Map<String, dynamic>))
           .toList();
     } catch (e) {
       return [];
     }
   }
 
-  Future<List<StaffItem>> getStaff(int id) async {
+  Future<List<StaffInfoModel>> getStaff(int id) async {
     try {
       final url = ApiConstants.formatUrl(
         '${ApiConstants.bangumiApiNextDomain}/p1/subjects/{0}/staffs/persons',
@@ -41,14 +41,14 @@ class BangumiDetail {
       if (staffList == null) return [];
 
       return staffList
-          .map((item) => StaffItem.fromJson(item as Map<String, dynamic>))
+          .map((item) => StaffInfoModel.fromJson(item as Map<String, dynamic>))
           .toList();
     } catch (e) {
       return [];
     }
   }
 
-  Future<CharacterDetail?> getCharacterDetail(int characterId) async {
+  Future<CharacterInfoModel?> getCharacterInfoModel(int characterId) async {
     try {
       final url = ApiConstants.formatUrl(
         '${ApiConstants.bangumiApiNextDomain}/p1/characters/{0}',
@@ -56,13 +56,13 @@ class BangumiDetail {
       );
 
       final response = await _dioClient.get(url);
-      return CharacterDetail.fromJson(response.data as Map<String, dynamic>);
+      return CharacterInfoModel.fromJson(response.data as Map<String, dynamic>);
     } catch (e) {
       return null;
     }
   }
 
-  Future<List<CharacterComment>> getCharacterComments(int characterId) async {
+  Future<List<CharacterTeasingModel>> getCharacterTeasingModels(int characterId) async {
     try {
       final url = ApiConstants.formatUrl(
         '${ApiConstants.bangumiApiNextDomain}/p1/characters/{0}/comments',
@@ -74,7 +74,7 @@ class BangumiDetail {
 
       return data
           .map(
-            (item) => CharacterComment.fromJson(item as Map<String, dynamic>),
+            (item) => CharacterTeasingModel.fromJson(item as Map<String, dynamic>),
           )
           .toList();
     } catch (e) {
@@ -82,7 +82,7 @@ class BangumiDetail {
     }
   }
 
-  Future<PersonDetail?> getPersonDetail(int personId) async {
+  Future<PersonInfoModel?> getPersonInfoModel(int personId) async {
     try {
       final url = ApiConstants.formatUrl(
         '${ApiConstants.bangumiApiNextDomain}/p1/persons/{0}',
@@ -90,13 +90,13 @@ class BangumiDetail {
       );
 
       final response = await _dioClient.get(url);
-      return PersonDetail.fromJson(response.data as Map<String, dynamic>);
+      return PersonInfoModel.fromJson(response.data as Map<String, dynamic>);
     } catch (e) {
       return null;
     }
   }
 
-  Future<List<PersonComment>> getPersonComments(int personId) async {
+  Future<List<PersonTeasingModel>> getPersonTeasingModels(int personId) async {
     try {
       final url = ApiConstants.formatUrl(
         '${ApiConstants.bangumiApiNextDomain}/p1/persons/{0}/comments',
@@ -107,7 +107,7 @@ class BangumiDetail {
       final data = response.data as List<dynamic>;
 
       return data
-          .map((item) => PersonComment.fromJson(item as Map<String, dynamic>))
+          .map((item) => PersonTeasingModel.fromJson(item as Map<String, dynamic>))
           .toList();
     } catch (e) {
       return [];

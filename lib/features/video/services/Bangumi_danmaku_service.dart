@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:canvas_danmaku/canvas_danmaku.dart';
-import 'package:mikomi/core/models/danmaku.dart';
+import 'package:mikomi/features/video/models/danmaku.dart';
 import 'package:mikomi/core/services/danmaku_service.dart';
 
 class BangumiDanmakuService {

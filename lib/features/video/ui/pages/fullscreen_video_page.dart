@@ -7,7 +7,7 @@ import 'package:mikomi/features/video/ui/widgets/danmaku_overlay.dart';
 import 'package:mikomi/features/video/ui/widgets/fullscreen_video.dart';
 import 'package:mikomi/features/video/ui/widgets/smallscreen_video.dart';
 import 'package:mikomi/features/video/ui/widgets/video_fit.dart';
-import 'package:mikomi/core/models/episode.dart';
+import 'package:mikomi/features/video/models/episode.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 import 'package:mikomi/features/settings/danmaku/danmaku_setting_service.dart';
 import 'package:mikomi/features/settings/video_play/service/play_setting_service.dart';

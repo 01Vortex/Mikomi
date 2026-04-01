@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mikomi/features/video/ui/widgets/smallscreen_video.dart';
 import 'package:mikomi/features/video/services/video_playback_service.dart';
-import 'package:mikomi/core/models/episode.dart';
+import 'package:mikomi/features/video/models/episode.dart';
 
 class VideoPlayerArea extends StatelessWidget {
   final double? videoHeight;

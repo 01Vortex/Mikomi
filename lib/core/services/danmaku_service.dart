@@ -2,9 +2,9 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:crypto/crypto.dart';
 import 'package:dio/dio.dart';
-import 'package:mikomi/core/models/danmaku.dart';
-import 'package:mikomi/core/models/danmaku_search_response.dart';
-import 'package:mikomi/core/models/danmaku_episode_response.dart';
+import 'package:mikomi/features/video/models/danmaku.dart';
+import 'package:mikomi/features/video/models/danmaku_search_response.dart';
+import 'package:mikomi/features/video/models/danmaku_episode_response.dart';
 
 class DanmakuService {
   static const String _dandanAppId = 'kvpx7qkqjh';
