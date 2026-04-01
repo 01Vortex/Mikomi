@@ -1,13 +1,13 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'package:mikomi/core/models/bangumi_item.dart';
+import 'package:mikomi/core/models/anime.dart';
 import 'package:mikomi/shared/widgets/cached_image.dart';
 import 'package:mikomi/core/providers/theme_animation_provider.dart';
 
 class AnimeHeader extends StatelessWidget {
-  final BangumiItem bangumiItem;
+  final Anime anime;
 
-  const AnimeHeader({super.key, required this.bangumiItem});
+  const AnimeHeader({super.key, required this.anime});
 
   @override
   Widget build(BuildContext context) {
@@ -17,7 +17,7 @@ class AnimeHeader extends StatelessWidget {
         // 背景模糊图
         ImageFiltered(
           imageFilter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-          child: CachedImage(imageUrl: bangumiItem.coverUrl, fit: BoxFit.cover),
+          child: CachedImage(imageUrl: anime.coverUrl, fit: BoxFit.cover),
         ),
         // 渐变遮罩
         Container(
@@ -47,7 +47,7 @@ class AnimeHeader extends StatelessWidget {
                     physics: const BouncingScrollPhysics(),
                     children: [
                       Text(
-                        bangumiItem.displayName,
+                        anime.displayName,
                         style: const TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
@@ -67,7 +67,7 @@ class AnimeHeader extends StatelessWidget {
                       // 左侧封面
                       Expanded(
                         child: Hero(
-                          tag: 'bangumi_${bangumiItem.id}',
+                          tag: 'bangumi_${anime.id}',
                           transitionOnUserGestures: true,
                           flightShuttleBuilder:
                               AnimationProvider.buildHeroFlightShuttle,
@@ -85,7 +85,7 @@ class AnimeHeader extends StatelessWidget {
                             child: ClipRRect(
                               borderRadius: BorderRadius.circular(12),
                               child: CachedImage(
-                                imageUrl: bangumiItem.coverUrl,
+                                imageUrl: anime.coverUrl,
                                 fit: BoxFit.cover,
                               ),
                             ),
@@ -100,7 +100,7 @@ class AnimeHeader extends StatelessWidget {
                           mainAxisAlignment: MainAxisAlignment.start,
                           children: [
                             // 上映时间
-                            if (bangumiItem.airDate.isNotEmpty) ...[
+                            if (anime.airDate.isNotEmpty) ...[
                               const Text(
                                 '上映时间',
                                 style: TextStyle(
@@ -110,7 +110,7 @@ class AnimeHeader extends StatelessWidget {
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                bangumiItem.airDate,
+                                anime.airDate,
                                 style: const TextStyle(
                                   fontSize: 20,
                                   fontWeight: FontWeight.bold,
@@ -120,7 +120,7 @@ class AnimeHeader extends StatelessWidget {
                               const SizedBox(height: 16),
                             ],
                             // Bangumi排行
-                            if (bangumiItem.rank > 0) ...[
+                            if (anime.rank > 0) ...[
                               const Text(
                                 'Bangumi排行',
                                 style: TextStyle(
@@ -130,7 +130,7 @@ class AnimeHeader extends StatelessWidget {
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                '#${bangumiItem.rank}',
+                                '#${anime.rank}',
                                 style: const TextStyle(
                                   fontSize: 20,
                                   fontWeight: FontWeight.bold,
@@ -140,9 +140,9 @@ class AnimeHeader extends StatelessWidget {
                               const SizedBox(height: 16),
                             ],
                             // 评分
-                            if (bangumiItem.ratingScore > 0) ...[
+                            if (anime.ratingScore > 0) ...[
                               Text(
-                                '${bangumiItem.ratingCount}人评分',
+                                '${anime.ratingCount}人评分',
                                 style: const TextStyle(
                                   fontSize: 14,
                                   color: Colors.white70,
@@ -158,7 +158,7 @@ class AnimeHeader extends StatelessWidget {
                                   ),
                                   const SizedBox(width: 4),
                                   Text(
-                                    bangumiItem.ratingScore.toStringAsFixed(1),
+                                    anime.ratingScore.toStringAsFixed(1),
                                     style: const TextStyle(
                                       fontSize: 20,
                                       fontWeight: FontWeight.bold,

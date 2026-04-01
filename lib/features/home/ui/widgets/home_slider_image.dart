@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:card_swiper/card_swiper.dart';
 import 'package:mikomi/config/routes/app_routes.dart';
 import 'package:mikomi/config/themes/app_colors.dart';
-import 'package:mikomi/core/models/bangumi_item.dart';
+import 'package:mikomi/core/models/anime.dart';
 import 'package:mikomi/shared/widgets/cached_image.dart';
 import 'package:mikomi/shared/widgets/skeleton.dart';
 
 class BannerSection extends StatefulWidget {
-  final List<BangumiItem> bannerList;
+  final List<Anime> bannerList;
 
   const BannerSection({super.key, this.bannerList = const []});
 

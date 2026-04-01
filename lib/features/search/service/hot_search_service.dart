@@ -1,5 +1,5 @@
 import 'dart:math' as math;
-import 'package:mikomi/core/models/bangumi_item.dart';
+import 'package:mikomi/core/models/anime.dart';
 
 class HotSearchService {
   /// 计算番剧热度分数
@@ -7,7 +7,7 @@ class HotSearchService {
   /// 综合考虑:
   /// - 基础质量分 (评分 + 排名) (50%)
   /// - 时间衰减 (50%)
-  static double calculatePopularityScore(BangumiItem item) {
+  static double calculatePopularityScore(Anime item) {
     // 基础质量分 (0-100)
     double qualityScore = _calculateQualityScore(item);
 
@@ -23,7 +23,7 @@ class HotSearchService {
 
   /// 计算基础质量分
   /// 综合评分和排名
-  static double _calculateQualityScore(BangumiItem item) {
+  static double _calculateQualityScore(Anime item) {
     // 评分分数 (0-10分 -> 0-100分)
     double scoreValue = (item.ratingScore / 10.0) * 100;
 
@@ -94,12 +94,12 @@ class HotSearchService {
   }
 
   /// 获取热度排行榜
-  static List<BangumiItem> getPopularityRanking(
-    List<BangumiItem> items, {
+  static List<Anime> getPopularityRanking(
+    List<Anime> items, {
     int limit = 10,
   }) {
     // 计算每个番剧的热度分数
-    List<MapEntry<BangumiItem, double>> scoredItems = items.map((item) {
+    List<MapEntry<Anime, double>> scoredItems = items.map((item) {
       double score = calculatePopularityScore(item);
       return MapEntry(item, score);
     }).toList();

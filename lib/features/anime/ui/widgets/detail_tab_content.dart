@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mikomi/config/themes/app_colors.dart';
-import 'package:mikomi/core/models/bangumi_item.dart';
+import 'package:mikomi/core/models/anime.dart';
 import 'package:mikomi/core/models/character_item.dart';
 import 'package:mikomi/core/models/staff_item.dart';
 import 'package:mikomi/core/network/dio_client.dart';
@@ -10,9 +10,9 @@ import 'package:mikomi/shared/widgets/scrolling_text.dart';
 import 'package:mikomi/shared/widgets/skeleton.dart';
 
 class DetailTabContent extends StatefulWidget {
-  final BangumiItem bangumiItem;
+  final Anime anime;
 
-  const DetailTabContent({super.key, required this.bangumiItem});
+  const DetailTabContent({super.key, required this.anime});
 
   @override
   State<DetailTabContent> createState() => _DetailTabContentState();
@@ -38,11 +38,11 @@ class _DetailTabContentState extends State<DetailTabContent> {
       _isLoadingStaff = true;
     });
 
-    print('开始加载角色和制作人员数据，番剧ID: ${widget.bangumiItem.id}');
+    print('开始加载角色和制作人员数据，番剧ID: ${widget.anime.id}');
 
     final results = await Future.wait([
-      _repository.getCharacters(widget.bangumiItem.id),
-      _repository.getStaff(widget.bangumiItem.id),
+      _repository.getCharacters(widget.anime.id),
+      _repository.getStaff(widget.anime.id),
     ]);
 
     if (mounted) {

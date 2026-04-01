@@ -1,4 +1,4 @@
-import 'package:mikomi/core/models/bangumi_item.dart';
+import 'package:mikomi/core/models/anime.dart';
 import 'package:mikomi/features/home/data/anilist_rank_data.dart';
 import 'package:mikomi/features/home/data/rank_record.dart';
 import 'package:mikomi/features/home/data/tencent_rank_data.dart';
@@ -11,7 +11,7 @@ class RankService {
 
   final Map<int, int> _metricById = {};
 
-  Future<List<BangumiItem>> getRankList(
+  Future<List<Anime>> getRankList(
     RankCategory category, {
     int limit = 30,
   }) async {
@@ -42,7 +42,7 @@ class RankService {
     return records.map((record) => record.item).toList();
   }
 
-  int metricValue(BangumiItem item, RankCategory category) {
+  int metricValue(Anime item, RankCategory category) {
     return _metricById[item.id] ?? 0;
   }
 
@@ -58,7 +58,7 @@ class RankService {
     }
   }
 
-  bool isChineseAnime(BangumiItem item) {
+  bool isChineseAnime(Anime item) {
     final text = '${item.name}|${item.nameCn}|${item.info}|${item.tags.map((e) => e.name).join('|')}';
     return text.contains('国创') ||
         text.contains('国漫') ||

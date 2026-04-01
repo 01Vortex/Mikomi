@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:mikomi/config/themes/app_colors.dart';
-import 'package:mikomi/core/models/bangumi_item.dart';
+import 'package:mikomi/core/models/anime.dart';
 import 'package:mikomi/config/localization/app_localizations.dart';
 import 'package:mikomi/shared/widgets/skeleton.dart';
 
 class PopularityRankingView extends StatelessWidget {
-  final List<BangumiItem> rankings;
-  final ValueChanged<BangumiItem> onTap;
+  final List<Anime> rankings;
+  final ValueChanged<Anime> onTap;
   final bool isLoading;
 
   const PopularityRankingView({
@@ -86,7 +86,7 @@ class PopularityRankingView extends StatelessWidget {
     );
   }
 
-  Widget _buildRankingItem(BangumiItem item, int rank) {
+  Widget _buildRankingItem(Anime item, int rank) {
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0.0, end: 1.0),
       duration: Duration(milliseconds: 300 + (rank * 50)),

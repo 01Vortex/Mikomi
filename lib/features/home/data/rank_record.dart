@@ -1,7 +1,7 @@
-import 'package:mikomi/core/models/bangumi_item.dart';
+import 'package:mikomi/core/models/anime.dart';
 
 class RankRecord {
-  final BangumiItem item;
+  final Anime item;
   final int metric;
 
   const RankRecord({required this.item, required this.metric});

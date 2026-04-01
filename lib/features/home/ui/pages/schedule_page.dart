@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mikomi/features/home/data/bangumi_basis.dart';
-import 'package:mikomi/core/models/bangumi_item.dart';
+import 'package:mikomi/core/models/anime.dart';
 import 'package:mikomi/config/routes/app_routes.dart';
 import 'package:mikomi/shared/utils/theme_extensions.dart';
 import 'package:mikomi/shared/widgets/cached_image.dart';
@@ -19,7 +19,7 @@ class _SchedulePageState extends State<SchedulePage>
   final BangumiBasis _homeRepository = BangumiBasis();
   TabController? _tabController;
   PageController? _pageController;
-  List<List<BangumiItem>> _weekSchedule = [];
+  List<List<Anime>> _weekSchedule = [];
   bool _isLoading = true;
   final int _currentDay = DateTime.now().weekday - 1;
 
@@ -128,14 +128,14 @@ class _SchedulePageState extends State<SchedulePage>
                 final daySchedule =
                     _weekSchedule.isNotEmpty && index < _weekSchedule.length
                     ? _weekSchedule[index]
-                    : <BangumiItem>[];
+                    : <Anime>[];
                 return _buildDayGrid(context, daySchedule);
               },
             ),
     );
   }
 
-  Widget _buildDayGrid(BuildContext context, List<BangumiItem> bangumiList) {
+  Widget _buildDayGrid(BuildContext context, List<Anime> bangumiList) {
     final screenWidth = MediaQuery.of(context).size.width;
     int crossCount = 1;
     if (screenWidth > 600) crossCount = 2;
@@ -170,7 +170,7 @@ class _SchedulePageState extends State<SchedulePage>
 
   Widget _buildScheduleCard(
     BuildContext context,
-    BangumiItem bangumiItem,
+    Anime Anime,
     double cardHeight,
   ) {
     final imageWidth = cardHeight * 0.7;
@@ -185,7 +185,7 @@ class _SchedulePageState extends State<SchedulePage>
           Navigator.pushNamed(
             context,
             AppRoutes.bangumiDetail,
-            arguments: bangumiItem,
+            arguments: Anime,
           );
         },
         child: SizedBox(
@@ -196,12 +196,12 @@ class _SchedulePageState extends State<SchedulePage>
               ClipRRect(
                 borderRadius: BorderRadius.circular(8),
                 child: Hero(
-                  tag: 'bangumi_${bangumiItem.id}',
+                  tag: 'bangumi_${Anime.id}',
                   transitionOnUserGestures: true,
                   flightShuttleBuilder:
                       AnimationProvider.buildHeroFlightShuttle,
                   child: CachedImage(
-                    imageUrl: bangumiItem.coverUrl,
+                    imageUrl: Anime.coverUrl,
                     width: imageWidth,
                     height: cardHeight,
                     fit: BoxFit.cover,
@@ -218,7 +218,7 @@ class _SchedulePageState extends State<SchedulePage>
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       ScrollingText(
-                        text: bangumiItem.displayName,
+                        text: Anime.displayName,
                         style: context.textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.w600,
                         ),
@@ -226,8 +226,8 @@ class _SchedulePageState extends State<SchedulePage>
                         height: 40,
                       ),
                       const SizedBox(height: 4),
-                      if ((bangumiItem.info.isNotEmpty) ||
-                          (bangumiItem.summary.isNotEmpty))
+                      if ((Anime.info.isNotEmpty) ||
+                          (Anime.summary.isNotEmpty))
                         Expanded(
                           child: Padding(
                             padding: const EdgeInsets.only(bottom: 2),
@@ -242,9 +242,9 @@ class _SchedulePageState extends State<SchedulePage>
                                 borderRadius: BorderRadius.circular(6),
                               ),
                               child: Text(
-                                bangumiItem.info.isNotEmpty
-                                    ? bangumiItem.info
-                                    : bangumiItem.summary,
+                                Anime.info.isNotEmpty
+                                    ? Anime.info
+                                    : Anime.summary,
                                 style: context.textTheme.labelMedium?.copyWith(
                                   color: context.colors.primary,
                                   fontWeight: FontWeight.w500,
@@ -259,7 +259,7 @@ class _SchedulePageState extends State<SchedulePage>
                       const Spacer(),
                       Row(
                         children: [
-                          if (bangumiItem.ratingScore > 0) ...[
+                          if (Anime.ratingScore > 0) ...[
                             Icon(
                               Icons.star_rounded,
                               size: 15,
@@ -267,13 +267,13 @@ class _SchedulePageState extends State<SchedulePage>
                             ),
                             const SizedBox(width: 2),
                             Text(
-                              bangumiItem.ratingScore.toStringAsFixed(1),
+                              Anime.ratingScore.toStringAsFixed(1),
                               style: context.textTheme.bodySmall?.copyWith(
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
                           ],
-                          if (bangumiItem.rank > 0) ...[
+                          if (Anime.rank > 0) ...[
                             const SizedBox(width: 8),
                             Icon(
                               Icons.leaderboard,
@@ -282,16 +282,16 @@ class _SchedulePageState extends State<SchedulePage>
                             ),
                             const SizedBox(width: 2),
                             Text(
-                              'Rank ${bangumiItem.rank}',
+                              'Rank ${Anime.rank}',
                               style: context.textTheme.bodySmall?.copyWith(
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
                           ],
                           const Spacer(),
-                          if (bangumiItem.ratingCount > 0)
+                          if (Anime.ratingCount > 0)
                             Text(
-                              '${bangumiItem.ratingCount}人',
+                              '${Anime.ratingCount}人',
                               style: context.textTheme.bodySmall?.copyWith(
                                 color: context.colors.onSurfaceVariant,
                               ),

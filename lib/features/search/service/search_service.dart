@@ -1,4 +1,4 @@
-import 'package:mikomi/core/models/bangumi_item.dart';
+import 'package:mikomi/core/models/anime.dart';
 
 class SearchService {
   /// 精准搜索排序
@@ -7,8 +7,8 @@ class SearchService {
   /// 2. 开头匹配 (80分)
   /// 3. 包含匹配 (60分)
   /// 4. 模糊匹配 (40分)
-  static List<BangumiItem> sortByRelevance(
-    List<BangumiItem> items,
+  static List<Anime> sortByRelevance(
+    List<Anime> items,
     String keyword,
   ) {
     if (keyword.trim().isEmpty) return items;
@@ -16,7 +16,7 @@ class SearchService {
     final lowerKeyword = keyword.toLowerCase().trim();
 
     // 计算每个番剧的相关度分数
-    List<MapEntry<BangumiItem, double>> scoredItems = items.map((item) {
+    List<MapEntry<Anime, double>> scoredItems = items.map((item) {
       double score = _calculateRelevanceScore(item, lowerKeyword);
       return MapEntry(item, score);
     }).toList();
@@ -28,7 +28,7 @@ class SearchService {
   }
 
   /// 计算相关度分数
-  static double _calculateRelevanceScore(BangumiItem item, String keyword) {
+  static double _calculateRelevanceScore(Anime item, String keyword) {
     final nameCn = item.nameCn.toLowerCase();
     final name = item.name.toLowerCase();
 
@@ -94,8 +94,8 @@ class SearchService {
 
   /// 过滤低相关度结果
   /// 只保留分数大于阈值的结果
-  static List<BangumiItem> filterByRelevance(
-    List<BangumiItem> items,
+  static List<Anime> filterByRelevance(
+    List<Anime> items,
     String keyword, {
     double minScore = 30,
   }) {

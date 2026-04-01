@@ -1,5 +1,5 @@
 import 'package:html/parser.dart' as html_parser;
-import 'package:mikomi/core/models/bangumi_item.dart';
+import 'package:mikomi/core/models/anime.dart';
 import 'package:mikomi/core/network/dio_client.dart';
 import 'package:mikomi/features/home/data/rank_record.dart';
 
@@ -49,7 +49,7 @@ class TencentRankData {
         }
 
         final id = _stableId(href.isEmpty ? '$title-$i' : href);
-        final item = BangumiItem(
+        final item = Anime(
           id: id,
           name: title,
           nameCn: title,

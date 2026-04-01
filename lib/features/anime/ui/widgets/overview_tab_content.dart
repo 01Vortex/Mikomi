@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:mikomi/config/themes/app_colors.dart';
-import 'package:mikomi/core/models/bangumi_item.dart';
+import 'package:mikomi/core/models/anime.dart';
 import 'package:mikomi/shared/widgets/skeleton.dart';
 import 'package:mikomi/shared/utils/theme_extensions.dart';
 
 class OverviewTabContent extends StatefulWidget {
-  final BangumiItem bangumiItem;
+  final Anime anime;
 
-  const OverviewTabContent({super.key, required this.bangumiItem});
+  const OverviewTabContent({super.key, required this.anime});
 
   @override
   State<OverviewTabContent> createState() => _OverviewTabContentState();
@@ -22,15 +22,15 @@ class _OverviewTabContentState extends State<OverviewTabContent> {
 
   @override
   Widget build(BuildContext context) {
-    final hasMoreTags = widget.bangumiItem.tags.length > _maxVisibleTags;
+    final hasMoreTags = widget.anime.tags.length > _maxVisibleTags;
     final displayTags = _showAllTags
-        ? widget.bangumiItem.tags
-        : widget.bangumiItem.tags.take(_maxVisibleTags).toList();
+        ? widget.anime.tags
+        : widget.anime.tags.take(_maxVisibleTags).toList();
 
     // 判断是否正在加载
     final isLoading =
-        widget.bangumiItem.summary.isEmpty &&
-        widget.bangumiItem.ratingCount == 0;
+        widget.anime.summary.isEmpty &&
+        widget.anime.ratingCount == 0;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
@@ -48,7 +48,7 @@ class _OverviewTabContentState extends State<OverviewTabContent> {
           // 标签
           if (isLoading)
             _buildTagsSkeleton()
-          else if (widget.bangumiItem.tags.isNotEmpty) ...[
+          else if (widget.anime.tags.isNotEmpty) ...[
             const SizedBox(height: 24),
             const Text(
               '标签',
@@ -152,9 +152,9 @@ class _OverviewTabContentState extends State<OverviewTabContent> {
     return LayoutBuilder(
       builder: (context, constraints) {
         final textSpan = TextSpan(
-          text: widget.bangumiItem.summary.isEmpty
+          text: widget.anime.summary.isEmpty
               ? '暂无简介'
-              : widget.bangumiItem.summary,
+              : widget.anime.summary,
           style: const TextStyle(
             fontSize: 14,
             height: 1.6,
@@ -180,9 +180,9 @@ class _OverviewTabContentState extends State<OverviewTabContent> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              widget.bangumiItem.summary.isEmpty
+              widget.anime.summary.isEmpty
                   ? '暂无简介'
-                  : widget.bangumiItem.summary,
+                  : widget.anime.summary,
               style: const TextStyle(
                 fontSize: 14,
                 height: 1.6,

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mikomi/config/themes/app_colors.dart';
-import 'package:mikomi/core/models/bangumi_item.dart';
+import 'package:mikomi/core/models/anime.dart';
 import 'package:mikomi/core/models/comment_item.dart';
 import 'package:mikomi/core/network/dio_client.dart';
 import 'package:mikomi/features/anime/data/bangumi_teasing.dart';
@@ -8,9 +8,9 @@ import 'package:mikomi/shared/widgets/comment_card.dart';
 import 'package:mikomi/shared/widgets/skeleton.dart';
 
 class AnimeTeasingContent extends StatefulWidget {
-  final BangumiItem bangumiItem;
+  final Anime anime;
 
-  const AnimeTeasingContent({super.key, required this.bangumiItem});
+  const AnimeTeasingContent({super.key, required this.anime});
 
   @override
   State<AnimeTeasingContent> createState() => _AnimeTeasingContentState();
@@ -56,7 +56,7 @@ class _AnimeTeasingContentState extends State<AnimeTeasingContent> {
     });
 
     final comments = await _repository.getBangumiComments(
-      widget.bangumiItem.id,
+      widget.anime.id,
       limit: _limit,
       offset: 0,
     );
@@ -79,7 +79,7 @@ class _AnimeTeasingContentState extends State<AnimeTeasingContent> {
     });
 
     final comments = await _repository.getBangumiComments(
-      widget.bangumiItem.id,
+      widget.anime.id,
       limit: _limit,
       offset: _offset,
     );

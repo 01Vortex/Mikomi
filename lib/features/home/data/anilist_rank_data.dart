@@ -1,4 +1,4 @@
-import 'package:mikomi/core/models/bangumi_item.dart';
+import 'package:mikomi/core/models/anime.dart';
 import 'package:mikomi/core/network/dio_client.dart';
 import 'package:mikomi/features/home/data/rank_record.dart';
 
@@ -76,7 +76,7 @@ class AniListRankData {
             .map((e) => e.toString())
             .toList();
 
-        final item = BangumiItem(
+        final item = Anime(
           id: id,
           name:
               titleMap['romaji']?.toString() ??

@@ -1,4 +1,4 @@
-class BangumiItem {
+class Anime {
   final int id;
   final String name;
   final String nameCn;
@@ -11,7 +11,7 @@ class BangumiItem {
   final List<BangumiTag> tags;
   final String info;
 
-  BangumiItem({
+  Anime({
     required this.id,
     required this.name,
     required this.nameCn,
@@ -25,7 +25,7 @@ class BangumiItem {
     this.info = '',
   });
 
-  factory BangumiItem.fromJson(Map<String, dynamic> json) {
+  factory Anime.fromJson(Map<String, dynamic> json) {
     final rating = json['rating'] ?? {};
     final subject = json['subject'] ?? json;
 
@@ -46,7 +46,7 @@ class BangumiItem {
       }
     }
 
-    return BangumiItem(
+    return Anime(
       id: subject['id'] ?? 0,
       name: subject['name'] ?? '',
       nameCn: subject['name_cn'] ?? subject['name'] ?? '',
@@ -75,7 +75,7 @@ class BangumiItem {
       '';
 
   // 添加copyWith方法用于数据迁移
-  BangumiItem copyWith({
+  Anime copyWith({
     int? id,
     String? name,
     String? nameCn,
@@ -88,7 +88,7 @@ class BangumiItem {
     List<BangumiTag>? tags,
     String? info,
   }) {
-    return BangumiItem(
+    return Anime(
       id: id ?? this.id,
       name: name ?? this.name,
       nameCn: nameCn ?? this.nameCn,

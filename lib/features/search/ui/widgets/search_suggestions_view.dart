@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:mikomi/config/themes/app_colors.dart';
-import 'package:mikomi/core/models/bangumi_item.dart';
+import 'package:mikomi/core/models/anime.dart';
 
 class SearchSuggestionsView extends StatelessWidget {
-  final List<BangumiItem> suggestions;
+  final List<Anime> suggestions;
   final String keyword;
   final ValueChanged<String> onTap;
   final bool isLoading;

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:mikomi/core/models/bangumi_item.dart';
+import 'package:mikomi/core/models/anime.dart';
 import 'package:mikomi/core/services/bangumi_detail_service.dart';
 import 'package:mikomi/features/anime/ui/widgets/anime_header.dart';
 import 'package:mikomi/features/anime/ui/widgets/overview_tab_content.dart';
@@ -14,15 +14,15 @@ import 'package:mikomi/features/settings/video_play/service/plugin_manager_servi
 import 'package:mikomi/shared/utils/theme_extensions.dart';
 
 class AnimePage extends StatefulWidget {
-  final BangumiItem bangumiItem;
+  final Anime anime;
 
-  const AnimePage({super.key, required this.bangumiItem});
+  const AnimePage({super.key, required this.anime});
 
   @override
-  State<AnimePage> createState() => _AnimePageState();
+  State<AnimePage> createState() => _animePageState();
 }
 
-class _AnimePageState extends State<AnimePage>
+class _animePageState extends State<AnimePage>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   final ScrollController _scrollController = ScrollController();
@@ -31,7 +31,7 @@ class _AnimePageState extends State<AnimePage>
   final CollectionService _collectionService = CollectionService();
 
   bool _showTitle = false;
-  late BangumiItem _bangumiItem;
+  late Anime _anime;
   CollectionStatus _collectionStatus = CollectionStatus.notCollected;
 
   // 视频源列表（从插件动态加载）
@@ -40,7 +40,7 @@ class _AnimePageState extends State<AnimePage>
   @override
   void initState() {
     super.initState();
-    _bangumiItem = widget.bangumiItem;
+    _anime = widget.anime;
     _tabController = TabController(length: 4, vsync: this);
     _scrollController.addListener(_onScroll);
     _loadVideoSources();
@@ -49,7 +49,7 @@ class _AnimePageState extends State<AnimePage>
   }
 
   Future<void> _loadCollectionStatus() async {
-    final collected = await _collectionService.isCollected(_bangumiItem.id);
+    final collected = await _collectionService.isCollected(_anime.id);
     if (mounted) {
       setState(() {
         _collectionStatus = collected
@@ -63,15 +63,15 @@ class _AnimePageState extends State<AnimePage>
     if (status == CollectionStatus.collected) {
       await _collectionService.addCollection(
         CollectionItem(
-          bangumiId: _bangumiItem.id,
-          bangumiName: _bangumiItem.name,
-          bangumiNameCn: _bangumiItem.nameCn,
-          coverUrl: _bangumiItem.coverUrl,
+          bangumiId: _anime.id,
+          bangumiName: _anime.name,
+          bangumiNameCn: _anime.nameCn,
+          coverUrl: _anime.coverUrl,
           collectedAt: DateTime.now(),
         ),
       );
     } else {
-      await _collectionService.removeCollection(_bangumiItem.id);
+      await _collectionService.removeCollection(_anime.id);
     }
     if (mounted) {
       setState(() {
@@ -93,14 +93,14 @@ class _AnimePageState extends State<AnimePage>
 
   Future<void> _loadDetailInfo() async {
     // 如果已有完整信息，不再请求
-    if (_bangumiItem.summary.isNotEmpty && _bangumiItem.ratingCount > 0) {
+    if (_anime.summary.isNotEmpty && _anime.ratingCount > 0) {
       return;
     }
 
-    final detail = await _detailService.getBangumiDetailById(_bangumiItem.id);
+    final detail = await _detailService.getBangumiDetailById(_anime.id);
     if (detail != null && mounted) {
       setState(() {
-        _bangumiItem = detail;
+        _anime = detail;
       });
     }
   }
@@ -154,14 +154,14 @@ class _AnimePageState extends State<AnimePage>
                 opacity: _showTitle ? 1.0 : 0.0,
                 duration: const Duration(milliseconds: 200),
                 child: Text(
-                  _bangumiItem.displayName,
+                  _anime.displayName,
                   style: const TextStyle(fontSize: 18),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
               flexibleSpace: FlexibleSpaceBar(
-                background: AnimeHeader(bangumiItem: _bangumiItem),
+                background: AnimeHeader(anime: _anime),
               ),
             ),
             SliverPersistentHeader(
@@ -186,9 +186,9 @@ class _AnimePageState extends State<AnimePage>
         body: TabBarView(
           controller: _tabController,
           children: [
-            OverviewTabContent(bangumiItem: _bangumiItem),
-            DetailTabContent(bangumiItem: _bangumiItem),
-            AnimeTeasingContent(bangumiItem: _bangumiItem),
+            OverviewTabContent(anime: _anime),
+            DetailTabContent(anime: _anime),
+            AnimeTeasingContent(anime: _anime),
             const Center(
               child: Padding(
                 padding: EdgeInsets.all(32),
@@ -218,9 +218,9 @@ class _AnimePageState extends State<AnimePage>
             const SizedBox(height: 16),
             PlayButton(
               videoSources: _videoSources,
-              animeTitle: _bangumiItem.displayName,
-              animeName: _bangumiItem.name,
-              bangumiId: _bangumiItem.id,
+              animeTitle: _anime.displayName,
+              animeName: _anime.name,
+              bangumiId: _anime.id,
               onPlay: () {
                 // 播放回调
               },

@@ -13,7 +13,7 @@ import '../../features/auth/ui/pages/login_page.dart';
 import '../../features/settings/video_play/pages/hardware_decode_page.dart';
 import '../../features/settings/video_play/pages/play_setting_page.dart';
 import '../../features/settings/video_play/pages/video_renderer_page.dart';
-import '../../core/models/bangumi_item.dart';
+import '../../core/models/anime.dart';
 import '../../core/models/video_plugin.dart';
 
 class AppRoutes {
@@ -51,9 +51,9 @@ class AppRoutes {
   static Route<dynamic>? onGenerateRoute(RouteSettings settings) {
     switch (settings.name) {
       case bangumiDetail:
-        final bangumiItem = settings.arguments as BangumiItem;
+        final anime = settings.arguments as Anime;
         return MaterialPageRoute(
-          builder: (context) => AnimePage(bangumiItem: bangumiItem),
+          builder: (context) => AnimePage(anime: anime),
         );
       case pluginEditor:
         final plugin = settings.arguments as VideoPlugin?;

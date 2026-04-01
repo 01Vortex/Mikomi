@@ -113,7 +113,7 @@ class _CollectionItemCardState extends State<_CollectionItemCard> {
       context,
       PageRouteBuilder(
         pageBuilder: (context, animation, secondaryAnimation) =>
-            AnimePage(bangumiItem: bangumi),
+            AnimePage(anime: bangumi),
         transitionsBuilder: (context, animation, secondaryAnimation, child) =>
             FadeTransition(opacity: animation, child: child),
         transitionDuration: const Duration(milliseconds: 200),

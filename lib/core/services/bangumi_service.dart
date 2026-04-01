@@ -1,13 +1,13 @@
 import 'package:flutter/foundation.dart';
 import 'package:mikomi/core/network/dio_client.dart';
 import 'package:mikomi/core/network/api_constants.dart';
-import 'package:mikomi/core/models/bangumi_item.dart';
+import 'package:mikomi/core/models/anime.dart';
 import 'package:mikomi/features/search/service/search_service.dart';
 
 class BangumiService {
   final DioClient _dioClient = DioClient();
 
-  Future<List<BangumiItem>> getTrendsList({
+  Future<List<Anime>> getTrendsList({
     int type = 2,
     int limit = 24,
     int offset = 0,
@@ -19,13 +19,13 @@ class BangumiService {
       );
 
       final List<dynamic> data = response.data['data'] ?? [];
-      return data.map((item) => BangumiItem.fromJson(item)).toList();
+      return data.map((item) => Anime.fromJson(item)).toList();
     } catch (e) {
       return [];
     }
   }
 
-  Future<List<BangumiItem>> searchBangumi(
+  Future<List<Anime>> searchBangumi(
     String keyword, {
     int offset = 0,
   }) async {
@@ -44,7 +44,7 @@ class BangumiService {
       );
 
       final List<dynamic> data = response.data['data'] ?? [];
-      final items = data.map((item) => BangumiItem.fromJson(item)).toList();
+      final items = data.map((item) => Anime.fromJson(item)).toList();
 
       final sortedItems = SearchService.sortByRelevance(items, keyword);
 
@@ -60,13 +60,13 @@ class BangumiService {
     }
   }
 
-  Future<BangumiItem?> getBangumiById(int id) async {
+  Future<Anime?> getBangumiById(int id) async {
     try {
       final response = await _dioClient.get(
         '${ApiConstants.bangumiApiDomain}/v0/subjects/$id',
       );
 
-      return BangumiItem.fromJson(response.data);
+      return Anime.fromJson(response.data);
     } catch (e) {
       debugPrint('获取番剧详情失败: $e');
       return null;

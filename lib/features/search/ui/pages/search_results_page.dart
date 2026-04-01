@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mikomi/config/themes/app_colors.dart';
-import 'package:mikomi/core/models/bangumi_item.dart';
+import 'package:mikomi/core/models/anime.dart';
 import 'package:mikomi/features/search/data/bangumi_search.dart';
 import 'package:mikomi/features/search/ui/widgets/search_app_bar.dart';
 import 'package:mikomi/features/search/ui/widgets/search_results_view.dart';
@@ -20,8 +20,8 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
   final FocusNode _focusNode = FocusNode();
   final BangumiSearch _searchService = BangumiSearch();
 
-  List<BangumiItem> _searchResults = [];
-  List<BangumiItem> _suggestions = [];
+  List<Anime> _searchResults = [];
+  List<Anime> _suggestions = [];
   bool _isSearching = true;
   bool _isLoadingSuggestions = false;
   bool _showSuggestions = false;
