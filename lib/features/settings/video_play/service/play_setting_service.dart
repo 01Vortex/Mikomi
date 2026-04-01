@@ -5,6 +5,7 @@ class PlaySettingsService {
   static const String _keyAutoPlayNext = 'auto_play_next';
   static const String _keyPlaySpeed = 'play_speed';
   static const String _keyVideoFitMode = 'video_fit_mode';
+  static const String _keyLowLatencyAudio = 'low_latency_audio';
 
   Future<bool> getAutoPlayNext() async {
     final prefs = await SharedPreferences.getInstance();
@@ -38,5 +39,15 @@ class PlaySettingsService {
   Future<void> setVideoFitMode(VideoFitMode mode) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_keyVideoFitMode, mode.name);
+  }
+
+  Future<bool> getLowLatencyAudio() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_keyLowLatencyAudio) ?? true;
+  }
+
+  Future<void> setLowLatencyAudio(bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_keyLowLatencyAudio, value);
   }
 }

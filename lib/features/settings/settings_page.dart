@@ -22,7 +22,6 @@ class _SettingsPageState extends State<SettingsPage> {
 
   bool _autoPlayNext = true;
   bool _showDanmaku = false;
-  double _playSpeed = 1.0;
   bool _hardwareDecoding = true;
   bool _isLoading = true;
 
@@ -34,14 +33,12 @@ class _SettingsPageState extends State<SettingsPage> {
 
   Future<void> _loadSettings() async {
     final autoPlayNext = await _basisService.getAutoPlayNext();
-    final playSpeed = await _basisService.getPlaySpeed();
     final hardwareDecoding = await _hwService.getEnabled();
     final showDanmaku = await _danmakuService.getShowDanmaku();
 
     if (mounted) {
       setState(() {
         _autoPlayNext = autoPlayNext;
-        _playSpeed = playSpeed;
         _hardwareDecoding = hardwareDecoding;
         _showDanmaku = showDanmaku;
         _isLoading = false;
@@ -119,6 +116,15 @@ class _SettingsPageState extends State<SettingsPage> {
                 leading: const Icon(Icons.video_settings_outlined),
                 title: const Text('视频源'),
                 description: const Text('管理视频数据源'),
+              ),
+              SettingsTile.navigation(
+                onPressed: (_) {
+                  Navigator.pushNamed(context, '/video_renderer')
+                      .then((_) => _loadSettings());
+                },
+                leading: const Icon(Icons.tv_outlined),
+                title: const Text('视频渲染器'),
+                description: const Text('选择视频画面渲染方式'),
               ),
               SettingsTile.navigation(
                 onPressed: (_) {

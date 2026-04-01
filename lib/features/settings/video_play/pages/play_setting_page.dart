@@ -15,6 +15,7 @@ class _VideoBasisPageState extends State<VideoBasisPage> {
   bool _autoPlayNext = true;
   double _playSpeed = 1.0;
   VideoFitMode _videoFitMode = VideoFitMode.contain;
+  bool _lowLatencyAudio = false;
   bool _loading = true;
 
   @override
@@ -27,11 +28,13 @@ class _VideoBasisPageState extends State<VideoBasisPage> {
     final autoPlayNext = await _service.getAutoPlayNext();
     final playSpeed = await _service.getPlaySpeed();
     final videoFitMode = await _service.getVideoFitMode();
+    final lowLatencyAudio = await _service.getLowLatencyAudio();
     if (!mounted) return;
     setState(() {
       _autoPlayNext = autoPlayNext;
       _playSpeed = playSpeed;
       _videoFitMode = videoFitMode;
+      _lowLatencyAudio = lowLatencyAudio;
       _loading = false;
     });
   }
@@ -49,6 +52,11 @@ class _VideoBasisPageState extends State<VideoBasisPage> {
   Future<void> _setVideoFitMode(VideoFitMode mode) async {
     await _service.setVideoFitMode(mode);
     setState(() => _videoFitMode = mode);
+  }
+
+  Future<void> _setLowLatencyAudio(bool value) async {
+    await _service.setLowLatencyAudio(value);
+    setState(() => _lowLatencyAudio = value);
   }
 
   @override
@@ -77,6 +85,21 @@ class _VideoBasisPageState extends State<VideoBasisPage> {
                       subtitle: const Text('当前视频播放完毕后自动播放下一集'),
                       value: _autoPlayNext,
                       onChanged: _setAutoPlayNext,
+                    ),
+                  ],
+                ),
+                _SectionCard(
+                  children: [
+                    SwitchListTile(
+                      secondary: Icon(
+                        Icons.graphic_eq_outlined,
+                        color:
+                            _lowLatencyAudio ? cs.primary : cs.onSurfaceVariant,
+                      ),
+                      title: const Text('低延迟音频'),
+                      subtitle: const Text('启用OpenSLES音频输入以降低延时'),
+                      value: _lowLatencyAudio,
+                      onChanged: _setLowLatencyAudio,
                     ),
                   ],
                 ),

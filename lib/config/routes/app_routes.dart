@@ -12,6 +12,7 @@ import '../../features/settings/danmaku/danmaku_setting_page.dart';
 import '../../features/auth/ui/pages/login_page.dart';
 import '../../features/settings/video_play/pages/hardware_decode_page.dart';
 import '../../features/settings/video_play/pages/play_setting_page.dart';
+import '../../features/settings/video_play/pages/video_renderer_page.dart';
 import '../../core/models/bangumi_item.dart';
 import '../../core/models/video_plugin.dart';
 
@@ -29,6 +30,7 @@ class AppRoutes {
   static const String login = '/login';
   static const String hardwareDecode = '/hardware_decode';
   static const String videoBasis = '/video_basis';
+  static const String videoRenderer = '/video_renderer';
 
   static Map<String, WidgetBuilder> get routes {
     return {
@@ -42,6 +44,7 @@ class AppRoutes {
       login: (context) => const LoginPage(),
       hardwareDecode: (context) => const HardwareDecodePage(),
       videoBasis: (context) => const VideoBasisPage(),
+      videoRenderer: (context) => const VideoRendererPage(),
     };
   }
 

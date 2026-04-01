@@ -1,8 +1,11 @@
+import 'dart:io';
+
 import 'package:flutter/foundation.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 import 'package:mikomi/features/settings/video_play/service/hardware_decode_service.dart';
 import 'package:mikomi/features/settings/video_play/service/play_setting_service.dart';
+import 'package:mikomi/features/settings/video_play/service/video_renderer_service.dart';
 
 class VideoPlaybackService {
   Player? _player;
@@ -11,16 +14,46 @@ class VideoPlaybackService {
   bool _isDisposing = false;
   final HardwareDecodeService _hwService = HardwareDecodeService();
   final PlaySettingsService _basisService = PlaySettingsService();
+  final VideoRendererService _rendererService = VideoRendererService();
 
   bool get isInitialized => _isInitialized;
   Player? get player => _player;
   VideoController? get videoController => _videoController;
+
+  String? _resolveVo(VideoRenderer renderer) {
+    return switch (renderer) {
+      VideoRenderer.auto => null,
+      VideoRenderer.textureView => 'gpu',
+      VideoRenderer.surfaceView => 'mediacodec_embed',
+    };
+  }
+
+  bool? _resolveAttachSurfaceAfterVideoParameters(VideoRenderer renderer) {
+    return switch (renderer) {
+      VideoRenderer.auto => null,
+      VideoRenderer.textureView => true,
+      VideoRenderer.surfaceView => false,
+    };
+  }
+
+  Future<String> _applyLowLatencyAudio(bool lowLatencyAudio) async {
+    if (!lowLatencyAudio || _player == null) return 'default';
+    if (!Platform.isAndroid || _player!.platform is! NativePlayer) {
+      return 'default';
+    }
+
+    final nativePlayer = _player!.platform as NativePlayer;
+    await nativePlayer.setProperty('ao', 'opensles');
+    return await nativePlayer.getProperty('ao');
+  }
 
   Future<void> initialize({bool smallScreen = false}) async {
     if (_isDisposing || _player != null) return;
     try {
       final enabled = await _hwService.getEnabled();
       final decoder = await _hwService.getDecoder();
+      final renderer = await _rendererService.getRenderer();
+      final lowLatencyAudio = await _basisService.getLowLatencyAudio();
       final playSpeed = await _basisService.getPlaySpeed();
 
       _player = Player(
@@ -30,13 +63,32 @@ class VideoPlaybackService {
         ),
       );
 
+      final resolvedVo = _resolveVo(renderer);
+      final resolvedAttachSurfaceAfterVideoParameters =
+          _resolveAttachSurfaceAfterVideoParameters(renderer);
+
+      final videoControllerConfig = VideoControllerConfiguration(
+        enableHardwareAcceleration: enabled,
+        hwdec: enabled ? decoder.hwdecValue : 'no',
+        vo: resolvedVo,
+        androidAttachSurfaceAfterVideoParameters:
+            resolvedAttachSurfaceAfterVideoParameters,
+        scale: smallScreen ? 0.75 : 1.0,
+      );
+
       _videoController = VideoController(
         _player!,
-        configuration: VideoControllerConfiguration(
-          enableHardwareAcceleration: enabled,
-          hwdec: enabled ? decoder.hwdecValue : 'no',
-          scale: smallScreen ? 0.75 : 1.0,
-        ),
+        configuration: videoControllerConfig,
+      );
+
+      final resolvedAo = await _applyLowLatencyAudio(lowLatencyAudio);
+
+      final platformController = await _videoController!.platform.future;
+      debugPrint(
+        '✅ VideoPlaybackService: renderer=${renderer.name}, '
+        'vo=${platformController.configuration.vo ?? 'default'}, '
+        'hwdec=${platformController.configuration.hwdec ?? 'default'}, '
+        'lowLatencyAudio=$lowLatencyAudio, ao=$resolvedAo',
       );
 
       // 设置默认播放速度
