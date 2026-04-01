@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:mikomi/config/app_routes.dart';
 import 'package:mikomi/features/home/models/home_anime_model.dart';
 import 'package:mikomi/features/home/service/rank_service.dart';
-import 'package:mikomi/shared/theme_extensions.dart';
 import 'package:mikomi/shared/cached_image.dart';
 import 'package:mikomi/shared/skeleton.dart';
+import 'package:mikomi/shared/theme_extensions.dart';
 
 class RankPage extends StatefulWidget {
   const RankPage({super.key});
@@ -15,7 +15,6 @@ class RankPage extends StatefulWidget {
 
 class _RankPageState extends State<RankPage> {
   final RankService _rankService = RankService();
-
   final List<_RankTabItem> _tabs = const [
     _RankTabItem(label: '播放', category: RankCategory.play),
     _RankTabItem(label: '收藏', category: RankCategory.collection),
@@ -23,78 +22,125 @@ class _RankPageState extends State<RankPage> {
     _RankTabItem(label: '日漫', category: RankCategory.japanese),
   ];
 
+  late final PageController _pageController;
   RankCategory _currentCategory = RankCategory.play;
-  List<HomeAnimeModel> _rankList = [];
-  bool _isLoading = true;
+  final Map<RankCategory, List<HomeAnimeModel>> _rankByCategory = {};
+  final Set<RankCategory> _loadingCategories = {};
 
   @override
   void initState() {
     super.initState();
-    _loadRankList();
+    _pageController = PageController(initialPage: 0);
+    _loadRankList(RankCategory.play, forceRefresh: true);
   }
 
-  Future<void> _loadRankList() async {
-    setState(() => _isLoading = true);
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
 
-    final list = await _rankService.getRankList(_currentCategory, limit: 50);
+  Future<void> _loadRankList(
+    RankCategory category, {
+    bool forceRefresh = false,
+  }) async {
+    if (_loadingCategories.contains(category)) return;
+    if (!forceRefresh && _rankByCategory.containsKey(category)) return;
 
-    if (!mounted) {
-      return;
-    }
+    setState(() => _loadingCategories.add(category));
+    final list = await _rankService.getRankList(category, limit: 100);
+    if (!mounted) return;
 
     setState(() {
-      _rankList = list;
-      _isLoading = false;
+      _rankByCategory[category] = list;
+      _loadingCategories.remove(category);
     });
   }
 
   Future<void> _switchCategory(RankCategory category) async {
-    if (_currentCategory == category) {
-      return;
+    if (_currentCategory == category) return;
+    final targetIndex = _tabs.indexWhere((tab) => tab.category == category);
+    if (targetIndex < 0) return;
+
+    setState(() => _currentCategory = category);
+    if (_pageController.hasClients) {
+      await _pageController.animateToPage(
+        targetIndex,
+        duration: const Duration(milliseconds: 220),
+        curve: Curves.easeOutCubic,
+      );
     }
+    await _loadRankList(category);
+  }
 
-    setState(() {
-      _currentCategory = category;
-    });
+  Future<void> _onPageChanged(int index) async {
+    final category = _tabs[index].category;
+    if (_currentCategory != category) {
+      setState(() => _currentCategory = category);
+    }
+    await _loadRankList(category);
+  }
 
-    await _loadRankList();
+  Future<void> _refreshCurrentCategory() {
+    return _loadRankList(_currentCategory, forceRefresh: true);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('排行榜')),
-      body: RefreshIndicator(
-        onRefresh: _loadRankList,
-        child: CustomScrollView(
-          slivers: [
-            SliverToBoxAdapter(child: _buildTabBar(context)),
-            if (_isLoading)
-              SliverList.builder(
-                itemCount: 8,
-                itemBuilder: (context, index) => _buildSkeletonItem(context),
-              )
-            else if (_rankList.isEmpty)
-              SliverFillRemaining(
-                hasScrollBody: false,
-                child: Center(
-                  child: Text(
-                    '暂无排行数据',
-                    style: TextStyle(color: context.colors.textSecondary),
-                  ),
+      appBar: AppBar(title: const Text('排行榜'), centerTitle: true),
+      body: Column(
+        children: [
+          _buildTabBar(context),
+          Expanded(
+            child: PageView.builder(
+              controller: _pageController,
+              itemCount: _tabs.length,
+              onPageChanged: (index) => _onPageChanged(index),
+              itemBuilder: (context, index) {
+                final category = _tabs[index].category;
+                return _buildCategoryPage(context, category);
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCategoryPage(BuildContext context, RankCategory category) {
+    final isLoading = _loadingCategories.contains(category);
+    final list = _rankByCategory[category] ?? const <HomeAnimeModel>[];
+
+    return RefreshIndicator(
+      onRefresh: _refreshCurrentCategory,
+      child: CustomScrollView(
+        slivers: [
+          if (isLoading)
+            SliverList.builder(
+              itemCount: 8,
+              itemBuilder: (context, index) => _buildSkeletonItem(context),
+            )
+          else if (list.isEmpty)
+            SliverFillRemaining(
+              hasScrollBody: false,
+              child: Center(
+                child: Text(
+                  '暂无排行数据',
+                  style: TextStyle(color: context.colors.textSecondary),
                 ),
-              )
-            else
-              SliverList.builder(
-                itemCount: _rankList.length,
-                itemBuilder: (context, index) {
-                  final item = _rankList[index];
-                  return _buildRankItem(context, index + 1, item);
-                },
               ),
-            const SliverToBoxAdapter(child: SizedBox(height: 24)),
-          ],
-        ),
+            )
+          else
+            SliverList.builder(
+              itemCount: list.length,
+              itemBuilder: (context, index) {
+                final item = list[index];
+                return _buildRankItem(context, index + 1, item, category);
+              },
+            ),
+          const SliverToBoxAdapter(child: SizedBox(height: 24)),
+        ],
       ),
     );
   }
@@ -143,7 +189,12 @@ class _RankPageState extends State<RankPage> {
     );
   }
 
-  Widget _buildRankItem(BuildContext context, int rank, HomeAnimeModel item) {
+  Widget _buildRankItem(
+    BuildContext context,
+    int rank,
+    HomeAnimeModel item,
+    RankCategory category,
+  ) {
     final rankColor = switch (rank) {
       1 => const Color(0xFFFFB300),
       2 => const Color(0xFF90A4AE),
@@ -159,11 +210,7 @@ class _RankPageState extends State<RankPage> {
         child: InkWell(
           borderRadius: BorderRadius.circular(14),
           onTap: () {
-            Navigator.pushNamed(
-              context,
-              AppRoutes.animeDetail,
-              arguments: item,
-            );
+            Navigator.pushNamed(context, AppRoutes.animeDetail, arguments: item);
           },
           child: Padding(
             padding: const EdgeInsets.all(10),
@@ -252,7 +299,7 @@ class _RankPageState extends State<RankPage> {
                             const SizedBox(width: 4),
                             Expanded(
                               child: Text(
-                                '${_rankService.metricLabel(_currentCategory)} ${_rankService.metricValue(item, _currentCategory)}',
+                                '${_rankService.metricLabel(category)} ${_rankService.metricValue(item, category)}',
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: TextStyle(

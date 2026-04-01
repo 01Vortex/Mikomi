@@ -101,6 +101,7 @@ class HomeRepository {
 
   Future<List<RankRecord>> getChineseRank({int limit = 30}) async {
     try {
+      final scoreIndex = await _buildChineseScoreIndex(limit: limit * 2);
       final html = await _tencentSource.fetchChineseRankHtml(limit: limit);
       final document = html_parser.parse(html);
       final cards = document.querySelectorAll('.list_item');
@@ -112,6 +113,7 @@ class HomeRepository {
         final coverAnchor = card.querySelector('a.figure');
         final image = card.querySelector('img.figure_pic');
         final desc = card.querySelector('.figure_desc');
+        final caption = card.querySelector('.figure_caption');
 
         final title =
             titleAnchor?.attributes['title']?.trim() ??
@@ -125,6 +127,8 @@ class HomeRepository {
             '';
         final summary =
             desc?.attributes['title']?.trim() ?? desc?.text.trim() ?? '';
+        final captionText =
+            caption?.attributes['title']?.trim() ?? caption?.text.trim() ?? '';
 
         if (title.isEmpty || cover.isEmpty) {
           continue;
@@ -135,7 +139,7 @@ class HomeRepository {
           name: title,
           nameCn: title,
           summary: summary,
-          airDate: '',
+          airDate: _extractChinesePublishTime(summary, captionText),
           images: {
             'large': cover,
             'common': cover,
@@ -143,7 +147,7 @@ class HomeRepository {
             'small': cover,
             'grid': cover,
           },
-          ratingScore: 0,
+          ratingScore: _resolveChineseScore(title, scoreIndex),
           ratingCount: 0,
           rank: i + 1,
           tags: const [HomeAnimeTag(name: '国漫', count: 0)],
@@ -247,6 +251,98 @@ class HomeRepository {
       tags: genres.map((g) => HomeAnimeTag(name: g, count: 0)).toList(),
       info: '',
     );
+  }
+
+  Future<Map<String, double>> _buildChineseScoreIndex({int limit = 100}) async {
+    try {
+      final mediaList = await _aniListSource.fetchMedia(
+        page: 1,
+        perPage: limit,
+        sort: 'POPULARITY_DESC',
+        country: 'CN',
+      );
+
+      final map = <String, double>{};
+      for (final media in mediaList) {
+        if (media is! Map<String, dynamic>) {
+          continue;
+        }
+
+        final score100 = (media['averageScore'] as num?)?.toDouble() ?? 0;
+        if (score100 <= 0) {
+          continue;
+        }
+
+        final score10 = ((score100 / 10).clamp(0, 10)).toDouble();
+        final titleMap = media['title'] as Map<String, dynamic>? ?? {};
+
+        for (final raw in [
+          titleMap['native']?.toString() ?? '',
+          titleMap['romaji']?.toString() ?? '',
+          titleMap['english']?.toString() ?? '',
+        ]) {
+          final key = _normalizeTitle(raw);
+          if (key.isEmpty) {
+            continue;
+          }
+          map[key] = score10;
+        }
+      }
+
+      return map;
+    } catch (_) {
+      return {};
+    }
+  }
+
+  double _resolveChineseScore(String title, Map<String, double> scoreIndex) {
+    final key = _normalizeTitle(title);
+    return scoreIndex[key] ?? 0;
+  }
+
+  String _normalizeTitle(String text) {
+    return text
+        .trim()
+        .toLowerCase()
+        .replaceAll(RegExp(r'\s+'), '')
+        .replaceAll(RegExp(r'[·•・:：\-—_!！?？,，.。/\\\(\)\[\]【】《》「」『』]'), '');
+  }
+
+  String _extractChinesePublishTime(String summary, String caption) {
+    final text = '$summary $caption';
+
+    final week = RegExp(r'每周([一二三四五六日天])').firstMatch(text)?.group(1);
+    final time = RegExp(r'(\d{1,2}[:：]\d{2})').firstMatch(text)?.group(1);
+
+    final normalizedTime = time?.replaceAll('：', ':');
+    final weekText = switch (week) {
+      '一' => '周一',
+      '二' => '周二',
+      '三' => '周三',
+      '四' => '周四',
+      '五' => '周五',
+      '六' => '周六',
+      '日' || '天' => '周日',
+      _ => '',
+    };
+
+    if (weekText.isNotEmpty && normalizedTime != null) {
+      return '$weekText $normalizedTime';
+    }
+    if (weekText.isNotEmpty) {
+      return weekText;
+    }
+    if (normalizedTime != null) {
+      return normalizedTime;
+    }
+
+    final fallback = caption.isNotEmpty ? caption : summary;
+    final cleaned = fallback.replaceAll(RegExp(r'\s+'), ' ').trim();
+    if (cleaned.isNotEmpty) {
+      return cleaned.length > 12 ? cleaned.substring(0, 12) : cleaned;
+    }
+
+    return '';
   }
 
   String _buildDate(dynamic startDateRaw) {
