@@ -33,4 +33,23 @@ class AniListSource {
     }
     return [];
   }
+
+  Future<List<dynamic>> fetchAiringSchedule({
+    required int page,
+    int perPage = 50,
+  }) async {
+    final response = await _dioClient.post(
+      'https://graphql.anilist.co',
+      data: {
+        'query': AniListQueries.airingSchedule,
+        'variables': {'page': page, 'perPage': perPage},
+      },
+    );
+
+    final data = response.data;
+    if (data is Map<String, dynamic>) {
+      return (data['data']?['Page']?['media'] as List?)?.cast<dynamic>() ?? [];
+    }
+    return [];
+  }
 }

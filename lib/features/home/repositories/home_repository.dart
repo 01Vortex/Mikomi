@@ -1,5 +1,7 @@
+import 'package:html/parser.dart' as html_parser;
 import 'package:mikomi/core/data/datasources/anilist_source.dart';
 import 'package:mikomi/core/data/datasources/bangumi_source.dart';
+import 'package:mikomi/core/data/datasources/tencent_source.dart';
 import 'package:mikomi/features/home/models/home_anime_model.dart';
 import 'package:mikomi/features/home/service/display_service.dart';
 import 'package:mikomi/features/home/service/slider_image_service.dart';
@@ -7,6 +9,7 @@ import 'package:mikomi/features/home/service/slider_image_service.dart';
 class HomeRepository {
   final BangumiSource _bangumiSource = BangumiSource();
   final AniListSource _aniListSource = AniListSource();
+  final TencentSource _tencentSource = TencentSource();
 
   Future<List<HomeAnimeModel>> getRecommendedList({
     int limit = 12,
@@ -97,14 +100,63 @@ class HomeRepository {
   }
 
   Future<List<RankRecord>> getChineseRank({int limit = 30}) async {
-    final mediaList = await _aniListSource.fetchMedia(
-      page: 1,
-      perPage: limit,
-      sort: 'POPULARITY_DESC',
-      country: 'CN',
-    );
+    try {
+      final html = await _tencentSource.fetchChineseRankHtml(limit: limit);
+      final document = html_parser.parse(html);
+      final cards = document.querySelectorAll('.list_item');
 
-    return _mapAniListRank(mediaList, metricField: 'popularity');
+      final result = <RankRecord>[];
+      for (var i = 0; i < cards.length; i++) {
+        final card = cards[i];
+        final titleAnchor = card.querySelector('.figure_title');
+        final coverAnchor = card.querySelector('a.figure');
+        final image = card.querySelector('img.figure_pic');
+        final desc = card.querySelector('.figure_desc');
+
+        final title =
+            titleAnchor?.attributes['title']?.trim() ??
+            titleAnchor?.text.trim() ??
+            coverAnchor?.attributes['title']?.trim() ??
+            '';
+        final cover = image?.attributes['src']?.trim() ?? '';
+        final href =
+            coverAnchor?.attributes['href']?.trim() ??
+            titleAnchor?.attributes['href']?.trim() ??
+            '';
+        final summary =
+            desc?.attributes['title']?.trim() ?? desc?.text.trim() ?? '';
+
+        if (title.isEmpty || cover.isEmpty) {
+          continue;
+        }
+
+        final item = HomeAnimeModel(
+          id: _stableId(href.isEmpty ? '$title-$i' : href),
+          name: title,
+          nameCn: title,
+          summary: summary,
+          airDate: '',
+          images: {
+            'large': cover,
+            'common': cover,
+            'medium': cover,
+            'small': cover,
+            'grid': cover,
+          },
+          ratingScore: 0,
+          ratingCount: 0,
+          rank: i + 1,
+          tags: const [HomeAnimeTag(name: '国漫', count: 0)],
+          info: '',
+        );
+
+        result.add(RankRecord(item: item, metric: cards.length - i));
+      }
+
+      return result;
+    } catch (_) {
+      return [];
+    }
   }
 
   Future<List<HomeAnimeModel>> _fetchBangumiHomeItems(int limit) async {
@@ -215,6 +267,14 @@ class HomeRepository {
     final mm = safeMonth.toString().padLeft(2, '0');
     final dd = safeDay.toString().padLeft(2, '0');
     return '$year-$mm-$dd';
+  }
+
+  int _stableId(String text) {
+    var hash = 0;
+    for (final codeUnit in text.codeUnits) {
+      hash = ((hash * 31) + codeUnit) & 0x7fffffff;
+    }
+    return hash == 0 ? 1 : hash;
   }
 }
 

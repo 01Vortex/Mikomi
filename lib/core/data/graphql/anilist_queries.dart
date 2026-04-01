@@ -63,4 +63,34 @@ query (
   }
 }
 ''';
+
+  static const String airingSchedule = '''
+query (
+  \$page: Int,
+  \$perPage: Int
+) {
+  Page(page: \$page, perPage: \$perPage) {
+    media(type: ANIME, status: RELEASING, sort: POPULARITY_DESC) {
+      id
+      countryOfOrigin
+      title {
+        romaji
+        english
+        native
+      }
+      coverImage {
+        large
+        medium
+      }
+      averageScore
+      popularity
+      genres
+      nextAiringEpisode {
+        airingAt
+        episode
+      }
+    }
+  }
+}
+''';
 }
