@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:mikomi/shared/utils/theme_extensions.dart';
+import 'package:mikomi/shared/theme_extensions.dart';
 import 'package:mikomi/core/services/auth_service.dart';
 
 class AccountSettingsPage extends StatelessWidget {

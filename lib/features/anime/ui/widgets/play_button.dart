@@ -6,7 +6,7 @@ import 'package:mikomi/core/models/episode.dart';
 import 'package:mikomi/core/services/bangumi_episodes_service.dart';
 import 'package:mikomi/features/video/services/video_content_service.dart';
 import 'package:mikomi/features/video/services/video_plugin_service.dart';
-import 'package:mikomi/shared/widgets/message_dialog.dart';
+import 'package:mikomi/shared/message_dialog.dart';
 
 class PlayButton extends StatefulWidget {
   final VoidCallback? onPlay;

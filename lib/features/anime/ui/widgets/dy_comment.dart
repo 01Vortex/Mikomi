@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mikomi/config/themes/app_colors.dart';
-import 'package:mikomi/shared/widgets/cached_image.dart';
-import 'package:mikomi/shared/widgets/skeleton.dart';
+import 'package:mikomi/shared/cached_image.dart';
+import 'package:mikomi/shared/skeleton.dart';
 import 'package:intl/intl.dart';
 
 class DyComment<T> extends StatefulWidget {

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mikomi/config/themes/app_colors.dart';
 import 'package:mikomi/core/models/comment_item.dart';
-import 'package:mikomi/shared/widgets/cached_image.dart';
+import 'package:mikomi/shared/cached_image.dart';
 
 class CommentCard extends StatelessWidget {
   final CommentItem commentItem;

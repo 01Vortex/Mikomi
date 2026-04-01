@@ -4,8 +4,8 @@ import 'package:mikomi/core/models/anime.dart';
 import 'package:mikomi/core/models/comment_item.dart';
 import 'package:mikomi/core/network/dio_client.dart';
 import 'package:mikomi/features/anime/data/bangumi_teasing.dart';
-import 'package:mikomi/shared/widgets/comment_card.dart';
-import 'package:mikomi/shared/widgets/skeleton.dart';
+import 'package:mikomi/shared/comment_card.dart';
+import 'package:mikomi/shared/skeleton.dart';
 
 class AnimeTeasingContent extends StatefulWidget {
   final Anime anime;

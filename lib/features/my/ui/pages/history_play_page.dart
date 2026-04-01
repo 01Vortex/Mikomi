@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:mikomi/core/services/watch_history_service.dart';
 import 'package:mikomi/core/models/watch_history.dart';
 import 'package:mikomi/features/video/ui/pages/video_page.dart';
-import 'package:mikomi/shared/widgets/cached_image.dart';
-import 'package:mikomi/shared/widgets/skeleton.dart';
+import 'package:mikomi/shared/cached_image.dart';
+import 'package:mikomi/shared/skeleton.dart';
 import 'package:mikomi/core/services/bangumi_service.dart';
 
 class WatchHistoryPage extends StatefulWidget {

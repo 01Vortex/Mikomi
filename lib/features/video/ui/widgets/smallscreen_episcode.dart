@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mikomi/core/models/episode.dart';
-import 'package:mikomi/shared/utils/theme_extensions.dart';
-import 'package:mikomi/shared/widgets/scrolling_text.dart';
+import 'package:mikomi/shared/theme_extensions.dart';
+import 'package:mikomi/shared/scrolling_text.dart';
 
 class SmallscreenEpisode extends StatelessWidget {
   final Episode episode;

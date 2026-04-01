@@ -5,7 +5,7 @@ import 'package:mikomi/features/home/ui/widgets/home_button_tab.dart';
 import 'package:mikomi/features/home/ui/widgets/home_display.dart';
 import 'package:mikomi/features/home/data/bangumi_basis.dart';
 import 'package:mikomi/core/models/anime.dart';
-import 'package:mikomi/shared/widgets/skeleton.dart';
+import 'package:mikomi/shared/skeleton.dart';
 import 'package:mikomi/config/themes/app_colors.dart';
 import 'package:mikomi/config/routes/app_routes.dart';
 

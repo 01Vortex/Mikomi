@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:mikomi/shared/utils/theme_extensions.dart';
+import 'package:mikomi/shared/theme_extensions.dart';
 import 'package:mikomi/features/auth/service/bangumi_login_service.dart';
 import 'package:mikomi/features/auth/service/mikomi_login_service.dart';
 import 'package:mikomi/features/auth/service/mikomi_oauth_service.dart';
 import 'package:mikomi/features/auth/ui/pages/register_page.dart';
 import 'package:mikomi/core/services/auth_service.dart';
 import 'package:mikomi/core/services/navigation_service.dart';
-import 'package:mikomi/shared/widgets/message_dialog.dart';
+import 'package:mikomi/shared/message_dialog.dart';
 import 'package:app_links/app_links.dart';
 import 'package:provider/provider.dart';
 import 'dart:async';

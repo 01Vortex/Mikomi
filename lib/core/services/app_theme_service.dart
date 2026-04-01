@@ -1,5 +1,5 @@
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:mikomi/core/models/app_theme_model.dart';
+import 'package:mikomi/core/models/theme.dart';
 
 class AppThemeService {
   static const String _themeIdKey = 'app_theme_id';

@@ -4,10 +4,10 @@ import 'package:mikomi/core/services/collection_service.dart';
 import 'package:mikomi/core/services/collection_notifier.dart';
 import 'package:mikomi/features/anime/ui/pages/anime_page.dart';
 import 'package:mikomi/core/services/bangumi_service.dart';
-import 'package:mikomi/shared/utils/theme_extensions.dart';
-import 'package:mikomi/shared/widgets/cached_image.dart';
-import 'package:mikomi/shared/widgets/skeleton.dart';
-import 'package:mikomi/shared/widgets/scrolling_text.dart';
+import 'package:mikomi/shared/theme_extensions.dart';
+import 'package:mikomi/shared/cached_image.dart';
+import 'package:mikomi/shared/skeleton.dart';
+import 'package:mikomi/shared/scrolling_text.dart';
 
 class CollectTabContent extends StatefulWidget {
   const CollectTabContent({super.key});

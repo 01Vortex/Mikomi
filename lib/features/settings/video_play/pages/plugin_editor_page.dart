@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:mikomi/core/models/video_plugin.dart';
 import 'package:mikomi/features/settings/video_play/service/plugin_manager_service.dart';
-import 'package:mikomi/shared/utils/theme_extensions.dart';
-import 'package:mikomi/shared/widgets/message_dialog.dart';
+import 'package:mikomi/shared/theme_extensions.dart';
+import 'package:mikomi/shared/message_dialog.dart';
 
 class PluginEditorPage extends StatefulWidget {
   final VideoPlugin? plugin;

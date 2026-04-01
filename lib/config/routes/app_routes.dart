@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../shared/widgets/main_page.dart';
+import '../../shared/main_page.dart';
 import '../../features/anime/ui/pages/anime_page.dart';
 import '../../features/home/ui/pages/schedule_page.dart';
 import '../../features/home/ui/pages/rank_page.dart';

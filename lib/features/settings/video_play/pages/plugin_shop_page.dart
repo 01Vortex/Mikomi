@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mikomi/features/settings/video_play/service/plugin_shop_service.dart';
 import 'package:mikomi/features/settings/video_play/service/plugin_manager_service.dart';
-import 'package:mikomi/shared/widgets/message_dialog.dart';
+import 'package:mikomi/shared/message_dialog.dart';
 
 class PluginShopPage extends StatefulWidget {
   const PluginShopPage({super.key});

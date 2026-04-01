@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:mikomi/config/themes/app_colors.dart';
 import 'package:mikomi/core/models/anime.dart';
 import 'package:mikomi/config/localization/app_localizations.dart';
-import 'package:mikomi/shared/widgets/skeleton.dart';
+import 'package:mikomi/shared/skeleton.dart';
 
 class PopularityRankingView extends StatelessWidget {
   final List<Anime> rankings;

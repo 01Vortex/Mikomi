@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:mikomi/shared/widgets/scrolling_text.dart';
+import 'package:mikomi/shared/scrolling_text.dart';
 import 'package:mikomi/config/themes/app_colors.dart';
-import 'package:mikomi/shared/widgets/cached_image.dart';
+import 'package:mikomi/shared/cached_image.dart';
 import 'package:mikomi/core/providers/theme_animation_provider.dart';
 
 class AnimeCard extends StatelessWidget {

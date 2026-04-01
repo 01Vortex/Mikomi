@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:mikomi/core/models/theme_color_scheme.dart';
+import 'package:mikomi/shared/theme_extensions.dart';
 
 class AppTheme {
   final String id;

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:mikomi/core/models/app_theme_model.dart';
+import 'package:mikomi/core/models/theme.dart';
 import 'package:mikomi/core/services/app_theme_service.dart';
 
 class AppThemeProvider extends ChangeNotifier {

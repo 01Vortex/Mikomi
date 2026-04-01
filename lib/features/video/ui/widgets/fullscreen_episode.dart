@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mikomi/core/models/episode.dart';
-import 'package:mikomi/shared/widgets/skeleton.dart';
-import 'package:mikomi/shared/utils/theme_extensions.dart';
+import 'package:mikomi/shared/skeleton.dart';
+import 'package:mikomi/shared/theme_extensions.dart';
 
 class FullscreenEpisodeSelector extends StatefulWidget {
   final List<Episode> episodes;

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:mikomi/shared/utils/theme_extensions.dart';
+import 'package:mikomi/shared/theme_extensions.dart';
 
 class CommentTabContent extends StatelessWidget {
   const CommentTabContent.VideoComment({super.key});

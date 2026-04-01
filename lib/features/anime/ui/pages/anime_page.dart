@@ -11,7 +11,7 @@ import 'package:mikomi/core/models/collection_item.dart';
 import 'package:mikomi/core/services/collection_service.dart';
 import 'package:mikomi/features/anime/selector/video_source_selector.dart';
 import 'package:mikomi/features/settings/video_play/service/plugin_manager_service.dart';
-import 'package:mikomi/shared/utils/theme_extensions.dart';
+import 'package:mikomi/shared/theme_extensions.dart';
 
 class AnimePage extends StatefulWidget {
   final Anime anime;

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mikomi/core/models/anime.dart';
-import 'package:mikomi/shared/widgets/anime_grid_card.dart';
+import 'package:mikomi/shared/anime_grid_card.dart';
 import 'package:mikomi/config/routes/app_routes.dart';
 
 class HomeDisplay extends StatelessWidget {

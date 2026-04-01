@@ -6,7 +6,7 @@ import 'package:mikomi/features/settings/video_play/service/hardware_decode_serv
 import 'package:mikomi/features/settings/danmaku/danmaku_setting_service.dart';
 import 'package:mikomi/features/settings/account/account_manage_page.dart';
 import 'package:mikomi/core/services/auth_service.dart';
-import 'package:mikomi/shared/widgets/message_dialog.dart';
+import 'package:mikomi/shared/message_dialog.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});

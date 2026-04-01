@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:canvas_danmaku/canvas_danmaku.dart';
-import 'package:mikomi/shared/utils/theme_extensions.dart';
+import 'package:mikomi/shared/theme_extensions.dart';
 
 /// 弹幕渲染层 —— 供小屏和全屏共用
 /// 包裹在 [IgnorePointer] 内，不拦截触摸事件

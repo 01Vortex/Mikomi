@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:mikomi/config/routes/app_routes.dart';
 import 'package:mikomi/core/models/anime.dart';
 import 'package:mikomi/features/home/service/rank_service.dart';
-import 'package:mikomi/shared/utils/theme_extensions.dart';
-import 'package:mikomi/shared/widgets/cached_image.dart';
-import 'package:mikomi/shared/widgets/skeleton.dart';
+import 'package:mikomi/shared/theme_extensions.dart';
+import 'package:mikomi/shared/cached_image.dart';
+import 'package:mikomi/shared/skeleton.dart';
 
 class RankPage extends StatefulWidget {
   const RankPage({super.key});

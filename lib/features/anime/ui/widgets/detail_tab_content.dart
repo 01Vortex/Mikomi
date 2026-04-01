@@ -6,8 +6,8 @@ import 'package:mikomi/core/models/staff_item.dart';
 import 'package:mikomi/core/network/dio_client.dart';
 import 'package:mikomi/features/anime/data/bangumi_detail.dart';
 import 'package:mikomi/features/anime/ui/widgets/detail_popover.dart';
-import 'package:mikomi/shared/widgets/scrolling_text.dart';
-import 'package:mikomi/shared/widgets/skeleton.dart';
+import 'package:mikomi/shared/scrolling_text.dart';
+import 'package:mikomi/shared/skeleton.dart';
 
 class DetailTabContent extends StatefulWidget {
   final Anime anime;

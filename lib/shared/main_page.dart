@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:mikomi/features/home/ui/pages/home_page.dart';
 import 'package:mikomi/features/pilgrimage/ui/pages/pilgrimage_page.dart';
 import 'package:mikomi/features/my/ui/pages/my_page.dart';
-import 'package:mikomi/shared/widgets/bottom_navigation.dart';
+import 'package:mikomi/shared/bottom_navigation.dart';
 import 'package:mikomi/core/services/navigation_service.dart';
 
 class MainPage extends StatefulWidget {

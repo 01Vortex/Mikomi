@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 extension ColorExtension on Color {
-  /// 生成浅色版本（增加亮度）
   Color lighten([double amount = 0.1]) {
     assert(amount >= 0 && amount <= 1);
     final hsl = HSLColor.fromColor(this);
@@ -11,17 +10,14 @@ extension ColorExtension on Color {
     return lightened.toColor();
   }
 
-  /// 生成更浅的版本
   Color lightenMore([double amount = 0.2]) {
     return lighten(amount);
   }
 
-  /// 生成最浅的版本（背景色）
   Color lightenMost([double amount = 0.35]) {
     return lighten(amount);
   }
 
-  /// 生成深色版本（降低亮度）
   Color darken([double amount = 0.1]) {
     assert(amount >= 0 && amount <= 1);
     final hsl = HSLColor.fromColor(this);
@@ -32,12 +28,11 @@ extension ColorExtension on Color {
   }
 }
 
-/// 主题色系统
 class ThemeColorScheme {
-  final Color primary;           // 主题色（最深）
-  final Color primaryLight;      // 浅色版本
-  final Color primaryLighter;    // 更浅版本
-  final Color primaryLightest;   // 最浅版本（背景）
+  final Color primary;
+  final Color primaryLight;
+  final Color primaryLighter;
+  final Color primaryLightest;
 
   ThemeColorScheme({
     required this.primary,
@@ -48,18 +43,15 @@ class ThemeColorScheme {
         primaryLighter = primaryLighter ?? primary.lighten(0.25),
         primaryLightest = primaryLightest ?? primary.lighten(0.4);
 
-  /// 从主题色自动生成色系
   factory ThemeColorScheme.auto(Color primary) {
     return ThemeColorScheme(primary: primary);
   }
 
-  // 衍生色
   Color get surface => primaryLightest;
   Color get surfaceVariant => primaryLighter;
   Color get onSurface => primary;
   Color get onSurfaceVariant => primaryLight;
 
-  /// 获取背景渐变（四色混合）
   LinearGradient getBackgroundGradient() {
     return LinearGradient(
       begin: Alignment.topLeft,
@@ -73,4 +65,28 @@ class ThemeColorScheme {
       stops: const [0.0, 0.33, 0.66, 1.0],
     );
   }
+}
+
+extension ThemeColorExtensions on ColorScheme {
+  Color get textPrimary => onSurface;
+
+  Color get textSecondary => onSurface.withValues(alpha: 0.6);
+
+  Color get textHint => onSurface.withValues(alpha: 0.5);
+
+  Color get textDisabled => onSurface.withValues(alpha: 0.38);
+
+  Color get textLight => onSurface.withValues(alpha: 0.3);
+
+  Color get primaryLight => primary.withValues(alpha: 0.15);
+
+  Color get primaryLighter => primary.withValues(alpha: 0.1);
+
+  Color get primaryOverlay => primary.withValues(alpha: 0.3);
+}
+
+extension ThemeContextExtensions on BuildContext {
+  ColorScheme get colors => Theme.of(this).colorScheme;
+
+  TextTheme get textTheme => Theme.of(this).textTheme;
 }
