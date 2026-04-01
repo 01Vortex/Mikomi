@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:mikomi/config/themes/app_colors.dart';
+import 'package:mikomi/config/app_theme.dart';
 import 'package:mikomi/core/models/anime.dart';
 import 'package:mikomi/shared/anime_grid_card.dart';
-import 'package:mikomi/config/localization/app_localizations.dart';
-import 'package:mikomi/config/routes/app_routes.dart';
+import 'package:mikomi/config/app_localizations.dart';
+import 'package:mikomi/config/app_routes.dart';
 
 class SearchResultsView extends StatelessWidget {
   final List<Anime> results;

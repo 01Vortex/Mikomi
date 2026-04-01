@@ -1,5 +1,5 @@
 import 'package:mikomi/core/network/dio_client.dart';
-import 'package:mikomi/core/network/api_constants.dart';
+import 'package:mikomi/core/network/app_api.dart';
 import 'package:mikomi/features/anime/models/anime_teasing_model.dart';
 
 class BangumiTeasing {

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:mikomi/config/themes/app_colors.dart';
+import 'package:mikomi/config/app_theme.dart';
 import 'package:mikomi/features/anime/models/anime_teasing_model.dart';
 import 'package:mikomi/shared/cached_image.dart';
 

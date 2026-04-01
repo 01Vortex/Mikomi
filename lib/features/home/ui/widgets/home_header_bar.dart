@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:mikomi/config/themes/app_colors.dart';
+import 'package:mikomi/config/app_theme.dart';
 import 'package:mikomi/features/search/ui/pages/search_page.dart';
 import 'package:mikomi/core/services/auth_service.dart';
 

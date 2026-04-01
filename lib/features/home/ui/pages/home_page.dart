@@ -3,11 +3,11 @@ import 'package:mikomi/features/home/ui/widgets/home_header_bar.dart';
 import 'package:mikomi/features/home/ui/widgets/home_slider_image.dart';
 import 'package:mikomi/features/home/ui/widgets/home_button_tab.dart';
 import 'package:mikomi/features/home/ui/widgets/home_display.dart';
-import 'package:mikomi/features/home/data/home_feed_data.dart';
+import 'package:mikomi/features/home/service/home_content_service.dart';
 import 'package:mikomi/features/home/models/home_anime_model.dart';
 import 'package:mikomi/shared/skeleton.dart';
-import 'package:mikomi/config/themes/app_colors.dart';
-import 'package:mikomi/config/routes/app_routes.dart';
+import 'package:mikomi/config/app_theme.dart';
+import 'package:mikomi/config/app_routes.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});

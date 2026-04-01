@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:mikomi/config/themes/app_colors.dart';
+import 'package:mikomi/config/app_theme.dart';
 import 'package:mikomi/core/models/anime.dart';
 import 'package:mikomi/features/anime/models/anime_related_info_model.dart';
 import 'package:mikomi/features/anime/models/staff_info_model.dart';
@@ -37,7 +37,7 @@ class _DetailTabContentState extends State<DetailTabContent> {
       _isLoadingStaff = true;
     });
 
-    print('开始加载角色和制作人员数据，番剧ID: ${widget.anime.id}');
+    debugPrint('开始加载角色和制作人员数据，番剧ID: ${widget.anime.id}');
 
     final results = await Future.wait([
       _repository.getCharacters(widget.anime.id),
@@ -48,7 +48,7 @@ class _DetailTabContentState extends State<DetailTabContent> {
       final characters = results[0] as List<AnimeRelatedInfoModel>;
       final staff = results[1] as List<StaffInfoModel>;
 
-      print('加载完成 - 角色数量: ${characters.length}, 制作人员数量: ${staff.length}');
+      debugPrint('加载完成 - 角色数量: ${characters.length}, 制作人员数量: ${staff.length}');
 
       // 角色排序：主角 > 配角 > 客串 > 其他
       characters.sort((a, b) {
@@ -230,7 +230,7 @@ class _DetailTabContentState extends State<DetailTabContent> {
   Widget _buildCharacterCard(AnimeRelatedInfoModel character) {
     return InkWell(
       onTap: () {
-        print('点击角色卡片: ${character.name}');
+        debugPrint('点击角色卡片: ${character.name}');
         _showCharacterInfoModel(context, character.id);
       },
       child: SizedBox(
@@ -323,7 +323,7 @@ class _DetailTabContentState extends State<DetailTabContent> {
   Widget _buildStaffCard(StaffInfoModel StaffInfoModel) {
     return InkWell(
       onTap: () {
-        print('点击制作人员卡片: ${StaffInfoModel.staff.name}');
+        debugPrint('点击制作人员卡片: ${StaffInfoModel.staff.name}');
         _showPersonInfoModel(context, StaffInfoModel.staff.id);
       },
       child: SizedBox(

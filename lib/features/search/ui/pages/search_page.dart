@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:mikomi/config/themes/app_colors.dart';
+import 'package:mikomi/config/app_theme.dart';
 import 'package:mikomi/core/services/bangumi_service.dart';
 import 'package:mikomi/core/services/search_history_service.dart';
 import 'package:mikomi/core/models/anime.dart';
@@ -10,7 +10,7 @@ import 'package:mikomi/features/search/ui/widgets/search_history_view.dart';
 import 'package:mikomi/features/search/ui/widgets/search_suggestions_view.dart';
 import 'package:mikomi/features/search/ui/widgets/popularity_ranking_view.dart';
 import 'package:mikomi/features/search/ui/pages/search_results_page.dart';
-import 'package:mikomi/config/routes/app_routes.dart';
+import 'package:mikomi/config/app_routes.dart';
 
 class SearchPage extends StatefulWidget {
   const SearchPage({super.key});

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:mikomi/config/routes/app_routes.dart';
+import 'package:mikomi/config/app_routes.dart';
 import 'package:mikomi/features/home/models/home_anime_model.dart';
 import 'package:mikomi/features/home/service/rank_service.dart';
 import 'package:mikomi/shared/theme_extensions.dart';

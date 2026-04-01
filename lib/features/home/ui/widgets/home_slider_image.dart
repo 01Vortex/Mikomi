@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:card_swiper/card_swiper.dart';
-import 'package:mikomi/config/routes/app_routes.dart';
-import 'package:mikomi/config/themes/app_colors.dart';
+import 'package:mikomi/config/app_routes.dart';
+import 'package:mikomi/config/app_theme.dart';
 import 'package:mikomi/features/home/models/home_anime_model.dart';
 import 'package:mikomi/shared/cached_image.dart';
 import 'package:mikomi/shared/skeleton.dart';

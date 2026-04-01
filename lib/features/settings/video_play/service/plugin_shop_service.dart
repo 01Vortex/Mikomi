@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:mikomi/features/video/models/video_plugin.dart';
 
 class PluginHTTPItem {
@@ -56,7 +57,7 @@ class PluginShopService {
                 PluginHTTPItem.fromJson(item as Map<String, dynamic>))
             .toList();
       } catch (e) {
-        print('获取云端插件列表失败 ($baseUrl): $e');
+        debugPrint('获取云端插件列表失败 ($baseUrl): $e');
       }
     }
     return [];
@@ -70,7 +71,7 @@ class PluginShopService {
             jsonDecode(response.data!) as Map<String, dynamic>;
         return VideoPlugin.fromJson(json);
       } catch (e) {
-        print('获取云端插件失败 ($baseUrl): $e');
+        debugPrint('获取云端插件失败 ($baseUrl): $e');
       }
     }
     return null;

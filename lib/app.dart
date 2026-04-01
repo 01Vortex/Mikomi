@@ -1,15 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
-import 'config/routes/app_routes.dart';
-import 'config/themes/app_theme.dart';
-import 'config/localization/app_localizations.dart';
+import 'config/app_routes.dart';
+import 'config/app_theme.dart';
+import 'config/app_localizations.dart';
 import 'core/services/locale_service.dart';
 import 'core/services/auth_service.dart';
 import 'core/services/navigation_service.dart';
 import 'core/providers/app_theme_provider.dart';
-import 'core/providers/theme_font_provider.dart';
-import 'core/providers/theme_animation_provider.dart';
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
@@ -32,7 +30,7 @@ class MyApp extends StatelessWidget {
           final effectiveFontFamily = fontProvider.getEffectiveFontFamily();
 
           return MaterialApp(
-            key: ValueKey('${effectiveColor}_${effectiveFontFamily}'),
+            key: ValueKey('${effectiveColor}_$effectiveFontFamily'),
             title: 'Mikomi',
             debugShowCheckedModeBanner: false,
             theme: ThemeData(

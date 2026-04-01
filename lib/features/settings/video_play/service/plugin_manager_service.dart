@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:mikomi/features/video/models/video_plugin.dart';
@@ -51,7 +52,7 @@ class VideoPluginManager {
           .toList();
 
       if (jsonFiles.isEmpty) {
-        print('未找到默认插件');
+        debugPrint('未找到默认插件');
         return;
       }
 
@@ -62,16 +63,16 @@ class VideoPluginManager {
           final plugin = VideoPlugin.fromJson(json);
           _plugins.add(plugin);
         } catch (e) {
-          print('加载默认插件失败 $filePath: $e');
+          debugPrint('加载默认插件失败 $filePath: $e');
         }
       }
 
       if (_plugins.isNotEmpty) {
         await savePlugins();
-        print('已加载 ${_plugins.length} 个默认插件');
+        debugPrint('已加载 ${_plugins.length} 个默认插件');
       }
     } catch (e) {
-      print('加载默认插件失败: $e');
+      debugPrint('加载默认插件失败: $e');
     }
   }
 
@@ -92,7 +93,7 @@ class VideoPluginManager {
       final List<dynamic> jsonList = jsonDecode(jsonString);
       _plugins = jsonList.map((json) => VideoPlugin.fromJson(json)).toList();
     } catch (e) {
-      print('加载插件失败: $e');
+      debugPrint('加载插件失败: $e');
       _plugins.clear();
     }
   }
@@ -110,7 +111,7 @@ class VideoPluginManager {
       final jsonString = jsonEncode(jsonList);
       await pluginsFile.writeAsString(jsonString);
     } catch (e) {
-      print('保存插件失败: $e');
+      debugPrint('保存插件失败: $e');
     }
   }
 
@@ -182,7 +183,7 @@ class VideoPluginManager {
       await updatePlugin(plugin);
       return true;
     } catch (e) {
-      print('导入插件失败: $e');
+      debugPrint('导入插件失败: $e');
       return false;
     }
   }

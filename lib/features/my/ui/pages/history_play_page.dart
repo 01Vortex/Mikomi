@@ -108,34 +108,6 @@ class _HistoryModelPageState extends State<HistoryModelPage> {
     });
   }
 
-  Future<void> _clearAll() async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('清空历史记录'),
-        content: const Text('确认要清除所有历史记录吗?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text(
-              '取消',
-              style: TextStyle(color: Theme.of(context).colorScheme.outline),
-            ),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('确认'),
-          ),
-        ],
-      ),
-    );
-
-    if (confirmed == true) {
-      await _historyService.clearAll();
-      _loadHistories();
-    }
-  }
-
   Map<String, List<HistoryModel>> _groupByDate() {
     final Map<String, List<HistoryModel>> grouped = {};
     final now = DateTime.now();

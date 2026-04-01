@@ -1,39 +1,23 @@
+import 'package:mikomi/features/home/data/repositories/home_repository.dart';
 import 'package:mikomi/features/home/models/home_anime_model.dart';
-import 'package:mikomi/features/home/data/anilist_rank_data.dart';
-import 'package:mikomi/features/home/data/rank_record.dart';
-import 'package:mikomi/features/home/data/tencent_rank_data.dart';
 
 enum RankCategory { play, collection, chinese, japanese }
 
 class RankService {
-  final AniListRankData _aniListRankData = AniListRankData();
-  final TencentRankData _tencentRankData = TencentRankData();
-
+  final HomeRepository _repository = HomeRepository();
   final Map<int, int> _metricById = {};
 
   Future<List<HomeAnimeModel>> getRankList(
     RankCategory category, {
     int limit = 30,
   }) async {
-    List<RankRecord> records;
-
-    switch (category) {
-      case RankCategory.play:
-        records = await _aniListRankData.getPlayRank(limit: limit);
-        break;
-      case RankCategory.collection:
-        records = await _aniListRankData.getCollectionRank(limit: limit);
-        break;
-      case RankCategory.chinese:
-        records = await _tencentRankData.getChineseAnimeRank(limit: limit);
-        break;
-      case RankCategory.japanese:
-        records = await _aniListRankData.getPlayRank(
-          japaneseOnly: true,
-          limit: limit,
-        );
-        break;
-    }
+    final records = switch (category) {
+      RankCategory.play => await _repository.getPlayRank(limit: limit),
+      RankCategory.collection => await _repository.getCollectionRank(limit: limit),
+      RankCategory.chinese => await _repository.getChineseRank(limit: limit),
+      RankCategory.japanese =>
+        await _repository.getPlayRank(japaneseOnly: true, limit: limit),
+    };
 
     _metricById
       ..clear()
@@ -59,7 +43,8 @@ class RankService {
   }
 
   bool isChineseAnime(HomeAnimeModel item) {
-    final text = '${item.name}|${item.nameCn}|${item.info}|${item.tags.map((e) => e.name).join('|')}';
+    final text =
+        '${item.name}|${item.nameCn}|${item.info}|${item.tags.map((e) => e.name).join('|')}';
     return text.contains('国创') ||
         text.contains('国漫') ||
         text.contains('国产') ||

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mikomi/shared/scrolling_text.dart';
 import 'package:mikomi/shared/cached_image.dart';
-import 'package:mikomi/core/providers/theme_animation_provider.dart';
+import 'package:mikomi/core/providers/app_theme_provider.dart';
 
 class AnimeGridCard extends StatelessWidget {
   final String title;

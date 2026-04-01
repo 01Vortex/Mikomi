@@ -1,6 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
-import 'package:mikomi/config/api_config.dart';
+import 'package:mikomi/core/network/app_api.dart';
 import 'package:mikomi/core/services/api_service.dart';
 
 class MikomiRegisterService {

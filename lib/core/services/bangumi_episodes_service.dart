@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:mikomi/features/video/models/episode.dart';
 
 class BangumiEpisodesService {
@@ -39,7 +40,7 @@ class BangumiEpisodesService {
       }
       return [];
     } catch (e) {
-      print('获取集数失败: $e');
+      debugPrint('获取集数失败: $e');
       return [];
     }
   }

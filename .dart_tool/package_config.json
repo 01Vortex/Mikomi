@@ -621,13 +621,13 @@
     },
     {
       "name": "shared_preferences",
-      "rootUri": "file:///D:/CodeApp/Data/Android/Flutter_Cache/hosted/pub.flutter-io.cn/shared_preferences-2.5.4",
+      "rootUri": "file:///D:/CodeApp/Data/Android/Flutter_Cache/hosted/pub.flutter-io.cn/shared_preferences-2.5.5",
       "packageUri": "lib/",
       "languageVersion": "3.9"
     },
     {
       "name": "shared_preferences_android",
-      "rootUri": "file:///D:/CodeApp/Data/Android/Flutter_Cache/hosted/pub.flutter-io.cn/shared_preferences_android-2.4.21",
+      "rootUri": "file:///D:/CodeApp/Data/Android/Flutter_Cache/hosted/pub.flutter-io.cn/shared_preferences_android-2.4.23",
       "packageUri": "lib/",
       "languageVersion": "3.9"
     },
@@ -645,9 +645,9 @@
     },
     {
       "name": "shared_preferences_platform_interface",
-      "rootUri": "file:///D:/CodeApp/Data/Android/Flutter_Cache/hosted/pub.flutter-io.cn/shared_preferences_platform_interface-2.4.1",
+      "rootUri": "file:///D:/CodeApp/Data/Android/Flutter_Cache/hosted/pub.flutter-io.cn/shared_preferences_platform_interface-2.4.2",
       "packageUri": "lib/",
-      "languageVersion": "3.2"
+      "languageVersion": "3.9"
     },
     {
       "name": "shared_preferences_web",

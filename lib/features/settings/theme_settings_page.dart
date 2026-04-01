@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:mikomi/core/models/theme.dart';
 import 'package:mikomi/core/providers/app_theme_provider.dart';
-import 'package:mikomi/core/providers/theme_font_provider.dart';
-import 'package:mikomi/core/providers/theme_animation_provider.dart';
 
 class ThemeSettingsPage extends StatefulWidget {
   const ThemeSettingsPage({super.key});

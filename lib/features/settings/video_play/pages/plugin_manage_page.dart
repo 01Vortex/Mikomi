@@ -108,7 +108,7 @@ class _PluginManagePageState extends State<PluginManagePage> {
     final TextEditingController controller = TextEditingController();
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: const Text('导入规则'),
         content: TextField(
           controller: controller,
@@ -120,7 +120,7 @@ class _PluginManagePageState extends State<PluginManagePage> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogContext),
             child: const Text('取消'),
           ),
           TextButton(
@@ -128,14 +128,15 @@ class _PluginManagePageState extends State<PluginManagePage> {
               final success = await _pluginManager.importPluginFromBase64(
                 controller.text.trim(),
               );
-              if (mounted) {
-                Navigator.pop(context);
-                if (success) {
-                  MessageDialog.success(context, '导入成功');
-                  setState(() {});
-                } else {
-                  MessageDialog.error(context, '导入失败，请检查格式');
-                }
+              if (!mounted || !dialogContext.mounted) {
+                return;
+              }
+              Navigator.pop(dialogContext);
+              if (success) {
+                MessageDialog.success(this.context, '导入成功');
+                setState(() {});
+              } else {
+                MessageDialog.error(context, '导入失败，请检查格式');
               }
             },
             child: const Text('导入'),
@@ -148,24 +149,25 @@ class _PluginManagePageState extends State<PluginManagePage> {
   void _handleDelete() {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: const Text('删除规则'),
         content: Text('确定要删除选中的 ${_selectedIds.length} 条规则吗？'),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogContext),
             child: const Text('取消'),
           ),
           TextButton(
             onPressed: () async {
               await _pluginManager.removePlugins(_selectedIds);
-              if (mounted) {
-                Navigator.pop(context);
-                setState(() {
-                  _isMultiSelectMode = false;
-                  _selectedIds.clear();
-                });
+              if (!mounted || !dialogContext.mounted) {
+                return;
               }
+              Navigator.pop(dialogContext);
+              setState(() {
+                _isMultiSelectMode = false;
+                _selectedIds.clear();
+              });
             },
             child: const Text('删除'),
           ),
@@ -327,7 +329,7 @@ class _PluginManagePageState extends State<PluginManagePage> {
                               _pluginManager.exportPluginToBase64(plugin);
                           await Clipboard.setData(ClipboardData(text: base64));
                           if (mounted) {
-                            MessageDialog.success(context, '已复制到剪贴板');
+                            MessageDialog.success(this.context, '已复制到剪贴板');
                           }
                         },
                         onDelete: () async {

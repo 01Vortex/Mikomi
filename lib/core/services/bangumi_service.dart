@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:mikomi/core/network/dio_client.dart';
-import 'package:mikomi/core/network/api_constants.dart';
+import 'package:mikomi/core/network/app_api.dart';
 import 'package:mikomi/core/models/anime.dart';
 import 'package:mikomi/features/search/service/search_service.dart';
 

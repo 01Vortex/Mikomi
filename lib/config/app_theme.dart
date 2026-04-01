@@ -38,3 +38,27 @@ class AppColors {
   static const Color placeholder = Color(0xFFE0E0E0);
   static const Color placeholderIcon = Color(0xFF9E9E9E);
 }
+
+class AppTheme {
+  static ThemeData get lightTheme {
+    return ThemeData(
+      useMaterial3: true,
+      colorScheme: ColorScheme.fromSeed(
+        seedColor: AppColors.primary,
+        brightness: Brightness.light,
+      ),
+      appBarTheme: const AppBarTheme(centerTitle: true, elevation: 0),
+    );
+  }
+
+  static ThemeData get darkTheme {
+    return ThemeData(
+      useMaterial3: true,
+      colorScheme: ColorScheme.fromSeed(
+        seedColor: AppColors.primary,
+        brightness: Brightness.dark,
+      ),
+      appBarTheme: const AppBarTheme(centerTitle: true, elevation: 0),
+    );
+  }
+}

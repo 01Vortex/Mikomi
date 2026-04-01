@@ -1,21 +1,21 @@
 import 'package:flutter/material.dart';
-import '../../shared/main_page.dart';
-import '../../features/anime/ui/pages/anime_page.dart';
-import '../../features/home/ui/pages/schedule_page.dart';
-import '../../features/home/ui/pages/rank_page.dart';
-import '../../features/home/ui/pages/category_page.dart';
-import '../../features/settings/video_play/pages/plugin_manage_page.dart';
-import '../../features/settings/video_play/pages/plugin_editor_page.dart';
-import '../../features/settings/video_play/pages/plugin_test_page.dart';
-import '../../features/settings/video_play/pages/plugin_shop_page.dart';
-import '../../features/settings/danmaku/danmaku_setting_page.dart';
-import '../../features/auth/ui/pages/login_page.dart';
-import '../../features/settings/video_play/pages/hardware_decode_page.dart';
-import '../../features/settings/video_play/pages/play_setting_page.dart';
-import '../../features/settings/video_play/pages/video_renderer_page.dart';
-import '../../core/models/anime.dart';
-import '../../features/home/models/home_anime_model.dart';
-import '../../features/video/models/video_plugin.dart';
+import '../shared/main_page.dart';
+import '../features/anime/ui/pages/anime_page.dart';
+import '../features/home/ui/pages/schedule_page.dart';
+import '../features/home/ui/pages/rank_page.dart';
+import '../features/home/ui/pages/category_page.dart';
+import '../features/settings/video_play/pages/plugin_manage_page.dart';
+import '../features/settings/video_play/pages/plugin_editor_page.dart';
+import '../features/settings/video_play/pages/plugin_test_page.dart';
+import '../features/settings/video_play/pages/plugin_shop_page.dart';
+import '../features/settings/danmaku/danmaku_setting_page.dart';
+import '../features/auth/ui/pages/login_page.dart';
+import '../features/settings/video_play/pages/hardware_decode_page.dart';
+import '../features/settings/video_play/pages/play_setting_page.dart';
+import '../features/settings/video_play/pages/video_renderer_page.dart';
+import '../core/models/anime.dart';
+import '../features/home/models/home_anime_model.dart';
+import '../features/video/models/video_plugin.dart';
 
 class AppRoutes {
   static const String main = '/';

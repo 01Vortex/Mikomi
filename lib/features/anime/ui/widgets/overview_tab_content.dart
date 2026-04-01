@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:mikomi/config/themes/app_colors.dart';
+import 'package:mikomi/config/app_theme.dart';
 import 'package:mikomi/core/models/anime.dart';
 import 'package:mikomi/shared/skeleton.dart';
 import 'package:mikomi/shared/theme_extensions.dart';

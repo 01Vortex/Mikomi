@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mikomi/features/home/models/home_anime_model.dart';
 import 'package:mikomi/shared/anime_grid_card.dart';
-import 'package:mikomi/config/routes/app_routes.dart';
+import 'package:mikomi/config/app_routes.dart';
 
 class HomeDisplay extends StatelessWidget {
   final List<HomeAnimeModel> animeList;

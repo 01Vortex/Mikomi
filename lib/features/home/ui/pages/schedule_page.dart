@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:mikomi/features/home/data/home_feed_data.dart';
+import 'package:mikomi/features/home/service/home_content_service.dart';
 import 'package:mikomi/features/home/models/home_anime_model.dart';
-import 'package:mikomi/config/routes/app_routes.dart';
+import 'package:mikomi/config/app_routes.dart';
 import 'package:mikomi/shared/theme_extensions.dart';
 import 'package:mikomi/shared/cached_image.dart';
 import 'package:mikomi/shared/scrolling_text.dart';
-import 'package:mikomi/core/providers/theme_animation_provider.dart';
+import 'package:mikomi/core/providers/app_theme_provider.dart';
 
 class SchedulePage extends StatefulWidget {
   const SchedulePage({super.key});

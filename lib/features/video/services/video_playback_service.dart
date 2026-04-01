@@ -42,9 +42,14 @@ class VideoPlaybackService {
       return 'default';
     }
 
-    final nativePlayer = _player!.platform as NativePlayer;
-    await nativePlayer.setProperty('ao', 'opensles');
-    return await nativePlayer.getProperty('ao');
+    try {
+      final dynamic nativePlayer = _player!.platform;
+      await nativePlayer.setProperty('ao', 'opensles');
+      final dynamic ao = await nativePlayer.getProperty('ao');
+      return ao?.toString() ?? 'opensles';
+    } catch (_) {
+      return 'default';
+    }
   }
 
   Future<void> initialize({bool smallScreen = false}) async {
