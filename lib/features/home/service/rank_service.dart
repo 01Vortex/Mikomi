@@ -9,14 +9,13 @@ class RankService {
 
   Future<List<HomeAnimeModel>> getRankList(
     RankCategory category, {
-    int limit = 30,
+    int limit = 100,
   }) async {
     final records = switch (category) {
       RankCategory.play => await _repository.getPlayRank(limit: limit),
       RankCategory.collection => await _repository.getCollectionRank(limit: limit),
       RankCategory.chinese => await _repository.getChineseRank(limit: limit),
-      RankCategory.japanese =>
-        await _repository.getPlayRank(japaneseOnly: true, limit: limit),
+      RankCategory.japanese => await _repository.getJapaneseRank(limit: limit),
     };
 
     _metricById
@@ -33,8 +32,9 @@ class RankService {
   String metricLabel(RankCategory category) {
     switch (category) {
       case RankCategory.play:
-      case RankCategory.japanese:
         return '人气';
+      case RankCategory.japanese:
+        return '评分';
       case RankCategory.collection:
         return '收藏';
       case RankCategory.chinese:

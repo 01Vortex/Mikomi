@@ -36,7 +36,7 @@ class _RankPageState extends State<RankPage> {
   Future<void> _loadRankList() async {
     setState(() => _isLoading = true);
 
-    final list = await _rankService.getRankList(_currentCategory, limit: 30);
+    final list = await _rankService.getRankList(_currentCategory, limit: 50);
 
     if (!mounted) {
       return;
