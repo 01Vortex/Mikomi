@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:mikomi/core/models/bangumi_item.dart';
 import 'package:mikomi/core/services/bangumi_detail_service.dart';
 import 'package:mikomi/features/anime/ui/widgets/anime_header.dart';
-import 'package:mikomi/features/anime/ui/widgets/anime_overview_tab.dart';
-import 'package:mikomi/features/anime/ui/widgets/anime_detail_tab.dart';
-import 'package:mikomi/features/anime/ui/widgets/anime_teasing_tab.dart';
+import 'package:mikomi/features/anime/ui/widgets/overview_tab_content.dart';
+import 'package:mikomi/features/anime/ui/widgets/detail_tab_content.dart';
+import 'package:mikomi/features/anime/ui/widgets/teasing_tab_content.dart';
 import 'package:mikomi/features/anime/selector/collection_status_selector.dart';
 import 'package:mikomi/features/anime/ui/widgets/play_button.dart';
 import 'package:mikomi/core/models/collection_item.dart';
@@ -186,9 +186,9 @@ class _AnimePageState extends State<AnimePage>
         body: TabBarView(
           controller: _tabController,
           children: [
-            AnimeOverviewTab(bangumiItem: _bangumiItem),
-            AnimeDetailTab(bangumiItem: _bangumiItem),
-            AnimeTeasingTab(bangumiItem: _bangumiItem),
+            OverviewTabContent(bangumiItem: _bangumiItem),
+            DetailTabContent(bangumiItem: _bangumiItem),
+            AnimeTeasingContent(bangumiItem: _bangumiItem),
             const Center(
               child: Padding(
                 padding: EdgeInsets.all(32),

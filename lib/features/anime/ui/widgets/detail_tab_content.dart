@@ -5,20 +5,20 @@ import 'package:mikomi/core/models/character_item.dart';
 import 'package:mikomi/core/models/staff_item.dart';
 import 'package:mikomi/core/network/dio_client.dart';
 import 'package:mikomi/features/anime/data/bangumi_detail.dart';
-import 'package:mikomi/features/anime/ui/widgets/anime_detail_popover.dart';
+import 'package:mikomi/features/anime/ui/widgets/detail_popover.dart';
 import 'package:mikomi/shared/widgets/scrolling_text.dart';
 import 'package:mikomi/shared/widgets/skeleton.dart';
 
-class AnimeDetailTab extends StatefulWidget {
+class DetailTabContent extends StatefulWidget {
   final BangumiItem bangumiItem;
 
-  const AnimeDetailTab({super.key, required this.bangumiItem});
+  const DetailTabContent({super.key, required this.bangumiItem});
 
   @override
-  State<AnimeDetailTab> createState() => _AnimeDetailTabState();
+  State<DetailTabContent> createState() => _DetailTabContentState();
 }
 
-class _AnimeDetailTabState extends State<AnimeDetailTab> {
+class _DetailTabContentState extends State<DetailTabContent> {
   late final BangumiDetail _repository;
   List<CharacterItem> _characters = [];
   List<StaffItem> _staff = [];
@@ -435,7 +435,7 @@ void _showCharacterDetail(BuildContext context, int characterId) {
     backgroundColor: Colors.transparent,
     builder: (context) => SizedBox(
       height: MediaQuery.of(context).size.height * 0.75,
-      child: AnimeDetailPopover(id: characterId, type: InfoType.character),
+      child: DetailPopover(id: characterId, type: InfoType.character),
     ),
   );
 }
@@ -447,7 +447,7 @@ void _showPersonDetail(BuildContext context, int personId) {
     backgroundColor: Colors.transparent,
     builder: (context) => SizedBox(
       height: MediaQuery.of(context).size.height * 0.75,
-      child: AnimeDetailPopover(id: personId, type: InfoType.person),
+      child: DetailPopover(id: personId, type: InfoType.person),
     ),
   );
 }

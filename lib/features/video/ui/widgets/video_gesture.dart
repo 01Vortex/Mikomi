@@ -155,6 +155,7 @@ class _VideoGestureState extends State<VideoGesture>
     _startDragY = d.localPosition.dy;
     _isDragging = true;
     _isAdjusting = true;
+    VolumeController().showSystemUI = false;
     final isLeft = _isLeftSide(d.localPosition, c);
     _gestureType = isLeft ? _GestureType.brightness : _GestureType.volume;
     HapticFeedback.selectionClick();
@@ -180,7 +181,7 @@ class _VideoGestureState extends State<VideoGesture>
       setState(() => _volume = newVal);
       if (shouldCall) {
         _lastSystemCall = now;
-        VolumeController().setVolume(newVal);
+        VolumeController().setVolume(newVal, showSystemUI: false);
       }
       _showHud(_GestureType.volume);
     }

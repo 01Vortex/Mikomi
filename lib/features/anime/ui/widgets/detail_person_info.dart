@@ -3,7 +3,7 @@ import 'package:mikomi/config/themes/app_colors.dart';
 import 'package:mikomi/shared/widgets/cached_image.dart';
 import 'package:mikomi/shared/widgets/skeleton.dart';
 
-class AnimeDetailPersonInfo extends StatelessWidget {
+class DetailPersonInfo extends StatelessWidget {
   final String imageUrl;
   final String name;
   final String nameCN;
@@ -13,7 +13,7 @@ class AnimeDetailPersonInfo extends StatelessWidget {
   final bool isLoading;
   final VoidCallback onRetry;
 
-  const AnimeDetailPersonInfo({
+  const DetailPersonInfo({
     super.key,
     required this.imageUrl,
     required this.name,

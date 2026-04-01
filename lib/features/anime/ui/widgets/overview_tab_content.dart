@@ -4,16 +4,16 @@ import 'package:mikomi/core/models/bangumi_item.dart';
 import 'package:mikomi/shared/widgets/skeleton.dart';
 import 'package:mikomi/shared/utils/theme_extensions.dart';
 
-class AnimeOverviewTab extends StatefulWidget {
+class OverviewTabContent extends StatefulWidget {
   final BangumiItem bangumiItem;
 
-  const AnimeOverviewTab({super.key, required this.bangumiItem});
+  const OverviewTabContent({super.key, required this.bangumiItem});
 
   @override
-  State<AnimeOverviewTab> createState() => _AnimeOverviewTabState();
+  State<OverviewTabContent> createState() => _OverviewTabContentState();
 }
 
-class _AnimeOverviewTabState extends State<AnimeOverviewTab> {
+class _OverviewTabContentState extends State<OverviewTabContent> {
   bool _isExpanded = false;
   bool _showExpandButton = false;
   bool _showAllTags = false;

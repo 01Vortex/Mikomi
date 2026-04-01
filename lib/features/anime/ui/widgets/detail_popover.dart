@@ -6,22 +6,22 @@ import 'package:mikomi/core/models/person_detail.dart';
 import 'package:mikomi/core/models/person_comment.dart';
 import 'package:mikomi/core/network/dio_client.dart';
 import 'package:mikomi/features/anime/data/bangumi_detail.dart';
-import 'package:mikomi/features/anime/ui/widgets/comment_list.dart';
-import 'package:mikomi/features/anime/ui/widgets/anime_detail_person_info.dart';
+import 'package:mikomi/features/anime/ui/widgets/dy_comment.dart';
+import 'package:mikomi/features/anime/ui/widgets/detail_person_info.dart';
 
 enum InfoType { character, person }
 
-class AnimeDetailPopover extends StatefulWidget {
+class DetailPopover extends StatefulWidget {
   final int id;
   final InfoType type;
 
-  const AnimeDetailPopover({super.key, required this.id, required this.type});
+  const DetailPopover({super.key, required this.id, required this.type});
 
   @override
-  State<AnimeDetailPopover> createState() => _AnimeDetailPopoverState();
+  State<DetailPopover> createState() => _DetailPopoverState();
 }
 
-class _AnimeDetailPopoverState extends State<AnimeDetailPopover>
+class _DetailPopoverState extends State<DetailPopover>
     with SingleTickerProviderStateMixin {
   late final BangumiDetail _repository;
   late final TabController _tabController;
@@ -129,7 +129,7 @@ class _AnimeDetailPopoverState extends State<AnimeDetailPopover>
 
   Widget _buildInfo() {
     if (widget.type == InfoType.character) {
-      return AnimeDetailPersonInfo(
+      return DetailPersonInfo(
         imageUrl: _character?.image ?? '',
         name: _character?.name ?? '',
         nameCN: _character?.nameCN ?? '',
@@ -140,7 +140,7 @@ class _AnimeDetailPopoverState extends State<AnimeDetailPopover>
         onRetry: _loadInfo,
       );
     } else {
-      return AnimeDetailPersonInfo(
+      return DetailPersonInfo(
         imageUrl: _person?.image ?? '',
         name: _person?.name ?? '',
         nameCN: _person?.nameCN ?? '',
@@ -155,7 +155,7 @@ class _AnimeDetailPopoverState extends State<AnimeDetailPopover>
 
   Widget _buildComments() {
     if (widget.type == InfoType.character) {
-      return CommentList<CharacterComment>(
+      return DyComment<CharacterComment>(
         comments: _comments.cast<CharacterComment>(),
         isLoading: _isLoadingComments,
         onRetry: _loadComments,
@@ -166,7 +166,7 @@ class _AnimeDetailPopoverState extends State<AnimeDetailPopover>
         getReplies: (comment) => comment.replies,
       );
     } else {
-      return CommentList<PersonComment>(
+      return DyComment<PersonComment>(
         comments: _comments.cast<PersonComment>(),
         isLoading: _isLoadingComments,
         onRetry: _loadComments,
