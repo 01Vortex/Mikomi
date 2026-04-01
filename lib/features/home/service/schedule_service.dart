@@ -9,19 +9,61 @@ class ScheduleService {
   final AniListSource _aniListSource;
   final TencentSource _tencentSource;
 
+  DateTime? _lastLoadedAt;
+  List<List<HomeAnimeModel>>? _cachedSchedule;
+  Future<List<List<HomeAnimeModel>>>? _inFlight;
+
+  static const Duration _cacheDuration = Duration(minutes: 10);
+
   ScheduleService({AniListSource? aniListSource, TencentSource? tencentSource})
     : _aniListSource = aniListSource ?? AniListSource(),
       _tencentSource = tencentSource ?? TencentSource();
 
-  Future<List<List<HomeAnimeModel>>> getWeekSchedule() async {
-    final all = <HomeAnimeModel>[];
+  Future<List<List<HomeAnimeModel>>> getWeekSchedule({
+    bool forceRefresh = false,
+  }) async {
+    if (!forceRefresh && _hasValidCache()) {
+      return _cachedSchedule!;
+    }
 
-    final jpList = await _getJapaneseAiringItems();
-    final cnList = await _getChineseAiringItems();
+    final running = _inFlight;
+    if (running != null) {
+      return running;
+    }
 
-    all
-      ..addAll(jpList)
-      ..addAll(cnList);
+    final task = _loadWeekSchedule();
+    _inFlight = task;
+
+    try {
+      final result = await task;
+      _cachedSchedule = result;
+      _lastLoadedAt = DateTime.now();
+      return result;
+    } finally {
+      _inFlight = null;
+    }
+  }
+
+  bool _hasValidCache() {
+    final cached = _cachedSchedule;
+    final loadedAt = _lastLoadedAt;
+    if (cached == null || loadedAt == null) {
+      return false;
+    }
+
+    return DateTime.now().difference(loadedAt) < _cacheDuration;
+  }
+
+  Future<List<List<HomeAnimeModel>>> _loadWeekSchedule() async {
+    final results = await Future.wait([
+      _getJapaneseAiringItems(),
+      _getChineseAiringItems(),
+    ]);
+
+    final all = <HomeAnimeModel>[
+      ...results[0],
+      ...results[1],
+    ];
 
     final unique = <int, HomeAnimeModel>{};
     for (final item in all) {
@@ -105,6 +147,7 @@ class ScheduleService {
       final coverAnchor = card.querySelector('a.figure');
       final image = card.querySelector('img.figure_pic');
       final desc = card.querySelector('.figure_desc');
+      final caption = card.querySelector('.figure_caption');
 
       final title =
           titleAnchor?.attributes['title']?.trim() ??
@@ -119,6 +162,8 @@ class ScheduleService {
           '';
       final summary =
           desc?.attributes['title']?.trim() ?? desc?.text.trim() ?? '';
+      final captionText =
+          caption?.attributes['title']?.trim() ?? caption?.text.trim() ?? '';
 
       if (title.isEmpty || cover.isEmpty) {
         continue;
@@ -138,6 +183,11 @@ class ScheduleService {
       final mm = airingDateTime.minute.toString().padLeft(2, '0');
       final weekText = _weekdayText((slot.weekIndex + 1));
       final hasExactSlot = parsedSlot != null;
+      final episodeText = _extractTencentEpisode(
+        title: title,
+        summary: summary,
+        caption: captionText,
+      );
 
       result.add(
         HomeAnimeModel(
@@ -159,8 +209,8 @@ class ScheduleService {
           rank: 0,
           tags: const [HomeAnimeTag(name: '国漫', count: 0)],
           info: hasExactSlot
-              ? '国漫 · $weekText $hh:$mm'
-              : '国漫 · $weekText 时间待定',
+              ? '国漫 · $weekText $hh:$mm${episodeText.isEmpty ? '' : ' · $episodeText'}'
+              : '国漫 · $weekText 时间待定${episodeText.isEmpty ? '' : ' · $episodeText'}',
         ),
       );
     }
@@ -309,6 +359,32 @@ class ScheduleService {
       return 'https:$url';
     }
     return url;
+  }
+
+  String _extractTencentEpisode({
+    required String title,
+    required String summary,
+    required String caption,
+  }) {
+    final text = '$title $summary $caption';
+
+    final patterns = <RegExp>[
+      RegExp(r'第\s*(\d+)\s*[话話]'),
+      RegExp(r'第\s*(\d+)\s*集'),
+      RegExp(r'更新至\s*(\d+)\s*集'),
+      RegExp(r'更新到\s*(\d+)\s*集'),
+      RegExp(r'EP\s*(\d+)', caseSensitive: false),
+    ];
+
+    for (final pattern in patterns) {
+      final match = pattern.firstMatch(text);
+      final ep = match?.group(1);
+      if (ep != null && ep.isNotEmpty) {
+        return '第$ep话';
+      }
+    }
+
+    return '';
   }
 
   int _stableId(String text) {

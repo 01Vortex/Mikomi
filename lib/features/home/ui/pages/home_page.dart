@@ -27,7 +27,7 @@ class _HomePageState extends State<HomePage>
   bool _isLoadingMore = false;
   int _currentOffset = 0;
   final int _pageSize = 12;
-  final int _selectedTab = 0;
+  int _selectedTab = -1;
 
   @override
   bool get wantKeepAlive => true;
@@ -146,13 +146,17 @@ class _HomePageState extends State<HomePage>
             SliverToBoxAdapter(
               child: HomeActionTabs(
                 selectedIndex: _selectedTab,
-                onTabSelected: (index) {
+                onTabSelected: (index) async {
+                  setState(() => _selectedTab = index);
                   if (index == 0) {
-                    Navigator.pushNamed(context, AppRoutes.schedule);
+                    await Navigator.pushNamed(context, AppRoutes.schedule);
                   } else if (index == 1) {
-                    Navigator.pushNamed(context, AppRoutes.ranking);
+                    await Navigator.pushNamed(context, AppRoutes.ranking);
                   } else if (index == 2) {
-                    Navigator.pushNamed(context, AppRoutes.category);
+                    await Navigator.pushNamed(context, AppRoutes.category);
+                  }
+                  if (mounted) {
+                    setState(() => _selectedTab = -1);
                   }
                 },
               ),

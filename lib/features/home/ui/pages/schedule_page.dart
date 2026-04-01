@@ -6,6 +6,7 @@ import 'package:mikomi/features/home/service/schedule_service.dart';
 import 'package:mikomi/shared/cached_image.dart';
 import 'package:mikomi/shared/scrolling_text.dart';
 import 'package:mikomi/shared/theme_extensions.dart';
+import 'package:mikomi/shared/skeleton.dart';
 
 class SchedulePage extends StatefulWidget {
   const SchedulePage({super.key});
@@ -46,7 +47,7 @@ class _SchedulePageState extends State<SchedulePage>
     );
     _pageController = PageController(initialPage: _todayIndex);
     _tabController?.addListener(_handleTabChange);
-    _loadSchedule();
+    _loadSchedule(forceRefresh: true);
   }
 
   @override
@@ -58,18 +59,27 @@ class _SchedulePageState extends State<SchedulePage>
   }
 
   void _handleTabChange() {
-    if (_tabController?.indexIsChanging ?? false) {
-      _pageController?.animateToPage(
-        _tabController!.index,
-        duration: const Duration(milliseconds: 260),
-        curve: Curves.easeOutCubic,
-      );
+    if (!(_tabController?.indexIsChanging ?? false)) {
+      return;
     }
+
+    final controller = _pageController;
+    if (controller == null || !controller.hasClients) {
+      return;
+    }
+
+    controller.animateToPage(
+      _tabController!.index,
+      duration: const Duration(milliseconds: 260),
+      curve: Curves.easeOutCubic,
+    );
   }
 
-  Future<void> _loadSchedule() async {
+  Future<void> _loadSchedule({bool forceRefresh = false}) async {
     setState(() => _isLoading = true);
-    final schedule = await _scheduleService.getWeekSchedule();
+    final schedule = await _scheduleService.getWeekSchedule(
+      forceRefresh: forceRefresh,
+    );
     if (!mounted) {
       return;
     }
@@ -82,7 +92,13 @@ class _SchedulePageState extends State<SchedulePage>
 
   void _scrollToToday() {
     _tabController?.animateTo(_todayIndex);
-    _pageController?.animateToPage(
+
+    final controller = _pageController;
+    if (controller == null || !controller.hasClients) {
+      return;
+    }
+
+    controller.animateToPage(
       _todayIndex,
       duration: const Duration(milliseconds: 260),
       curve: Curves.easeOutCubic,
@@ -104,11 +120,12 @@ class _SchedulePageState extends State<SchedulePage>
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('更新日历'),
+        title: const Text('时间表'),
+        centerTitle: true,
         actions: [
           IconButton(
             tooltip: '刷新',
-            onPressed: _loadSchedule,
+            onPressed: () => _loadSchedule(forceRefresh: true),
             icon: const Icon(Icons.refresh_rounded),
           ),
           IconButton(
@@ -144,15 +161,22 @@ class _SchedulePageState extends State<SchedulePage>
         ),
       ),
       body: _isLoading
-          ? Center(
-              child: CircularProgressIndicator(color: context.colors.primary),
+          ? ListView.builder(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.fromLTRB(12, 12, 12, 24),
+              itemCount: 7,
+              itemBuilder: (context, index) => _buildScheduleSkeleton(context),
             )
           : RefreshIndicator(
-              onRefresh: _loadSchedule,
+              onRefresh: () => _loadSchedule(forceRefresh: true),
               child: PageView.builder(
                 controller: pageController,
                 itemCount: 7,
-                onPageChanged: (index) => tabController.animateTo(index),
+                onPageChanged: (index) {
+                  if (tabController.index != index) {
+                    tabController.animateTo(index);
+                  }
+                },
                 itemBuilder: (context, index) {
                   final dayList =
                       index < _weekSchedule.length ? _weekSchedule[index] : const <HomeAnimeModel>[];
@@ -218,6 +242,7 @@ class _SchedulePageState extends State<SchedulePage>
     final cs = context.colors;
     final timeText = _extractTime(anime.airDate);
     final regionText = anime.info.contains('国漫') ? '国漫' : '日漫';
+    final episodeText = _extractEpisode(anime.info);
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
@@ -254,29 +279,6 @@ class _SchedulePageState extends State<SchedulePage>
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 3,
-                              ),
-                              decoration: BoxDecoration(
-                                color: cs.primary.withValues(alpha: 0.12),
-                                borderRadius: BorderRadius.circular(999),
-                              ),
-                              child: Text(
-                                '$regionText · $timeText',
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w700,
-                                  color: cs.primary,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
                         ScrollingText(
                           text: anime.displayName,
                           style: TextStyle(
@@ -298,15 +300,27 @@ class _SchedulePageState extends State<SchedulePage>
                           ),
                         ),
                         const Spacer(),
-                        Text(
-                          anime.info,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: cs.tertiary,
-                            fontWeight: FontWeight.w600,
-                          ),
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 3,
+                              ),
+                              decoration: BoxDecoration(
+                                color: cs.primary.withValues(alpha: 0.12),
+                                borderRadius: BorderRadius.circular(999),
+                              ),
+                              child: Text(
+                                '$regionText · $timeText${episodeText.isEmpty ? '' : ' · $episodeText'}',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w700,
+                                  color: cs.primary,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
@@ -318,6 +332,67 @@ class _SchedulePageState extends State<SchedulePage>
         ),
       ),
     );
+  }
+
+  Widget _buildScheduleSkeleton(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Container(
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: context.colors.surface,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Row(
+          children: [
+            SkeletonLoader(
+              width: 78,
+              height: 102,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: SizedBox(
+                height: 102,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SkeletonLoader(
+                      width: 170,
+                      height: 16,
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    const SizedBox(height: 8),
+                    SkeletonLoader(
+                      width: double.infinity,
+                      height: 12,
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    const SizedBox(height: 6),
+                    SkeletonLoader(
+                      width: 180,
+                      height: 12,
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    const Spacer(),
+                    SkeletonLoader(
+                      width: 108,
+                      height: 20,
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _extractEpisode(String info) {
+    final match = RegExp(r'第\d+[话集]|更新至\d+集').firstMatch(info);
+    return match?.group(0) ?? '';
   }
 
   String _extractTime(String airDate) {
