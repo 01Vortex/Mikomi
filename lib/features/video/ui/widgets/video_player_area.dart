@@ -105,14 +105,9 @@ class VideoPlayerArea extends StatelessWidget {
                       const Icon(Icons.error_outline,
                           color: Colors.white70, size: 40),
                       const SizedBox(height: 12),
-                      const Text('视频解析失败，请切换视频源重试',
+                      const Text('视频解析失败，请切换视频源',
                           style: TextStyle(color: Colors.white70, fontSize: 13),
                           textAlign: TextAlign.center),
-                      const SizedBox(height: 12),
-                      TextButton(
-                        onPressed: onRetry,
-                        child: const Text('重试'),
-                      ),
                     ],
                   ),
                 ),
@@ -124,14 +119,9 @@ class VideoPlayerArea extends StatelessWidget {
                   children: [
                     const CircularProgressIndicator(
                         color: Colors.white, strokeWidth: 3),
-                    const SizedBox(height: 16),
-                    Text('解析中',
-                        style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.8),
-                            fontSize: 14)),
                     if (showTimeoutHint) ...[
                       const SizedBox(height: 12),
-                      Text('加载时间较长，点击右下角切换视频源',
+                      Text('加载视频较长,点击右下角切换视频源',
                           style: TextStyle(
                               color: Colors.white.withValues(alpha: 0.7),
                               fontSize: 13)),
@@ -145,7 +135,7 @@ class VideoPlayerArea extends StatelessWidget {
                 left: 0,
                 right: 0,
                 child: Container(
-                  height: 64,
+                  height: 56,
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       begin: Alignment.topCenter,
@@ -157,26 +147,34 @@ class VideoPlayerArea extends StatelessWidget {
                     ),
                   ),
                   child: Padding(
-                    padding: const EdgeInsets.only(left: 4, top: 8),
+                    padding: const EdgeInsets.only(left: 8, top: 10, right: 4),
                     child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        IconButton(
-                          icon: const Icon(Icons.arrow_back,
-                              color: Colors.white),
-                          onPressed: () => Navigator.of(context).pop(),
-                          padding: EdgeInsets.zero,
-                          constraints: const BoxConstraints(),
-                          iconSize: 24,
+                        GestureDetector(
+                          onTap: () => Navigator.of(context).pop(),
+                          behavior: HitTestBehavior.opaque,
+                          child: const Padding(
+                            padding: EdgeInsets.all(4),
+                            child: Icon(
+                              Icons.arrow_back,
+                              color: Colors.white,
+                              size: 24,
+                            ),
+                          ),
                         ),
-                        const SizedBox(width: 8),
+                        const SizedBox(width: 2),
                         Expanded(
-                          child: Text(title,
-                              style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.bold),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis),
+                          child: Text(
+                            title,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 15,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
                       ],
                     ),
