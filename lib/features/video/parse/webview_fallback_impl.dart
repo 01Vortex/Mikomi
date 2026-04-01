@@ -1,11 +1,11 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
-import 'package:mikomi/features/video/controller/video_webview_controller.dart';
+import 'package:mikomi/features/video/parse/video_webview.dart';
 
 /// 通用 WebView 实现（不支持 DOCUMENT_START_SCRIPT 时的回退方案）
 class WebviewFallbackImpl
-    extends VideoWebviewController<InAppWebViewController> {
+    extends VideoWebview<InAppWebViewController> {
   HeadlessInAppWebView? headlessWebView;
   bool hasRegisteredHandlers = false;
   bool _useLegacyParser = false;

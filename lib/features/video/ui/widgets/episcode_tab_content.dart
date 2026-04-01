@@ -4,7 +4,7 @@ import 'package:mikomi/core/models/episode.dart';
 import 'package:mikomi/features/video/ui/widgets/smallscreen_episcode.dart';
 import 'package:mikomi/shared/utils/theme_extensions.dart';
 
-class VideoEpisodeGridWidget extends StatelessWidget {
+class EpiscodeTabContent extends StatelessWidget {
   final bool isLoading;
   final List<Episode> episodes;
   final bool isDescending;
@@ -14,7 +14,7 @@ class VideoEpisodeGridWidget extends StatelessWidget {
   final VoidCallback onToggleExpand;
   final VoidCallback onToggleSort;
 
-  const VideoEpisodeGridWidget({
+  const EpiscodeTabContent({
     super.key,
     required this.isLoading,
     required this.episodes,

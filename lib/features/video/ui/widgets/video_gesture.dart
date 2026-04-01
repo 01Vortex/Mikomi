@@ -5,12 +5,12 @@ import 'package:mikomi/features/video/services/video_playback_service.dart';
 import 'package:screen_brightness/screen_brightness.dart';
 import 'package:volume_controller/volume_controller.dart';
 
-class VideoGestureDetector extends StatefulWidget {
+class VideoGesture extends StatefulWidget {
   final Widget child;
   final VideoPlaybackService? playerController;
   final bool enabled;
 
-  const VideoGestureDetector({
+  const VideoGesture({
     super.key,
     required this.child,
     this.playerController,
@@ -18,12 +18,12 @@ class VideoGestureDetector extends StatefulWidget {
   });
 
   @override
-  State<VideoGestureDetector> createState() => _VideoGestureDetectorState();
+  State<VideoGesture> createState() => _VideoGestureState();
 }
 
 enum _GestureType { none, brightness, volume, seek }
 
-class _VideoGestureDetectorState extends State<VideoGestureDetector>
+class _VideoGestureState extends State<VideoGesture>
     with TickerProviderStateMixin {
   _GestureType _gestureType = _GestureType.none;
   double _startDragY = 0;

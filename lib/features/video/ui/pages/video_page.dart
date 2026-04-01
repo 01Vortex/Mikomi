@@ -2,19 +2,19 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mikomi/features/video/ui/widgets/danmaku_overlay.dart';
-import 'package:mikomi/features/video/ui/widgets/video_comment.dart';
+import 'package:mikomi/features/video/ui/widgets/comment_tab_content.dart';
 import 'package:mikomi/features/video/ui/widgets/video_tab.dart';
 import 'package:mikomi/features/anime/selector/video_source_selector.dart';
 import 'package:mikomi/features/settings/video_play/service/plugin_manager_service.dart';
 import 'package:mikomi/core/models/episode.dart';
 import 'package:mikomi/features/video/services/video_playback_service.dart';
 import 'package:mikomi/features/settings/danmaku/danmaku_setting_service.dart';
-import 'package:mikomi/features/video/services/video_state_manager.dart';
+import 'package:mikomi/features/video/state/video_state_manager.dart';
 import 'package:mikomi/features/video/services/video_url_resolver_service.dart';
-import 'package:mikomi/features/video/services/video_episode_manager_service.dart';
-import 'package:mikomi/features/video/services/video_history_manager_service.dart';
-import 'package:mikomi/features/video/ui/widgets/video_player_widget.dart';
-import 'package:mikomi/features/video/ui/widgets/video_episode_grid_widget.dart';
+import 'package:mikomi/features/video/services/video_episode_service.dart';
+import 'package:mikomi/features/video/services/video_history_service.dart';
+import 'package:mikomi/features/video/ui/widgets/video_player_area.dart';
+import 'package:mikomi/features/video/ui/widgets/episcode_tab_content.dart';
 
 class VideoPage extends StatefulWidget {
   final String title;
@@ -53,8 +53,8 @@ class _VideoPageState extends State<VideoPage>
   late TabController _tabController;
   late VideoStateManager _state;
   late VideoUrlResolverService _urlResolver;
-  late VideoEpisodeManager _episodeManager;
-  late VideoHistoryManagerService _historyManager;
+  late VideoEpisodeService _episodeManager;
+  late VideoHistoryService _historyManager;
   late VideoPlaybackService _playerController;
 
   final TextEditingController _danmakuController = TextEditingController();
@@ -70,8 +70,8 @@ class _VideoPageState extends State<VideoPage>
     super.initState();
     _state = VideoStateManager();
     _urlResolver = VideoUrlResolverService();
-    _episodeManager = VideoEpisodeManager();
-    _historyManager = VideoHistoryManagerService();
+    _episodeManager = VideoEpisodeService();
+    _historyManager = VideoHistoryService();
     _playerController = VideoPlaybackService();
 
     _state.currentEpisode = widget.currentEpisode;
@@ -403,7 +403,7 @@ class _VideoPageState extends State<VideoPage>
                     final hasError = snapshot.hasError || _state.hasParseError;
                     return Column(
                       children: [
-                        VideoPlayerWidget(
+                        VideoPlayerArea(
                           videoUrl: videoUrl,
                           title: widget.title,
                           currentEpisode: _state.currentEpisode,
@@ -472,7 +472,7 @@ class _VideoPageState extends State<VideoPage>
                                         ? const NeverScrollableScrollPhysics()
                                         : null,
                                     children: [
-                                      VideoEpisodeGridWidget(
+                                      EpiscodeTabContent(
                                         isLoading: _state.isLoadingEpisodes,
                                         episodes: _state.episodes,
                                         isDescending: _state.isDescending,
@@ -489,7 +489,7 @@ class _VideoPageState extends State<VideoPage>
                                               !_state.isDescending,
                                         ),
                                       ),
-                                      const CommentTabWidget.VideoComment(),
+                                      const CommentTabContent.VideoComment(),
                                     ],
                                   ),
                                 ),

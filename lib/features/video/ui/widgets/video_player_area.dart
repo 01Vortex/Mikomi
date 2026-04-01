@@ -3,7 +3,7 @@ import 'package:mikomi/features/video/ui/widgets/smallscreen_video.dart';
 import 'package:mikomi/features/video/services/video_playback_service.dart';
 import 'package:mikomi/core/models/episode.dart';
 
-class VideoPlayerWidget extends StatelessWidget {
+class VideoPlayerArea extends StatelessWidget {
   final String videoUrl;
   final String title;
   final int currentEpisode;
@@ -29,7 +29,7 @@ class VideoPlayerWidget extends StatelessWidget {
   final bool showTimeoutHint;
   final VoidCallback onRetry;
 
-  const VideoPlayerWidget({
+  const VideoPlayerArea({
     super.key,
     required this.videoUrl,
     required this.title,

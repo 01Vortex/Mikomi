@@ -5,9 +5,9 @@ import 'package:canvas_danmaku/canvas_danmaku.dart';
 import 'package:mikomi/features/video/services/video_playback_service.dart';
 import 'package:mikomi/features/video/ui/widgets/danmaku_overlay.dart';
 import 'package:mikomi/features/video/services/bangumi_danmaku_service.dart';
-import 'package:mikomi/features/video/controller/danmaku_broadcaster.dart';
+import 'package:mikomi/features/video/services/danmaku_broadcaster.dart';
 import 'package:mikomi/features/video/ui/pages/fullscreen_video_page.dart';
-import 'package:mikomi/features/video/ui/widgets/video_gesture_detector.dart';
+import 'package:mikomi/features/video/ui/widgets/video_gesture.dart';
 import 'package:mikomi/core/models/episode.dart';
 import 'package:mikomi/features/settings/video_play/service/play_setting_service.dart';
 import 'package:mikomi/features/settings/danmaku/danmaku_setting_service.dart';
@@ -496,7 +496,7 @@ class _SmallscreenVideoState extends State<SmallscreenVideo> {
         widget.playerController.isInitialized &&
         controller != null;
 
-    return VideoGestureDetector(
+    return VideoGesture(
       playerController: widget.playerController,
       enabled: showPlayer && !_lockPanel,
       child: GestureDetector(

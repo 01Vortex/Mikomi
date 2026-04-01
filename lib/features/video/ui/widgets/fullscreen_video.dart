@@ -7,7 +7,7 @@ import 'package:mikomi/features/video/ui/widgets/danmaku_overlay.dart';
 import 'package:mikomi/features/video/ui/widgets/danmaku_settings_sheet.dart';
 import 'package:mikomi/features/video/ui/widgets/fullscreen_episode.dart';
 import 'package:mikomi/features/video/ui/widgets/video_fit.dart';
-import 'package:mikomi/features/video/ui/widgets/video_gesture_detector.dart';
+import 'package:mikomi/features/video/ui/widgets/video_gesture.dart';
 import 'package:mikomi/core/models/episode.dart';
 import 'package:mikomi/features/settings/video_play/service/play_setting_service.dart';
 
@@ -340,7 +340,7 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
     const double leftPad = _kSideMargin;
     const double rightPad = _kSideMargin;
 
-    return VideoGestureDetector(
+    return VideoGesture(
       playerController: widget.playerController,
       enabled: !_showControls && !_isLocked,
       child: Stack(

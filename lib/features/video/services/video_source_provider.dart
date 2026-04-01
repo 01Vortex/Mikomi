@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
-import 'package:mikomi/features/video/controller/video_webview_controller.dart';
+import 'package:mikomi/features/video/parse/video_webview.dart';
 
 // ──────────────────────────────────────────────
 // 数据模型
@@ -100,7 +100,7 @@ abstract class IVideoSourceProvider {
 /// WebView 实例在 Provider 生命周期内复用，切换集数时调用 unloadPage 释放页面资源，
 /// 仅在 [dispose] 时才真正销毁 WebView。
 class WebViewVideoSourceProvider implements IVideoSourceProvider {
-  VideoWebviewController? _webview;
+  VideoWebview? _webview;
   StreamSubscription<String>? _logSubscription;
 
   /// 通过递增 ID 标识最新请求，取消旧请求
@@ -117,7 +117,7 @@ class WebViewVideoSourceProvider implements IVideoSourceProvider {
     final currentResolveId = _resolveId;
 
     if (_webview == null) {
-      _webview = VideoWebviewControllerFactory.getController();
+      _webview = VideoWebviewFactory.getController();
       await _webview!.init();
 
       _logSubscription = _webview!.onLog.listen((log) {

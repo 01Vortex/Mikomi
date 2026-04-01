@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
-import 'package:mikomi/features/video/controller/video_webview_controller.dart';
+import 'package:mikomi/features/video/parse/video_webview.dart';
 import 'app.dart';
 
 void main() async {
@@ -15,7 +15,7 @@ void main() async {
   } catch (_) {
     supported = false;
   }
-  VideoWebviewControllerFactory.setDocumentStartScriptSupported(supported);
+  VideoWebviewFactory.setDocumentStartScriptSupported(supported);
 
   runApp(const MyApp());
 }

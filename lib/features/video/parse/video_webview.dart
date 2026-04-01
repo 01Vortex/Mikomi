@@ -1,9 +1,9 @@
 import 'dart:async';
 import 'dart:io';
-import 'package:mikomi/features/video/services/impl/webview_android_impl.dart';
-import 'package:mikomi/features/video/services/impl/webview_fallback_impl.dart';
+import 'package:mikomi/features/video/parse/webview_android_impl.dart';
+import 'package:mikomi/features/video/parse/webview_fallback_impl.dart';
 
-abstract class VideoWebviewController<T> {
+abstract class VideoWebview<T> {
   T? webviewController;
   int count = 0;
   int offset = 0;
@@ -34,10 +34,10 @@ abstract class VideoWebviewController<T> {
   void dispose();
 }
 
-class VideoWebviewControllerFactory {
+class VideoWebviewFactory {
   static void setDocumentStartScriptSupported(bool supported) {}
 
-  static VideoWebviewController getController() {
+  static VideoWebview getController() {
     if (Platform.isAndroid) {
       return WebviewAndroidImpl();
     }

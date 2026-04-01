@@ -2,7 +2,7 @@ import 'package:mikomi/core/models/watch_history.dart';
 import 'package:mikomi/core/services/watch_history_service.dart';
 import 'package:mikomi/features/video/services/video_playback_service.dart';
 
-class VideoHistoryManagerService {
+class VideoHistoryService {
   final WatchHistoryService _historyService = WatchHistoryService();
 
   void saveWatchHistory({
