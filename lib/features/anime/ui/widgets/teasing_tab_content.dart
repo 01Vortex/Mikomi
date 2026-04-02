@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:mikomi/config/app_theme.dart';
 import 'package:mikomi/core/models/anime.dart';
 import 'package:mikomi/features/anime/models/anime_teasing_model.dart';
-import 'package:mikomi/features/anime/repository/anime_repository.dart';
+import 'package:mikomi/features/anime/service/anime_service.dart';
 import 'package:mikomi/shared/comment_card.dart';
 import 'package:mikomi/shared/skeleton.dart';
 
@@ -16,7 +16,7 @@ class AnimeTeasingContent extends StatefulWidget {
 }
 
 class _AnimeTeasingContentState extends State<AnimeTeasingContent> {
-  late final AnimeRepository _repository;
+  late final AnimeService _animeService;
   final ScrollController _scrollController = ScrollController();
   List<CommentItem> _comments = [];
   bool _isLoading = false;
@@ -27,7 +27,7 @@ class _AnimeTeasingContentState extends State<AnimeTeasingContent> {
   @override
   void initState() {
     super.initState();
-    _repository = AnimeRepository();
+    _animeService = AnimeService();
     _loadComments();
     _scrollController.addListener(_onScroll);
   }
@@ -54,7 +54,7 @@ class _AnimeTeasingContentState extends State<AnimeTeasingContent> {
       _isLoading = true;
     });
 
-    final comments = await _repository.getSubjectComments(
+    final comments = await _animeService.getSubjectComments(
       widget.anime.id,
       limit: _limit,
       offset: 0,
@@ -77,7 +77,7 @@ class _AnimeTeasingContentState extends State<AnimeTeasingContent> {
       _isLoading = true;
     });
 
-    final comments = await _repository.getSubjectComments(
+    final comments = await _animeService.getSubjectComments(
       widget.anime.id,
       limit: _limit,
       offset: _offset,

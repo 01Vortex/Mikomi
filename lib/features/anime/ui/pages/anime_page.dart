@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mikomi/core/models/anime.dart';
-import 'package:mikomi/core/services/bangumi_detail_service.dart';
+import 'package:mikomi/features/anime/service/anime_service.dart';
 import 'package:mikomi/features/anime/ui/widgets/anime_header.dart';
 import 'package:mikomi/features/anime/ui/widgets/overview_tab_content.dart';
 import 'package:mikomi/features/anime/ui/widgets/detail_tab_content.dart';
@@ -26,7 +26,7 @@ class _AnimePageState extends State<AnimePage>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   final ScrollController _scrollController = ScrollController();
-  final BangumiDetailService _detailService = BangumiDetailService();
+  final AnimeService _animeService = AnimeService();
   final VideoPluginManager _pluginManager = VideoPluginManager();
   final CollectionService _collectionService = CollectionService();
 
@@ -97,7 +97,7 @@ class _AnimePageState extends State<AnimePage>
       return;
     }
 
-    final detail = await _detailService.getBangumiDetailById(_anime.id);
+    final detail = await _animeService.getAnimeDetailById(_anime.id);
     if (detail != null && mounted) {
       setState(() {
         _anime = detail;

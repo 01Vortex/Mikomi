@@ -3,7 +3,7 @@ import 'package:mikomi/config/app_theme.dart';
 import 'package:mikomi/core/models/anime.dart';
 import 'package:mikomi/features/anime/models/anime_related_info_model.dart';
 import 'package:mikomi/features/anime/models/staff_info_model.dart';
-import 'package:mikomi/features/anime/repository/anime_repository.dart';
+import 'package:mikomi/features/anime/service/anime_service.dart';
 import 'package:mikomi/features/anime/ui/widgets/detail_popover.dart';
 import 'package:mikomi/shared/scrolling_text.dart';
 import 'package:mikomi/shared/skeleton.dart';
@@ -18,7 +18,7 @@ class DetailTabContent extends StatefulWidget {
 }
 
 class _DetailTabContentState extends State<DetailTabContent> {
-  late final AnimeRepository _repository;
+  late final AnimeService _animeService;
   List<AnimeRelatedInfoModel> _characters = [];
   List<StaffInfoModel> _staff = [];
   bool _isLoadingCharacters = false;
@@ -27,7 +27,7 @@ class _DetailTabContentState extends State<DetailTabContent> {
   @override
   void initState() {
     super.initState();
-    _repository = AnimeRepository();
+    _animeService = AnimeService();
     // 不在initState中加载数据，改为懒加载
   }
 
@@ -40,8 +40,8 @@ class _DetailTabContentState extends State<DetailTabContent> {
     debugPrint('开始加载角色和制作人员数据，番剧ID: ${widget.anime.id}');
 
     final results = await Future.wait([
-      _repository.getCharacters(widget.anime.id),
-      _repository.getStaff(widget.anime.id),
+      _animeService.getCharacters(widget.anime.id),
+      _animeService.getStaff(widget.anime.id),
     ]);
 
     if (mounted) {

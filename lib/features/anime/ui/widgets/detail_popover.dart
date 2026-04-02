@@ -4,7 +4,7 @@ import 'package:mikomi/features/anime/models/character_info_model.dart';
 import 'package:mikomi/features/anime/models/character_teasing_model.dart';
 import 'package:mikomi/features/anime/models/person_info_model.dart';
 import 'package:mikomi/features/anime/models/person_teasing_model.dart';
-import 'package:mikomi/features/anime/repository/anime_repository.dart';
+import 'package:mikomi/features/anime/service/anime_service.dart';
 import 'package:mikomi/features/anime/ui/widgets/dy_comment.dart';
 import 'package:mikomi/features/anime/ui/widgets/detail_popover_info.dart';
 
@@ -22,7 +22,7 @@ class DetailPopover extends StatefulWidget {
 
 class _DetailPopoverState extends State<DetailPopover>
     with SingleTickerProviderStateMixin {
-  late final AnimeRepository _repository;
+  late final AnimeService _animeService;
   late final TabController _tabController;
 
   CharacterInfoModel? _character;
@@ -35,7 +35,7 @@ class _DetailPopoverState extends State<DetailPopover>
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
-    _repository = AnimeRepository();
+    _animeService = AnimeService();
     _loadInfo();
     _loadComments();
   }
@@ -50,7 +50,7 @@ class _DetailPopoverState extends State<DetailPopover>
     setState(() => _isLoadingInfo = true);
 
     if (widget.type == InfoType.character) {
-      final character = await _repository.getCharacterInfo(widget.id);
+      final character = await _animeService.getCharacterInfo(widget.id);
       if (mounted) {
         setState(() {
           _character = character;
@@ -58,7 +58,7 @@ class _DetailPopoverState extends State<DetailPopover>
         });
       }
     } else {
-      final person = await _repository.getPersonInfo(widget.id);
+      final person = await _animeService.getPersonInfo(widget.id);
       if (mounted) {
         setState(() {
           _person = person;
@@ -72,7 +72,7 @@ class _DetailPopoverState extends State<DetailPopover>
     setState(() => _isLoadingComments = true);
 
     if (widget.type == InfoType.character) {
-      final comments = await _repository.getCharacterComments(widget.id);
+      final comments = await _animeService.getCharacterComments(widget.id);
       if (mounted) {
         setState(() {
           _comments = comments;
@@ -80,7 +80,7 @@ class _DetailPopoverState extends State<DetailPopover>
         });
       }
     } else {
-      final comments = await _repository.getPersonComments(widget.id);
+      final comments = await _animeService.getPersonComments(widget.id);
       if (mounted) {
         setState(() {
           _comments = comments;
