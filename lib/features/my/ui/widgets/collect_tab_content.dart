@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mikomi/features/my/models/collection_model.dart';
-import 'package:mikomi/core/services/collection_service.dart';
-import 'package:mikomi/core/services/collection_notifier.dart';
+import 'package:mikomi/features/my/service/collection_service.dart';
+import 'package:mikomi/core/notifiers/collection_notifier.dart';
 import 'package:mikomi/features/anime/ui/pages/anime_page.dart';
 import 'package:mikomi/core/services/bangumi_service.dart';
 import 'package:mikomi/shared/theme_extensions.dart';

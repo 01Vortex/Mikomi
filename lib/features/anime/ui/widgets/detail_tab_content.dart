@@ -3,7 +3,7 @@ import 'package:mikomi/config/app_theme.dart';
 import 'package:mikomi/core/models/anime.dart';
 import 'package:mikomi/features/anime/models/anime_related_info_model.dart';
 import 'package:mikomi/features/anime/models/staff_info_model.dart';
-import 'package:mikomi/features/anime/data/bangumi_detail.dart';
+import 'package:mikomi/features/anime/repository/anime_repository.dart';
 import 'package:mikomi/features/anime/ui/widgets/detail_popover.dart';
 import 'package:mikomi/shared/scrolling_text.dart';
 import 'package:mikomi/shared/skeleton.dart';
@@ -18,7 +18,7 @@ class DetailTabContent extends StatefulWidget {
 }
 
 class _DetailTabContentState extends State<DetailTabContent> {
-  late final BangumiDetail _repository;
+  late final AnimeRepository _repository;
   List<AnimeRelatedInfoModel> _characters = [];
   List<StaffInfoModel> _staff = [];
   bool _isLoadingCharacters = false;
@@ -27,7 +27,7 @@ class _DetailTabContentState extends State<DetailTabContent> {
   @override
   void initState() {
     super.initState();
-    _repository = BangumiDetail();
+    _repository = AnimeRepository();
     // 不在initState中加载数据，改为懒加载
   }
 
@@ -64,8 +64,8 @@ class _DetailTabContentState extends State<DetailTabContent> {
       staff.sort((a, b) {
         const positionOrder = {'原作': 1, '导演': 2, '系列构成': 3, '角色设计': 4, '音乐': 5};
 
-        final posA = a.positions.isNotEmpty ? a.positions.first.cn : '';
-        final posB = b.positions.isNotEmpty ? b.positions.first.cn : '';
+        final posA = a.positions.isNotEmpty ? a.positions.first.label : '';
+        final posB = b.positions.isNotEmpty ? b.positions.first.label : '';
 
         final orderA = positionOrder[posA] ?? 99;
         final orderB = positionOrder[posB] ?? 99;
@@ -320,11 +320,11 @@ class _DetailTabContentState extends State<DetailTabContent> {
     );
   }
 
-  Widget _buildStaffCard(StaffInfoModel StaffInfoModel) {
+  Widget _buildStaffCard(StaffInfoModel staffInfo) {
     return InkWell(
       onTap: () {
-        debugPrint('点击制作人员卡片: ${StaffInfoModel.staff.name}');
-        _showPersonInfoModel(context, StaffInfoModel.staff.id);
+        debugPrint('点击制作人员卡片: ${staffInfo.staff.name}');
+        _showPersonInfoModel(context, staffInfo.staff.id);
       },
       child: SizedBox(
         width: 160,
@@ -338,9 +338,9 @@ class _DetailTabContentState extends State<DetailTabContent> {
                 color: Theme.of(context).colorScheme.surfaceContainerHighest,
               ),
               child: ClipOval(
-                child: (StaffInfoModel.staff.images?.grid ?? '').isNotEmpty
+                child: (staffInfo.staff.images?.grid ?? '').isNotEmpty
                     ? Image.network(
-                        StaffInfoModel.staff.images!.grid,
+                        staffInfo.staff.images!.grid,
                         width: 60,
                         height: 60,
                         fit: BoxFit.cover,
@@ -361,7 +361,7 @@ class _DetailTabContentState extends State<DetailTabContent> {
                     children: [
                       Expanded(
                         child: ScrollingText(
-                          text: StaffInfoModel.staff.name,
+                          text: staffInfo.staff.name,
                           style: const TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w500,
@@ -369,7 +369,7 @@ class _DetailTabContentState extends State<DetailTabContent> {
                           height: 18,
                         ),
                       ),
-                      if (StaffInfoModel.positionText.isNotEmpty) ...[
+                      if (staffInfo.positionText.isNotEmpty) ...[
                         const SizedBox(width: 4),
                         Flexible(
                           child: Container(
@@ -382,7 +382,7 @@ class _DetailTabContentState extends State<DetailTabContent> {
                               borderRadius: BorderRadius.circular(4),
                             ),
                             child: Text(
-                              StaffInfoModel.positionText,
+                              staffInfo.positionText,
                               style: const TextStyle(
                                 fontSize: 10,
                                 color: AppColors.textSecondary,
@@ -395,10 +395,10 @@ class _DetailTabContentState extends State<DetailTabContent> {
                       ],
                     ],
                   ),
-                  if (StaffInfoModel.staff.nameCN.isNotEmpty) ...[
+                  if (staffInfo.staff.localizedName.isNotEmpty) ...[
                     const SizedBox(height: 4),
                     ScrollingText(
-                      text: StaffInfoModel.staff.nameCN,
+                      text: staffInfo.staff.localizedName,
                       style: const TextStyle(
                         fontSize: 11,
                         color: AppColors.textSecondary,

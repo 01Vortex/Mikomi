@@ -4,7 +4,7 @@ import 'package:mikomi/features/anime/models/character_info_model.dart';
 import 'package:mikomi/features/anime/models/character_teasing_model.dart';
 import 'package:mikomi/features/anime/models/person_info_model.dart';
 import 'package:mikomi/features/anime/models/person_teasing_model.dart';
-import 'package:mikomi/features/anime/data/bangumi_detail.dart';
+import 'package:mikomi/features/anime/repository/anime_repository.dart';
 import 'package:mikomi/features/anime/ui/widgets/dy_comment.dart';
 import 'package:mikomi/features/anime/ui/widgets/detail_popover_info.dart';
 
@@ -22,7 +22,7 @@ class DetailPopover extends StatefulWidget {
 
 class _DetailPopoverState extends State<DetailPopover>
     with SingleTickerProviderStateMixin {
-  late final BangumiDetail _repository;
+  late final AnimeRepository _repository;
   late final TabController _tabController;
 
   CharacterInfoModel? _character;
@@ -35,7 +35,7 @@ class _DetailPopoverState extends State<DetailPopover>
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
-    _repository = BangumiDetail();
+    _repository = AnimeRepository();
     _loadInfo();
     _loadComments();
   }
@@ -50,7 +50,7 @@ class _DetailPopoverState extends State<DetailPopover>
     setState(() => _isLoadingInfo = true);
 
     if (widget.type == InfoType.character) {
-      final character = await _repository.getCharacterInfoModel(widget.id);
+      final character = await _repository.getCharacterInfo(widget.id);
       if (mounted) {
         setState(() {
           _character = character;
@@ -58,7 +58,7 @@ class _DetailPopoverState extends State<DetailPopover>
         });
       }
     } else {
-      final person = await _repository.getPersonInfoModel(widget.id);
+      final person = await _repository.getPersonInfo(widget.id);
       if (mounted) {
         setState(() {
           _person = person;
@@ -72,7 +72,7 @@ class _DetailPopoverState extends State<DetailPopover>
     setState(() => _isLoadingComments = true);
 
     if (widget.type == InfoType.character) {
-      final comments = await _repository.getCharacterTeasingModels(widget.id);
+      final comments = await _repository.getCharacterComments(widget.id);
       if (mounted) {
         setState(() {
           _comments = comments;
@@ -80,7 +80,7 @@ class _DetailPopoverState extends State<DetailPopover>
         });
       }
     } else {
-      final comments = await _repository.getPersonTeasingModels(widget.id);
+      final comments = await _repository.getPersonComments(widget.id);
       if (mounted) {
         setState(() {
           _comments = comments;
@@ -131,7 +131,7 @@ class _DetailPopoverState extends State<DetailPopover>
       return DetailPopoverInfo(
         imageUrl: _character?.image ?? '',
         name: _character?.name ?? '',
-        nameCN: _character?.nameCN ?? '',
+        nameCN: _character?.localizedName ?? '',
         info: _character?.info ?? '',
         summary: _character?.summary ?? '',
         summaryTitle: '角色简介',
@@ -142,7 +142,7 @@ class _DetailPopoverState extends State<DetailPopover>
       return DetailPopoverInfo(
         imageUrl: _person?.image ?? '',
         name: _person?.name ?? '',
-        nameCN: _person?.nameCN ?? '',
+        nameCN: _person?.localizedName ?? '',
         info: _person?.info ?? '',
         summary: _person?.summary ?? '',
         summaryTitle: '人物简介',

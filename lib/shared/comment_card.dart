@@ -63,7 +63,7 @@ class CommentCard extends StatelessWidget {
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      _formatTime(commentItem.comment.updatedAt),
+                      _formatTime(commentItem.feedback.updatedAtEpoch),
                       style: const TextStyle(
                         fontSize: 12,
                         color: AppColors.textSecondary,
@@ -72,14 +72,14 @@ class CommentCard extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 4),
-                if (commentItem.comment.rate > 0)
+                if (commentItem.feedback.score > 0)
                   Padding(
                     padding: const EdgeInsets.only(bottom: 4),
                     child: Row(
                       children: List.generate(
                         5,
                         (index) => Icon(
-                          index < (commentItem.comment.rate / 2).floor()
+                          index < (commentItem.feedback.score / 2).floor()
                               ? Icons.star_rounded
                               : Icons.star_border_rounded,
                           size: 16,
@@ -89,7 +89,7 @@ class CommentCard extends StatelessWidget {
                     ),
                   ),
                 Text(
-                  commentItem.comment.content,
+                  commentItem.feedback.content,
                   style: const TextStyle(
                     fontSize: 14,
                     height: 1.5,

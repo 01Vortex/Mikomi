@@ -24,13 +24,13 @@ class StaffImages {
 class Staff {
   final int id;
   final String name;
-  final String nameCN;
+  final String localizedName;
   final StaffImages? images;
 
   Staff({
     required this.id,
     required this.name,
-    required this.nameCN,
+    required this.localizedName,
     this.images,
   });
 
@@ -38,24 +38,24 @@ class Staff {
     return Staff(
       id: json['id'] ?? 0,
       name: json['name'] ?? '',
-      nameCN: json['nameCN'] ?? '',
+      localizedName: json['nameCN'] ?? json['name_cn'] ?? '',
       images: json['images'] != null
           ? StaffImages.fromJson(json['images'] as Map<String, dynamic>)
           : null,
     );
   }
 
-  String get displayName => nameCN.isNotEmpty ? nameCN : name;
+  String get displayName => localizedName.isNotEmpty ? localizedName : name;
 }
 
 class Position {
-  final String cn;
+  final String label;
 
-  Position({required this.cn});
+  Position({required this.label});
 
   factory Position.fromJson(Map<String, dynamic> json) {
     final type = json['type'] as Map<String, dynamic>?;
-    return Position(cn: type?['cn'] ?? '');
+    return Position(label: type?['cn'] ?? type?['name'] ?? '');
   }
 }
 
@@ -79,5 +79,5 @@ class StaffInfoModel {
   }
 
   String get positionText =>
-      positions.map((p) => p.cn).where((cn) => cn.isNotEmpty).join('、');
+      positions.map((p) => p.label).where((label) => label.isNotEmpty).join('、');
 }

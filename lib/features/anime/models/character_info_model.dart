@@ -1,7 +1,7 @@
 class CharacterInfoModel {
   final int id;
   final String name;
-  final String nameCN;
+  final String localizedName;
   final String info;
   final String summary;
   final String image;
@@ -9,7 +9,7 @@ class CharacterInfoModel {
   CharacterInfoModel({
     required this.id,
     required this.name,
-    required this.nameCN,
+    required this.localizedName,
     required this.info,
     required this.summary,
     required this.image,
@@ -19,7 +19,7 @@ class CharacterInfoModel {
     return CharacterInfoModel(
       id: json['id'] ?? 0,
       name: json['name'] ?? '',
-      nameCN: json['nameCN'] ?? '',
+      localizedName: json['nameCN'] ?? json['name_cn'] ?? '',
       info: json['info'] ?? '',
       summary: json['summary'] ?? '',
       image: (json['images'] as Map?)?['large'] ?? '',

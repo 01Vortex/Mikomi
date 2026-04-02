@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mikomi/config/app_theme.dart';
 import 'package:mikomi/core/models/anime.dart';
-import 'package:mikomi/features/search/data/bangumi_search.dart';
+import 'package:mikomi/features/search/repository/search_repository.dart';
 import 'package:mikomi/features/search/ui/widgets/search_app_bar.dart';
 import 'package:mikomi/features/search/ui/widgets/search_results_view.dart';
 import 'package:mikomi/features/search/ui/widgets/search_suggestions_view.dart';
@@ -18,7 +18,7 @@ class SearchResultsPage extends StatefulWidget {
 class _SearchResultsPageState extends State<SearchResultsPage> {
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _focusNode = FocusNode();
-  final BangumiSearch _searchService = BangumiSearch();
+  final SearchRepository _searchRepository = SearchRepository();
 
   List<Anime> _searchResults = [];
   List<Anime> _suggestions = [];
@@ -43,7 +43,7 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
   Future<void> _performSearch() async {
     setState(() => _isSearching = true);
 
-    final results = await _searchService.search(widget.keyword);
+    final results = await _searchRepository.search(widget.keyword);
 
     if (mounted) {
       setState(() {
@@ -67,7 +67,7 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
       _showSuggestions = true;
     });
 
-    final results = await _searchService.search(keyword.trim());
+    final results = await _searchRepository.search(keyword.trim());
 
     if (mounted) {
       setState(() {
@@ -83,7 +83,7 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
         _isSearching = true;
         _showSuggestions = false;
       });
-      _searchService.search(_searchController.text.trim()).then((results) {
+      _searchRepository.search(_searchController.text.trim()).then((results) {
         if (mounted) {
           setState(() {
             _searchResults = results;

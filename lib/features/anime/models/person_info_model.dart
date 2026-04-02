@@ -1,7 +1,7 @@
 class PersonInfoModel {
   final int id;
   final String name;
-  final String nameCN;
+  final String localizedName;
   final String image;
   final String summary;
   final String info;
@@ -9,7 +9,7 @@ class PersonInfoModel {
   PersonInfoModel({
     required this.id,
     required this.name,
-    required this.nameCN,
+    required this.localizedName,
     required this.image,
     required this.summary,
     required this.info,
@@ -36,7 +36,7 @@ class PersonInfoModel {
     return PersonInfoModel(
       id: json['id'] as int? ?? 0,
       name: json['name'] as String? ?? '',
-      nameCN: json['name_cn'] as String? ?? '',
+      localizedName: json['name_cn'] as String? ?? json['nameCN'] as String? ?? '',
       image:
           (json['images'] as Map<String, dynamic>?)?['large'] as String? ?? '',
       summary: json['summary'] as String? ?? '',

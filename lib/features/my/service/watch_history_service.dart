@@ -1,7 +1,8 @@
-import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
+
 import 'package:mikomi/features/my/models/history_model.dart';
-import 'package:mikomi/core/services/history_notifier.dart';
+import 'package:mikomi/core/notifiers/history_notifier.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class HistoryModelService {
   static const String _key = 'watch_history';
@@ -11,13 +12,12 @@ class HistoryModelService {
   Future<List<HistoryModel>> getHistories() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final String? historiesJson = prefs.getString(_key);
-
+      final historiesJson = prefs.getString(_key);
       if (historiesJson == null) return [];
 
-      final List<dynamic> decoded = json.decode(historiesJson);
+      final decoded = json.decode(historiesJson) as List<dynamic>;
       return decoded.map((item) => HistoryModel.fromJson(item)).toList();
-    } catch (e) {
+    } catch (_) {
       return [];
     }
   }
@@ -36,40 +36,27 @@ class HistoryModelService {
 
       final encoded = json.encode(histories.map((h) => h.toJson()).toList());
       await prefs.setString(_key, encoded);
-
-      // 通知历史记录已变更
       _notifier.notifyHistoryChanged();
-    } catch (e) {
-      // 忽略错误
-    }
+    } catch (_) {}
   }
 
   Future<void> deleteHistory(int bangumiId) async {
     try {
       final prefs = await SharedPreferences.getInstance();
       final histories = await getHistories();
-
       histories.removeWhere((h) => h.bangumiId == bangumiId);
 
       final encoded = json.encode(histories.map((h) => h.toJson()).toList());
       await prefs.setString(_key, encoded);
-
-      // 通知历史记录已变更
       _notifier.notifyHistoryChanged();
-    } catch (e) {
-      // 忽略错误
-    }
+    } catch (_) {}
   }
 
   Future<void> clearAll() async {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove(_key);
-
-      // 通知历史记录已变更
       _notifier.notifyHistoryChanged();
-    } catch (e) {
-      // 忽略错误
-    }
+    } catch (_) {}
   }
 }

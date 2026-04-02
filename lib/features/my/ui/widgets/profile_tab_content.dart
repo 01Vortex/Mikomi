@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mikomi/features/my/models/history_model.dart';
-import 'package:mikomi/core/services/watch_history_service.dart';
+import 'package:mikomi/features/my/service/watch_history_service.dart';
 import 'package:mikomi/core/services/bangumi_service.dart';
 import 'package:mikomi/features/video/ui/pages/video_page.dart';
 import 'package:mikomi/shared/theme_extensions.dart';
@@ -44,7 +44,7 @@ class ProfileTabContent extends StatelessWidget {
                     vertical: 8,
                   ),
                   decoration: BoxDecoration(
-                    color: context.colors.surfaceVariant,
+                    color: context.colors.surfaceContainerHighest,
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
@@ -65,7 +65,7 @@ class ProfileTabContent extends StatelessWidget {
                     vertical: 8,
                   ),
                   decoration: BoxDecoration(
-                    color: context.colors.surfaceVariant,
+                    color: context.colors.surfaceContainerHighest,
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
