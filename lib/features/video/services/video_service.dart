@@ -116,7 +116,7 @@ class VideoService {
 
     final source = await _videoStreamService.resolveFromPage(
       pageUrl,
-      useLegacyParser: plugin.useLegacyParser,
+      useAlternativeParser: plugin.useLegacyParser,
       timeout: const Duration(seconds: 45),
     );
     return source.url;

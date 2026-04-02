@@ -1,9 +1,10 @@
 import 'dart:async';
 import 'dart:io';
-import 'package:mikomi/features/video/parse/webview_android_impl.dart';
-import 'package:mikomi/features/video/parse/webview_fallback_impl.dart';
 
-abstract class VideoWebview<T> {
+import 'package:mikomi/features/video/parse/parsing_android.dart';
+import 'package:mikomi/features/video/parse/parsing_ios.dart';
+
+abstract class Parsing<T> {
   T? webviewController;
   int count = 0;
   int offset = 0;
@@ -26,21 +27,20 @@ abstract class VideoWebview<T> {
 
   final StreamController<(String, int)> videoParserEventController =
       StreamController<(String, int)>.broadcast();
-  Stream<(String, int)> get onVideoURLParser =>
-      videoParserEventController.stream;
+  Stream<(String, int)> get onVideoURLParser => videoParserEventController.stream;
 
-  Future<void> loadUrl(String url, bool useLegacyParser, {int offset = 0});
+  Future<void> loadUrl(String url, bool useAlternativeParser, {int offset = 0});
   Future<void> unloadPage();
   void dispose();
 }
 
-class VideoWebviewFactory {
+class ParsingFactory {
   static void setDocumentStartScriptSupported(bool supported) {}
 
-  static VideoWebview getController() {
+  static Parsing getController() {
     if (Platform.isAndroid) {
-      return WebviewAndroidImpl();
+      return ParsingAndroid();
     }
-    return WebviewFallbackImpl();
+    return ParsingIos();
   }
 }

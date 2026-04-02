@@ -1,14 +1,14 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
-import 'package:mikomi/features/video/parse/video_webview.dart';
+import 'package:mikomi/features/video/parse/parsing.dart';
 
-/// 通用 WebView 实现（不支持 DOCUMENT_START_SCRIPT 时的回退方案）
-class WebviewFallbackImpl
-    extends VideoWebview<InAppWebViewController> {
+/// 平台 WebView 解析实现
+class ParsingIos
+    extends Parsing<InAppWebViewController> {
   HeadlessInAppWebView? headlessWebView;
   bool hasRegisteredHandlers = false;
-  bool _useLegacyParser = false;
+  bool _useAlternativeParser = false;
   Timer? videoParserTimer;
 
   @override
@@ -26,12 +26,12 @@ class WebviewFallbackImpl
         loadsImagesAutomatically: false,
       ),
       onWebViewCreated: (controller) {
-        debugPrint('[WebView] Created (fallback impl)');
+        debugPrint('[WebView] Created');
         webviewController = controller;
         initEventController.add(true);
       },
       shouldInterceptRequest: (controller, request) async {
-        if (_useLegacyParser || isVideoSourceLoaded) return null;
+        if (_useAlternativeParser || isVideoSourceLoaded) return null;
         final url = request.url.toString();
         final lower = url.toLowerCase();
         if (_isAdUrl(lower)) return null;
@@ -67,33 +67,33 @@ class WebviewFallbackImpl
   }
 
   @override
-  Future<void> loadUrl(String url, bool useLegacyParser,
+  Future<void> loadUrl(String url, bool useAlternativeParser,
       {int offset = 0}) async {
     await unloadPage();
     if (!hasRegisteredHandlers) {
-      _addJavaScriptHandlers(useLegacyParser);
+      _addJavaScriptHandlers(useAlternativeParser);
       hasRegisteredHandlers = true;
     }
     count = 0;
     this.offset = offset;
-    _useLegacyParser = useLegacyParser;
+    _useAlternativeParser = useAlternativeParser;
     isIframeLoaded = false;
     isVideoSourceLoaded = false;
     videoLoadingEventController.add(true);
     await webviewController?.loadUrl(urlRequest: URLRequest(url: WebUri(url)));
   }
 
-  void _addJavaScriptHandlers(bool useLegacyParser) {
+  void _addJavaScriptHandlers(bool useAlternativeParser) {
     webviewController?.addJavaScriptHandler(
-        handlerName: 'LogBridge',
+        handlerName: 'ParserLogBridge',
         callback: (args) {
           final message = args.isNotEmpty ? args[0].toString() : '';
           if (message.contains('about:blank')) return;
           logEventController.add(message);
         });
-    if (useLegacyParser) {
+    if (useAlternativeParser) {
       webviewController?.addJavaScriptHandler(
-          handlerName: 'JSBridgeDebug',
+          handlerName: 'ParserCandidateBridge',
           callback: (args) {
             final message = args.isNotEmpty ? args[0].toString() : '';
             if ((message.contains('http') || message.startsWith('//')) &&
@@ -113,7 +113,7 @@ class WebviewFallbackImpl
           });
     } else {
       webviewController?.addJavaScriptHandler(
-          handlerName: 'VideoBridgeDebug',
+          handlerName: 'ParserStreamBridge',
           callback: (args) {
             final message = args.isNotEmpty ? args[0].toString() : '';
             if (message.contains('http') && !isVideoSourceLoaded) {
@@ -128,7 +128,7 @@ class WebviewFallbackImpl
   }
 
   Future<void> _onLoadStart() async {
-    if (_useLegacyParser || isVideoSourceLoaded) return;
+    if (_useAlternativeParser || isVideoSourceLoaded) return;
     await webviewController?.evaluateJavascript(source: """
       (function() {
         function hookFetch(win) {
@@ -138,7 +138,7 @@ class WebviewFallbackImpl
               var self = this;
               return orig.call(self).then(function(text) {
                 if (text.trim().indexOf('#EXTM3U') === 0)
-                  window.flutter_inappwebview.callHandler('VideoBridgeDebug', self.url);
+                  window.flutter_inappwebview.callHandler('ParserStreamBridge', self.url);
                 return text;
               });
             };
@@ -152,7 +152,7 @@ class WebviewFallbackImpl
               this.addEventListener('load', function() {
                 try {
                   if ((this.responseText||'').trim().indexOf('#EXTM3U') === 0)
-                    window.flutter_inappwebview.callHandler('VideoBridgeDebug', args[1]);
+                    window.flutter_inappwebview.callHandler('ParserStreamBridge', args[1]);
                 } catch(e) {}
               });
               return origOpen.apply(this, args);
@@ -187,14 +187,14 @@ class WebviewFallbackImpl
   }
 
   Future<void> _onLoadStop() async {
-    if (!_useLegacyParser && !isVideoSourceLoaded) {
+    if (!_useAlternativeParser && !isVideoSourceLoaded) {
       await webviewController?.evaluateJavascript(source: """
         (function() {
           function pv(video) {
             var src=video.getAttribute('src');
-            if(src&&src.trim()!==''&&src.indexOf('blob:')!==0&&src.indexOf('googleads')===-1){window.flutter_inappwebview.callHandler('VideoBridgeDebug',src);return true;}
+            if(src&&src.trim()!==''&&src.indexOf('blob:')!==0&&src.indexOf('googleads')===-1){window.flutter_inappwebview.callHandler('ParserStreamBridge',src);return true;}
             var ss=video.getElementsByTagName('source');
-            for(var i=0;i<ss.length;i++){src=ss[i].getAttribute('src');if(src&&src.trim()!==''&&src.indexOf('blob:')!==0&&src.indexOf('googleads')===-1){window.flutter_inappwebview.callHandler('VideoBridgeDebug',src);return true;}}
+            for(var i=0;i<ss.length;i++){src=ss[i].getAttribute('src');if(src&&src.trim()!==''&&src.indexOf('blob:')!==0&&src.indexOf('googleads')===-1){window.flutter_inappwebview.callHandler('ParserStreamBridge',src);return true;}}
             return false;
           }
           var vs=document.querySelectorAll('video');for(var i=0;i<vs.length;i++){if(pv(vs[i]))return;}
@@ -205,10 +205,10 @@ class WebviewFallbackImpl
         })();
       """);
     }
-    if (_useLegacyParser && !isVideoSourceLoaded) {
+    if (_useAlternativeParser && !isVideoSourceLoaded) {
       await webviewController?.evaluateJavascript(source: """
         (function() {
-          function pi(iframe){var src=iframe.getAttribute('src');if(src)window.flutter_inappwebview.callHandler('JSBridgeDebug',src);}
+          function pi(iframe){var src=iframe.getAttribute('src');if(src)window.flutter_inappwebview.callHandler('ParserCandidateBridge',src);}
           var ifs=document.querySelectorAll('iframe');for(var i=0;i<ifs.length;i++)pi(ifs[i]);
           var obs=new MutationObserver(function(ms){ms.forEach(function(m){if(m.type==='attributes'&&m.target.nodeName==='IFRAME')pi(m.target);m.addedNodes.forEach(function(node){if(node.nodeName==='IFRAME')pi(node);if(node.querySelectorAll){var fs=node.querySelectorAll('iframe');for(var i=0;i<fs.length;i++)pi(fs[i]);}});});});
           obs.observe(document.documentElement,{childList:true,subtree:true,attributes:true,attributeFilter:['src']});
@@ -231,12 +231,12 @@ class WebviewFallbackImpl
 
   Future<void> _pollVideoSource() async {
     if (isVideoSourceLoaded) return;
-    if (_useLegacyParser) {
+    if (_useAlternativeParser) {
       await webviewController?.evaluateJavascript(source:
-          "(function(){var ifs=document.querySelectorAll('iframe');for(var i=0;i<ifs.length;i++){var src=ifs[i].getAttribute('src');if(src)window.flutter_inappwebview.callHandler('JSBridgeDebug',src);}})();");
+          "(function(){var ifs=document.querySelectorAll('iframe');for(var i=0;i<ifs.length;i++){var src=ifs[i].getAttribute('src');if(src)window.flutter_inappwebview.callHandler('ParserCandidateBridge',src);}})();");
     } else {
       await webviewController?.evaluateJavascript(source:
-          "(function(){var vs=document.querySelectorAll('video');for(var i=0;i<vs.length;i++){var src=vs[i].getAttribute('src');if(src&&src.trim()!==''&&src.indexOf('blob:')!==0&&src.indexOf('googleads')===-1){window.flutter_inappwebview.callHandler('VideoBridgeDebug',src);return;}}})();");
+          "(function(){var vs=document.querySelectorAll('video');for(var i=0;i<vs.length;i++){var src=vs[i].getAttribute('src');if(src&&src.trim()!==''&&src.indexOf('blob:')!==0&&src.indexOf('googleads')===-1){window.flutter_inappwebview.callHandler('ParserStreamBridge',src);return;}}})();");
     }
   }
 

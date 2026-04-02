@@ -1,11 +1,11 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
-import 'package:mikomi/features/video/parse/video_webview.dart';
+import 'package:mikomi/features/video/parse/parsing.dart';
 
-/// Android WebView 实现（支持 DOCUMENT_START_SCRIPT 时使用）
-class WebviewAndroidImpl
-    extends VideoWebview<InAppWebViewController> {
+/// 平台 WebView 解析实现
+class ParsingAndroid
+    extends Parsing<InAppWebViewController> {
   HeadlessInAppWebView? headlessWebView;
   bool hasInjectedScripts = false;
 
@@ -61,12 +61,12 @@ class WebviewAndroidImpl
   }
 
   @override
-  Future<void> loadUrl(String url, bool useLegacyParser,
+  Future<void> loadUrl(String url, bool useAlternativeParser,
       {int offset = 0}) async {
     await unloadPage();
     if (!hasInjectedScripts) {
-      _addJavaScriptHandlers(useLegacyParser);
-      await _addUserScripts(useLegacyParser);
+      _addJavaScriptHandlers(useAlternativeParser);
+      await _addUserScripts(useAlternativeParser);
       hasInjectedScripts = true;
     }
     count = 0;
@@ -115,19 +115,19 @@ class WebviewAndroidImpl
     videoParserEventController.add((url, offset));
   }
 
-  void _addJavaScriptHandlers(bool useLegacyParser) {
-    logEventController.add('Adding LogBridge handler');
+  void _addJavaScriptHandlers(bool useAlternativeParser) {
+    logEventController.add('Adding ParserLogBridge handler');
     webviewController?.addJavaScriptHandler(
-        handlerName: 'LogBridge',
+        handlerName: 'ParserLogBridge',
         callback: (args) {
           final message = args.isNotEmpty ? args[0].toString() : '';
           if (message.contains('about:blank')) return;
           logEventController.add(message);
         });
-    if (useLegacyParser) {
-      logEventController.add('Adding JSBridgeDebug handler');
+    if (useAlternativeParser) {
+      logEventController.add('Adding ParserCandidateBridge handler');
       webviewController?.addJavaScriptHandler(
-          handlerName: 'JSBridgeDebug',
+          handlerName: 'ParserCandidateBridge',
           callback: (args) {
             final message = args.isNotEmpty ? args[0].toString() : '';
             logEventController.add('Callback received: $message');
@@ -150,9 +150,9 @@ class WebviewAndroidImpl
             }
           });
     } else {
-      logEventController.add('Adding VideoBridgeDebug handler');
+      logEventController.add('Adding ParserStreamBridge handler');
       webviewController?.addJavaScriptHandler(
-          handlerName: 'VideoBridgeDebug',
+          handlerName: 'ParserStreamBridge',
           callback: (args) {
             final message = args.isNotEmpty ? args[0].toString() : '';
             logEventController.add('Callback received: $message');
@@ -168,15 +168,15 @@ class WebviewAndroidImpl
     }
   }
 
-  Future<void> _addUserScripts(bool useLegacyParser) async {
+  Future<void> _addUserScripts(bool useAlternativeParser) async {
     final scripts = <UserScript>[];
-    if (useLegacyParser) {
-      logEventController.add('Adding JSBridgeDebug UserScript');
-      const String jsBridgeDebugScript = """
-        window.flutter_inappwebview.callHandler('LogBridge', 'JSBridgeDebug script loaded: ' + window.location.href);
+    if (useAlternativeParser) {
+      logEventController.add('Adding ParserCandidateBridge UserScript');
+      const String parserCandidateScript = """
+        window.flutter_inappwebview.callHandler('ParserLogBridge', 'ParserCandidateBridge script loaded: ' + window.location.href);
         function processIframeElement(iframe) {
           let src = iframe.getAttribute('src');
-          if (src) { window.flutter_inappwebview.callHandler('JSBridgeDebug', src); }
+          if (src) { window.flutter_inappwebview.callHandler('ParserCandidateBridge', src); }
         }
         const _observer = new MutationObserver((mutations) => {
           mutations.forEach(mutation => {
@@ -193,13 +193,13 @@ class WebviewAndroidImpl
         _observer.observe(document.documentElement, { childList: true, subtree: true, attributes: true, attributeFilter: ['src'] });
       """;
       scripts.add(UserScript(
-        source: jsBridgeDebugScript,
+        source: parserCandidateScript,
         injectionTime: UserScriptInjectionTime.AT_DOCUMENT_START,
       ));
     } else {
-      logEventController.add('Adding VideoBridgeDebug UserScripts');
+      logEventController.add('Adding ParserStreamBridge UserScripts');
       const String blobParserScript = """
-        window.flutter_inappwebview.callHandler('LogBridge', 'BlobParser script loaded: ' + window.location.href);
+        window.flutter_inappwebview.callHandler('ParserLogBridge', 'BlobParser script loaded: ' + window.location.href);
         function _hookWindowFetch(win) {
           try {
             const _r_text = win.Response.prototype.text;
@@ -208,8 +208,8 @@ class WebviewAndroidImpl
                 _r_text.call(this).then((text) => {
                   resolve(text);
                   if (text.trim().startsWith('#EXTM3U')) {
-                    window.flutter_inappwebview.callHandler('LogBridge', 'M3U8 source found: ' + this.url);
-                    window.flutter_inappwebview.callHandler('VideoBridgeDebug', this.url);
+                    window.flutter_inappwebview.callHandler('ParserLogBridge', 'M3U8 source found: ' + this.url);
+                    window.flutter_inappwebview.callHandler('ParserStreamBridge', this.url);
                   }
                 }).catch(reject);
               });
@@ -224,8 +224,8 @@ class WebviewAndroidImpl
                 try {
                   const content = this.responseText || '';
                   if (content.trim().startsWith('#EXTM3U')) {
-                    window.flutter_inappwebview.callHandler('LogBridge', 'M3U8 source found: ' + args[1]);
-                    window.flutter_inappwebview.callHandler('VideoBridgeDebug', args[1]);
+                    window.flutter_inappwebview.callHandler('ParserLogBridge', 'M3U8 source found: ' + args[1]);
+                    window.flutter_inappwebview.callHandler('ParserStreamBridge', args[1]);
                   }
                 } catch (_) {}
               });
@@ -257,7 +257,7 @@ class WebviewAndroidImpl
         else { _setupIframeListeners(); }
       """;
       const String videoTagParserScript = """
-        window.flutter_inappwebview.callHandler('LogBridge', 'VideoTagParser script loaded: ' + window.location.href);
+        window.flutter_inappwebview.callHandler('ParserLogBridge', 'VideoTagParser script loaded: ' + window.location.href);
         const _observer = new MutationObserver((mutations) => {
           for (const mutation of mutations) {
             if (mutation.type === 'attributes' && mutation.target.nodeName === 'VIDEO') { if (processVideoElement(mutation.target)) return; continue; }
@@ -271,14 +271,14 @@ class WebviewAndroidImpl
           let src = video.getAttribute('src');
           if (src && src.trim() !== '' && !src.startsWith('blob:') && !src.includes('googleads')) {
             _observer.disconnect();
-            window.flutter_inappwebview.callHandler('VideoBridgeDebug', src);
+            window.flutter_inappwebview.callHandler('ParserStreamBridge', src);
             return true;
           }
           for (let s of video.getElementsByTagName('source')) {
             src = s.getAttribute('src');
             if (src && src.trim() !== '' && !src.startsWith('blob:') && !src.includes('googleads')) {
               _observer.disconnect();
-              window.flutter_inappwebview.callHandler('VideoBridgeDebug', src);
+              window.flutter_inappwebview.callHandler('ParserStreamBridge', src);
               return true;
             }
           }

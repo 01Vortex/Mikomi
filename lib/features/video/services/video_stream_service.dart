@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
-import 'package:mikomi/features/video/parse/video_webview.dart';
+import 'package:mikomi/features/video/parse/parsing.dart';
 import 'package:mikomi/features/video/services/video_exception.dart';
 
 enum ParsedVideoStreamType { online, cached }
@@ -25,7 +25,7 @@ class ParsedVideoStream {
 abstract class VideoStreamService {
   Future<ParsedVideoStream> resolveFromPage(
     String episodeUrl, {
-    required bool useLegacyParser,
+    required bool useAlternativeParser,
     int offset = 0,
     Duration timeout = const Duration(seconds: 45),
   });
@@ -35,37 +35,39 @@ abstract class VideoStreamService {
 }
 
 class WebViewVideoStreamService implements VideoStreamService {
-  VideoWebview? _webview;
+  Parsing? _parser;
   StreamSubscription<String>? _logSubscription;
   int _requestId = 0;
 
   @override
   Future<ParsedVideoStream> resolveFromPage(
     String episodeUrl, {
-    required bool useLegacyParser,
+    required bool useAlternativeParser,
     int offset = 0,
     Duration timeout = const Duration(seconds: 45),
   }) async {
     _requestId++;
     final currentRequestId = _requestId;
 
-    if (_webview == null) {
-      _webview = VideoWebviewFactory.getController();
-      await _webview!.init();
+    if (_parser == null) {
+      _parser = ParsingFactory.getController();
+      await _parser!.init();
 
-      _logSubscription = _webview!.onLog.listen((log) {
+      _logSubscription = _parser!.onLog.listen((log) {
         debugPrint('[WebView] $log');
       });
     }
 
     try {
-      await _webview!.loadUrl(episodeUrl, useLegacyParser, offset: offset);
+      await _parser!.loadUrl(
+        episodeUrl,
+        useAlternativeParser, offset: offset);
 
       if (currentRequestId != _requestId) {
         throw const VideoStreamCancelledException();
       }
 
-      final event = await _webview!.onVideoURLParser.first.timeout(
+      final event = await _parser!.onVideoURLParser.first.timeout(
         timeout,
         onTimeout: () {
           if (currentRequestId != _requestId) {
@@ -100,7 +102,7 @@ class WebViewVideoStreamService implements VideoStreamService {
       throw VideoException(VideoExceptionCode.parseFailed, detail: e.toString());
     } finally {
       if (currentRequestId == _requestId) {
-        await _webview?.unloadPage();
+        await _parser?.unloadPage();
       }
     }
   }
@@ -115,7 +117,7 @@ class WebViewVideoStreamService implements VideoStreamService {
     cancel();
     _logSubscription?.cancel();
     _logSubscription = null;
-    _webview?.dispose();
-    _webview = null;
+    _parser?.dispose();
+    _parser = null;
   }
 }
