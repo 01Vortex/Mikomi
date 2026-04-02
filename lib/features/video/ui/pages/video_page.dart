@@ -11,7 +11,7 @@ import 'package:mikomi/features/video/models/episode_model.dart';
 import 'package:mikomi/features/video/services/video_playback_service.dart';
 import 'package:mikomi/features/settings/danmaku/danmaku_setting_service.dart';
 import 'package:mikomi/features/video/state/video_state_manager.dart';
-import 'package:mikomi/features/video/services/video_url_resolver_service.dart';
+import 'package:mikomi/features/video/services/video_parsing_service.dart';
 import 'package:mikomi/features/video/services/video_episode_service.dart';
 import 'package:mikomi/features/video/services/video_history_service.dart';
 import 'package:mikomi/features/video/ui/widgets/video_player_area.dart';
@@ -53,7 +53,7 @@ class _VideoPageState extends State<VideoPage>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   late VideoStateManager _state;
-  late VideoUrlResolverService _urlResolver;
+  late VideoParsingService _videoParsingService;
   late VideoEpisodeService _episodeManager;
   late VideoHistoryService _historyManager;
   late VideoPlaybackService _playerController;
@@ -70,7 +70,7 @@ class _VideoPageState extends State<VideoPage>
   void initState() {
     super.initState();
     _state = VideoStateManager();
-    _urlResolver = VideoUrlResolverService();
+    _videoParsingService = VideoParsingService();
     _episodeManager = VideoEpisodeService();
     _historyManager = VideoHistoryService();
     _playerController = VideoPlaybackService();
@@ -101,7 +101,7 @@ class _VideoPageState extends State<VideoPage>
   void _initializeVideoUrl() {
     if (_state.episodes.isEmpty && _state.currentPluginName != null && widget.animeTitle != null) {
       if (_state.videoUrl.isNotEmpty) {
-        if (_urlResolver.isDirectStreamUrl(_state.videoUrl)) {
+        if (_videoParsingService.isDirectStreamUrl(_state.videoUrl)) {
           _state.isUsingCachedPlayUrl = true;
           _state.shouldParseAfterEpisodesLoaded = true;
           _state.lastResolvedVideoUrl = _state.videoUrl;
@@ -180,7 +180,7 @@ class _VideoPageState extends State<VideoPage>
           .firstWhere((ep) => ep.number == _state.currentEpisode)
           .url ??
           _state.videoUrl;
-      final parsedUrl = await _urlResolver.refreshParsedUrl(
+      final parsedUrl = await _videoParsingService.refreshParsedUrl(
         pageUrl,
         _state.currentPluginName!,
         _state.lastResolvedVideoUrl,
@@ -196,7 +196,7 @@ class _VideoPageState extends State<VideoPage>
   }
 
   void _updateCurrentVideoUrl() {
-    _urlResolver.cancelParsing();
+    _videoParsingService.cancelParsing();
     setState(() {
       _state.showTimeoutHint = false;
       _state.hasParseError = false;
@@ -210,7 +210,7 @@ class _VideoPageState extends State<VideoPage>
 
   Future<String> _getCurrentVideoUrl() async {
     try {
-      final url = await _urlResolver.resolveVideoUrl(
+      final url = await _videoParsingService.resolveVideoUrl(
         _state.videoUrl,
         _state.currentPluginName,
         _state.episodes,
@@ -255,7 +255,7 @@ class _VideoPageState extends State<VideoPage>
   }
 
   Future<void> _switchVideoSource(VideoSource source) async {
-    _urlResolver.cancelParsing();
+    _videoParsingService.cancelParsing();
     await _playerController.stop();
     setState(() {
       _state.currentPluginName = source.name;

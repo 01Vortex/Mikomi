@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:mikomi/features/video/models/video_plugin.dart';
 import 'package:mikomi/core/models/road.dart';
-import 'package:mikomi/features/video/services/video_content_service.dart';
+import 'package:mikomi/features/video/services/video_service.dart';
 import 'package:mikomi/features/settings/video_play/service/plugin_test_service.dart';
 import 'package:mikomi/features/settings/video_play/service/anti-anti-crawler_test_service.dart';
 import 'package:mikomi/shared/theme_extensions.dart';

@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:mikomi/features/anime/selector/video_source_selector.dart';
 import 'package:mikomi/features/video/ui/pages/video_page.dart';
 import 'package:mikomi/features/video/models/episode_model.dart';
-import 'package:mikomi/features/video/services/video_content_service.dart';
+import 'package:mikomi/features/video/services/video_service.dart';
 import 'package:mikomi/features/video/services/video_plugin_service.dart';
 import 'package:mikomi/shared/message_dialog.dart';
 
@@ -28,7 +28,7 @@ class PlayButton extends StatefulWidget {
 }
 
 class _PlayButtonState extends State<PlayButton> {
-  final VideoContentService _videoSourceRepo = VideoContentService();
+  final VideoService _videoService = VideoService();
   final VideoPluginService _pluginService = VideoPluginService();
 
   List<Episode>? _episodes;
@@ -66,8 +66,8 @@ class _PlayButtonState extends State<PlayButton> {
     }
 
     try {
-      var videoEpisodes = await _videoSourceRepo
-          .searchAndGetEpisodes(widget.animeTitle!, pluginName)
+      var videoEpisodes = await _videoService
+          .episodeGateway(widget.animeTitle!, pluginName)
           .timeout(
             const Duration(seconds: 30),
             onTimeout: () {
@@ -80,8 +80,8 @@ class _PlayButtonState extends State<PlayButton> {
           widget.animeName != null &&
           widget.animeName != widget.animeTitle) {
         debugPrint('中文名搜索无结果，尝试原名: ${widget.animeName}');
-        videoEpisodes = await _videoSourceRepo
-            .searchAndGetEpisodes(widget.animeName!, pluginName)
+        videoEpisodes = await _videoService
+            .episodeGateway(widget.animeName!, pluginName)
             .timeout(
               const Duration(seconds: 30),
               onTimeout: () {

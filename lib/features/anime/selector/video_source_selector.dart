@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:mikomi/features/video/services/video_content_service.dart';
+import 'package:mikomi/features/video/services/video_service.dart';
 import 'package:mikomi/features/settings/video_play/service/plugin_manager_service.dart';
 
 class VideoSource {
@@ -28,7 +28,7 @@ class _VideoSourceSelectorState extends State<VideoSourceSelector>
     with TickerProviderStateMixin {
   late TabController _tabController;
   late List<VideoSource> _sources;
-  final VideoContentService _videoSourceRepo = VideoContentService();
+  final VideoService _videoService = VideoService();
   final VideoPluginManager _pluginManager = VideoPluginManager();
   final Map<String, bool?> _sourceAvailability = {};
   final Map<String, int> _sourceEpisodeCount = {};
@@ -115,8 +115,8 @@ class _VideoSourceSelectorState extends State<VideoSourceSelector>
       debugPrint('[${source.name}] 搜索关键词: ${widget.animeTitle}');
       debugPrint('========================================');
 
-      final episodes = await _videoSourceRepo
-          .searchAndGetEpisodes(widget.animeTitle!, source.name)
+      final episodes = await _videoService
+          .episodeGateway(widget.animeTitle!, source.name)
           .timeout(
             const Duration(seconds: 60), // 增加到60秒
             onTimeout: () {

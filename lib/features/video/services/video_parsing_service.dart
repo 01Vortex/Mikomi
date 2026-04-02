@@ -1,10 +1,10 @@
 import 'package:flutter/foundation.dart';
-import 'package:mikomi/features/video/services/video_content_service.dart';
-import 'package:mikomi/features/video/services/video_source_provider.dart'
-    show VideoSourceCancelledException;
+import 'package:mikomi/features/video/models/episode_model.dart';
+import 'package:mikomi/features/video/services/video_exception.dart';
+import 'package:mikomi/features/video/services/video_service.dart';
 
-class VideoUrlResolverService {
-  final VideoContentService _videoSourceRepo = VideoContentService();
+class VideoParsingService {
+  final VideoService _videoService = VideoService();
 
   bool isDirectStreamUrl(String url) {
     final lower = url.toLowerCase();
@@ -14,30 +14,28 @@ class VideoUrlResolverService {
   Future<String> resolveVideoUrl(
     String url,
     String? pluginName,
-    List episodes,
+    List<Episode> episodes,
     int currentEpisode,
   ) async {
     try {
       if (episodes.isEmpty) {
-        if (isDirectStreamUrl(url)) {
-          return url;
-        }
+        if (isDirectStreamUrl(url)) return url;
         if (pluginName != null && url.isNotEmpty) {
-          return await _videoSourceRepo.parseVideoUrl(url, pluginName);
+          return await _videoService.parseGateway(url, pluginName);
         }
         return url;
       }
 
       final episodeUrl = episodes
-          .firstWhere((ep) => ep.number == currentEpisode)
-          .url ??
+              .firstWhere((ep) => ep.number == currentEpisode)
+              .url ??
           url;
 
       if (pluginName != null) {
-        return await _videoSourceRepo.parseVideoUrl(episodeUrl, pluginName);
+        return await _videoService.parseGateway(episodeUrl, pluginName);
       }
       return episodeUrl;
-    } on VideoSourceCancelledException {
+    } on VideoStreamCancelledException {
       return '';
     } catch (e) {
       debugPrint('获取视频URL失败: $e');
@@ -51,8 +49,7 @@ class VideoUrlResolverService {
     String lastResolvedUrl,
   ) async {
     try {
-      final parsedUrl =
-          await _videoSourceRepo.parseVideoUrl(pageUrl, pluginName);
+      final parsedUrl = await _videoService.parseGateway(pageUrl, pluginName);
       if (parsedUrl.isEmpty || parsedUrl == lastResolvedUrl) {
         return lastResolvedUrl;
       }
@@ -64,6 +61,6 @@ class VideoUrlResolverService {
   }
 
   void cancelParsing() {
-    _videoSourceRepo.cancelVideoParsing();
+    _videoService.cancelVideoParsing();
   }
 }
