@@ -141,7 +141,6 @@ class _VideoPageState extends State<VideoPage>
           _state.currentPluginName!,
           widget.animeTitle,
           widget.animeName,
-          widget.bangumiId,
         );
         if (episodes.isNotEmpty && mounted) {
           setState(() {
@@ -160,8 +159,8 @@ class _VideoPageState extends State<VideoPage>
             }
           }
         }
-      } else if (widget.bangumiId != null) {
-        final episodes = await _episodeManager.loadBangumiEpisodes(widget.bangumiId!);
+      } else {
+        final episodes = <Episode>[];
         if (mounted && episodes.isNotEmpty) {
           setState(() => _state.episodes = episodes);
         }
@@ -267,7 +266,6 @@ class _VideoPageState extends State<VideoPage>
         source.name,
         widget.animeTitle,
         widget.animeName,
-        widget.bangumiId,
       );
       if (episodes.isNotEmpty && mounted) {
         setState(() => _state.episodes = episodes);

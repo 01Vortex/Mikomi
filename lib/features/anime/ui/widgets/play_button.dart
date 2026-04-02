@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:mikomi/features/anime/selector/video_source_selector.dart';
 import 'package:mikomi/features/video/ui/pages/video_page.dart';
 import 'package:mikomi/features/video/models/episode_model.dart';
-import 'package:mikomi/features/video/services/episodes_service.dart';
 import 'package:mikomi/features/video/services/video_content_service.dart';
 import 'package:mikomi/features/video/services/video_plugin_service.dart';
 import 'package:mikomi/shared/message_dialog.dart';
@@ -29,7 +28,6 @@ class PlayButton extends StatefulWidget {
 }
 
 class _PlayButtonState extends State<PlayButton> {
-  final EpisodesService _episodesService = EpisodesService();
   final VideoContentService _videoSourceRepo = VideoContentService();
   final VideoPluginService _pluginService = VideoPluginService();
 
@@ -59,7 +57,11 @@ class _PlayButtonState extends State<PlayButton> {
 
   Future<void> _loadEpisodesWithVideoSource(String pluginName) async {
     if (widget.animeTitle == null) {
-      await _loadBangumiEpisodes();
+      if (mounted) {
+        setState(() {
+          _episodes = [];
+        });
+      }
       return;
     }
 
@@ -74,7 +76,6 @@ class _PlayButtonState extends State<PlayButton> {
             },
           );
 
-      // 中文名搜索无结果时，用原名重试
       if (videoEpisodes.isEmpty &&
           widget.animeName != null &&
           widget.animeName != widget.animeTitle) {
@@ -90,36 +91,9 @@ class _PlayButtonState extends State<PlayButton> {
             );
       }
 
-      List<Episode>? bangumiEpisodes;
-      if (widget.bangumiId != null) {
-        bangumiEpisodes = await _episodesService
-            .getEpisodesBySubjectId(widget.bangumiId!)
-            .timeout(
-              const Duration(seconds: 10),
-              onTimeout: () {
-                debugPrint('获取Bangumi集数超时');
-                return [];
-              },
-            );
-      }
-
-      final mergedEpisodes = <Episode>[];
-      for (int i = 0; i < videoEpisodes.length; i++) {
-        final videoEp = videoEpisodes[i];
-        String? title = videoEp.title;
-
-        if (bangumiEpisodes != null && i < bangumiEpisodes.length) {
-          title = bangumiEpisodes[i].title;
-        }
-
-        mergedEpisodes.add(
-          Episode(number: videoEp.number, title: title, url: videoEp.url),
-        );
-      }
-
       if (mounted) {
         setState(() {
-          _episodes = mergedEpisodes;
+          _episodes = videoEpisodes;
         });
       }
     } catch (e) {
@@ -132,34 +106,6 @@ class _PlayButtonState extends State<PlayButton> {
     }
   }
 
-  Future<void> _loadBangumiEpisodes() async {
-    if (widget.bangumiId == null) return;
-
-    try {
-      final episodes = await _episodesService
-          .getEpisodesBySubjectId(widget.bangumiId!)
-          .timeout(
-            const Duration(seconds: 10),
-            onTimeout: () {
-              debugPrint('获取Bangumi集数超时');
-              return [];
-            },
-          );
-
-      if (mounted) {
-        setState(() {
-          _episodes = episodes;
-        });
-      }
-    } catch (e) {
-      debugPrint('加载Bangumi集数失败: $e');
-      if (mounted) {
-        setState(() {
-          _episodes = [];
-        });
-      }
-    }
-  }
 
   void _showVideoSourceSelector(BuildContext context) {
     if (widget.videoSources == null || widget.videoSources!.isEmpty) {
@@ -222,7 +168,7 @@ class _PlayButtonState extends State<PlayButton> {
       if (pluginName != null) {
         await _loadEpisodesWithVideoSource(pluginName);
       } else {
-        await _loadBangumiEpisodes();
+        _episodes = [];
       }
 
       if (!mounted) {
@@ -235,9 +181,9 @@ class _PlayButtonState extends State<PlayButton> {
       debugPrint('加载完成，集数: ${_episodes?.length}');
 
       if (_episodes == null || _episodes!.isEmpty) {
-        debugPrint('未找到剧集数据');
+        debugPrint('未找到剧集数据，当前视频源不可用');
         if (mounted) {
-          MessageDialog.warning(context, '未找到剧集数据');
+          MessageDialog.warning(context, '当前视频源无剧集，无法播放');
         }
         return;
       }
