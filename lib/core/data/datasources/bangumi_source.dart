@@ -20,6 +20,31 @@ class BangumiSource {
     return [];
   }
 
+  Future<List<dynamic>> searchSubjects({
+    required String keyword,
+    int limit = 48,
+    int offset = 0,
+  }) async {
+    final response = await _dioClient.post(
+      ApiConstants.bangumiApiDomain + ApiConstants.bangumiSearch,
+      data: {
+        'keyword': keyword,
+        'sort': 'rank',
+        'filter': {'type': [2]},
+      },
+      queryParameters: {
+        'limit': limit,
+        'offset': offset,
+      },
+    );
+
+    final data = response.data;
+    if (data is Map<String, dynamic>) {
+      return (data['data'] as List?)?.cast<dynamic>() ?? [];
+    }
+    return [];
+  }
+
   Future<Map<String, dynamic>> fetchCalendar() async {
     final response = await _dioClient.get(
       ApiConstants.bangumiApiNextDomain + ApiConstants.bangumiCalendar,

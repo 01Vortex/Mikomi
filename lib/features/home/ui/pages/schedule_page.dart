@@ -47,7 +47,7 @@ class _SchedulePageState extends State<SchedulePage>
     );
     _pageController = PageController(initialPage: _todayIndex);
     _tabController?.addListener(_handleTabChange);
-    _loadSchedule(forceRefresh: true);
+    _loadSchedule();
   }
 
   @override

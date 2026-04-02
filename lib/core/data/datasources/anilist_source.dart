@@ -9,8 +9,11 @@ class AniListSource {
     required int perPage,
     required String sort,
     String? country,
+    String? genre,
+    int? seasonYear,
+    String? status,
   }) async {
-    final variables = {
+    final variables = <String, dynamic>{
       'page': page,
       'perPage': perPage,
       'sort': [sort],
@@ -19,12 +22,19 @@ class AniListSource {
     if (country != null && country.isNotEmpty) {
       variables['country'] = country;
     }
-
-    final query = country == null ? AniListQueries.base : AniListQueries.japanese;
+    if (genre != null && genre.isNotEmpty) {
+      variables['genre'] = genre;
+    }
+    if (seasonYear != null) {
+      variables['seasonYear'] = seasonYear;
+    }
+    if (status != null && status.isNotEmpty) {
+      variables['status'] = status;
+    }
 
     final response = await _dioClient.post(
       'https://graphql.anilist.co',
-      data: {'query': query, 'variables': variables},
+      data: {'query': AniListQueries.base, 'variables': variables},
     );
 
     final data = response.data;

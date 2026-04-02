@@ -9,9 +9,9 @@ class ScheduleService {
   final AniListSource _aniListSource;
   final TencentSource _tencentSource;
 
-  DateTime? _lastLoadedAt;
-  List<List<HomeAnimeModel>>? _cachedSchedule;
-  Future<List<List<HomeAnimeModel>>>? _inFlight;
+  static DateTime? _lastLoadedAt;
+  static List<List<HomeAnimeModel>>? _cachedSchedule;
+  static Future<List<List<HomeAnimeModel>>>? _inFlight;
 
   static const Duration _cacheDuration = Duration(minutes: 10);
 

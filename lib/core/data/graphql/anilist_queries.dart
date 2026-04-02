@@ -3,10 +3,21 @@ class AniListQueries {
 query (
   \$page: Int,
   \$perPage: Int,
-  \$sort: [MediaSort]
+  \$sort: [MediaSort],
+  \$country: CountryCode,
+  \$genre: String,
+  \$seasonYear: Int,
+  \$status: MediaStatus
 ) {
   Page(page: \$page, perPage: \$perPage) {
-    media(type: ANIME, sort: \$sort) {
+    media(
+      type: ANIME,
+      sort: \$sort,
+      countryOfOrigin: \$country,
+      genre: \$genre,
+      seasonYear: \$seasonYear,
+      status: \$status
+    ) {
       id
       title {
         romaji
