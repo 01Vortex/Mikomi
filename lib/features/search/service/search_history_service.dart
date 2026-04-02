@@ -8,7 +8,7 @@ class SearchHistoryService {
     try {
       final prefs = await SharedPreferences.getInstance();
       return prefs.getStringList(_historyKey) ?? [];
-    } catch (e) {
+    } catch (_) {
       return [];
     }
   }
@@ -26,9 +26,7 @@ class SearchHistoryService {
       }
 
       await prefs.setStringList(_historyKey, history);
-    } catch (e) {
-      // 忽略错误
-    }
+    } catch (_) {}
   }
 
   Future<void> removeHistory(String keyword) async {
@@ -37,19 +35,14 @@ class SearchHistoryService {
       final history = await getHistory();
 
       history.remove(keyword);
-
       await prefs.setStringList(_historyKey, history);
-    } catch (e) {
-      // 忽略错误
-    }
+    } catch (_) {}
   }
 
   Future<void> clearHistory() async {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove(_historyKey);
-    } catch (e) {
-      // 忽略错误
-    }
+    } catch (_) {}
   }
 }

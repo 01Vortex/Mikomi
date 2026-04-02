@@ -1,7 +1,7 @@
 import 'dart:math' as math;
 import 'package:mikomi/core/models/anime.dart';
 
-class HotSearchService {
+class HotSearchAlgorithmService {
   /// 计算番剧热度分数
   /// 优化后的算法，避免高分老番长期霸榜
   /// 综合考虑:

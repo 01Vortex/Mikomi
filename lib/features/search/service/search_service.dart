@@ -1,113 +1,46 @@
+import 'package:mikomi/core/data/datasources/bangumi_source.dart';
 import 'package:mikomi/core/models/anime.dart';
+import 'package:mikomi/features/search/service/hot_search_service.dart';
+import 'package:mikomi/features/search/service/search_algorithm_service.dart';
 
 class SearchService {
-  /// 精准搜索排序
-  /// 匹配优先级:
-  /// 1. 完全匹配 (100分)
-  /// 2. 开头匹配 (80分)
-  /// 3. 包含匹配 (60分)
-  /// 4. 模糊匹配 (40分)
-  static List<Anime> sortByRelevance(
-    List<Anime> items,
-    String keyword,
-  ) {
-    if (keyword.trim().isEmpty) return items;
+  final BangumiSource _bangumiSource;
 
-    final lowerKeyword = keyword.toLowerCase().trim();
+  SearchService({BangumiSource? bangumiSource})
+    : _bangumiSource = bangumiSource ?? BangumiSource();
 
-    // 计算每个番剧的相关度分数
-    List<MapEntry<Anime, double>> scoredItems = items.map((item) {
-      double score = _calculateRelevanceScore(item, lowerKeyword);
-      return MapEntry(item, score);
-    }).toList();
+  Future<List<Anime>> search(String keyword) async {
+    try {
+      final data = await _bangumiSource.searchSubjects(keyword: keyword, limit: 50);
+      final items = data
+          .whereType<Map>()
+          .map((item) => Anime.fromJson(Map<String, dynamic>.from(item)))
+          .toList();
 
-    // 按分数降序排序
-    scoredItems.sort((a, b) => b.value.compareTo(a.value));
+      final sortedItems = SearchAlgorithmService.sortByRelevance(items, keyword);
+      final filteredItems = SearchAlgorithmService.filterByRelevance(
+        sortedItems,
+        keyword,
+        minScore: 30,
+      );
 
-    return scoredItems.map((e) => e.key).toList();
-  }
-
-  /// 计算相关度分数
-  static double _calculateRelevanceScore(Anime item, String keyword) {
-    final nameCn = item.nameCn.toLowerCase();
-    final name = item.name.toLowerCase();
-
-    double maxScore = 0;
-
-    // 检查中文名
-    maxScore = _max(maxScore, _matchScore(nameCn, keyword));
-
-    // 检查原名
-    maxScore = _max(maxScore, _matchScore(name, keyword));
-
-    // 加上评分和排名的权重
-    double ratingBonus = (item.ratingScore / 10.0) * 10; // 最多10分
-    double rankBonus = 0;
-    if (item.rank > 0 && item.rank <= 1000) {
-      rankBonus = (1000 - item.rank) / 100; // 最多10分
+      return filteredItems.take(20).toList();
+    } catch (_) {
+      return [];
     }
-
-    return maxScore + ratingBonus + rankBonus;
   }
 
-  /// 匹配分数计算
-  static double _matchScore(String text, String keyword) {
-    if (text.isEmpty) return 0;
+  Future<List<Anime>> getPopularityRankings({int limit = 10}) async {
+    try {
+      final data = await _bangumiSource.fetchTrends(limit: 50, offset: 0);
+      final items = data
+          .whereType<Map>()
+          .map((item) => Anime.fromJson(Map<String, dynamic>.from(item)))
+          .toList();
 
-    // 完全匹配
-    if (text == keyword) return 100;
-
-    // 开头匹配
-    if (text.startsWith(keyword)) return 80;
-
-    // 包含匹配
-    if (text.contains(keyword)) {
-      // 关键词在文本中的位置越靠前,分数越高
-      int index = text.indexOf(keyword);
-      double positionScore = 60 - (index / text.length * 20);
-      return positionScore;
+      return HotSearchAlgorithmService.getPopularityRanking(items, limit: limit);
+    } catch (_) {
+      return [];
     }
-
-    // 模糊匹配 (检查关键词的每个字符是否按顺序出现)
-    if (_fuzzyMatch(text, keyword)) {
-      return 40;
-    }
-
-    return 0;
   }
-
-  /// 模糊匹配
-  /// 检查keyword的每个字符是否按顺序出现在text中
-  static bool _fuzzyMatch(String text, String keyword) {
-    int textIndex = 0;
-    int keywordIndex = 0;
-
-    while (textIndex < text.length && keywordIndex < keyword.length) {
-      if (text[textIndex] == keyword[keywordIndex]) {
-        keywordIndex++;
-      }
-      textIndex++;
-    }
-
-    return keywordIndex == keyword.length;
-  }
-
-  /// 过滤低相关度结果
-  /// 只保留分数大于阈值的结果
-  static List<Anime> filterByRelevance(
-    List<Anime> items,
-    String keyword, {
-    double minScore = 30,
-  }) {
-    if (keyword.trim().isEmpty) return items;
-
-    final lowerKeyword = keyword.toLowerCase().trim();
-
-    return items.where((item) {
-      double score = _calculateRelevanceScore(item, lowerKeyword);
-      return score >= minScore;
-    }).toList();
-  }
-
-  static double _max(double a, double b) => a > b ? a : b;
 }

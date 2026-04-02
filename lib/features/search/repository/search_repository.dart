@@ -1,7 +1,7 @@
 import 'package:mikomi/core/data/datasources/bangumi_source.dart';
 import 'package:mikomi/core/models/anime.dart';
 import 'package:mikomi/features/search/service/hot_search_service.dart';
-import 'package:mikomi/features/search/service/search_service.dart';
+import 'package:mikomi/features/search/service/search_algorithm_service.dart';
 
 class SearchRepository {
   final BangumiSource _bangumiSource;
@@ -17,8 +17,8 @@ class SearchRepository {
           .map((item) => Anime.fromJson(Map<String, dynamic>.from(item)))
           .toList();
 
-      final sortedItems = SearchService.sortByRelevance(items, keyword);
-      final filteredItems = SearchService.filterByRelevance(
+      final sortedItems = SearchAlgorithmService.sortByRelevance(items, keyword);
+      final filteredItems = SearchAlgorithmService.filterByRelevance(
         sortedItems,
         keyword,
         minScore: 30,
@@ -38,7 +38,7 @@ class SearchRepository {
           .map((item) => Anime.fromJson(Map<String, dynamic>.from(item)))
           .toList();
 
-      return HotSearchService.getPopularityRanking(items, limit: limit);
+      return HotSearchAlgorithmService.getPopularityRanking(items, limit: limit);
     } catch (_) {
       return [];
     }

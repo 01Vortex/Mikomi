@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mikomi/config/app_theme.dart';
 import 'package:mikomi/features/search/repository/search_repository.dart';
-import 'package:mikomi/core/services/search_history_service.dart';
+import 'package:mikomi/features/search/service/search_history_service.dart';
 import 'package:mikomi/core/models/anime.dart';
 import 'package:mikomi/features/search/ui/widgets/search_app_bar.dart';
 import 'package:mikomi/features/search/ui/widgets/search_history_view.dart';
