@@ -1,6 +1,19 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
+import 'package:mikomi/features/video/parse/anti_anti_crawler/anti_anti_crawler.dart';
+import 'package:mikomi/features/video/parse/anti_anti_crawler/anti_anti_crawler_composite.dart';
+import 'package:mikomi/features/video/parse/anti_anti_crawler/captcha_handler.dart';
+import 'package:mikomi/features/video/parse/anti_anti_crawler/cookie_manager.dart';
+import 'package:mikomi/features/video/parse/anti_anti_crawler/error_retry.dart';
+import 'package:mikomi/features/video/parse/anti_anti_crawler/fingerprint_spoofer.dart';
+import 'package:mikomi/features/video/parse/anti_anti_crawler/js_hook.dart';
+import 'package:mikomi/features/video/parse/anti_anti_crawler/proxy_strategy.dart';
+import 'package:mikomi/features/video/parse/anti_anti_crawler/request_delay.dart';
+import 'package:mikomi/features/video/parse/anti_anti_crawler/request_interceptor.dart';
+import 'package:mikomi/features/video/parse/anti_anti_crawler/resource_filter.dart';
+import 'package:mikomi/features/video/parse/anti_anti_crawler/ua_dynamic_generation.dart';
+import 'package:mikomi/features/video/parse/anti_anti_crawler/webdriver_hider.dart';
 import 'package:mikomi/features/video/parse/parsing.dart';
 
 /// 平台 WebView 解析实现
@@ -9,12 +22,26 @@ class ParsingAndroid
   HeadlessInAppWebView? headlessWebView;
   bool hasInjectedScripts = false;
 
+  final UaDynamicGeneration _uaDynamicGeneration = UaDynamicGeneration();
+  final RequestInterceptor _requestInterceptor = const RequestInterceptor();
+  final ResourceFilter _resourceFilter = const ResourceFilter();
+  final RequestDelay _requestDelay = const RequestDelay();
+  final ProxyStrategy _proxyStrategy = const ProxyStrategy();
+  final ParsingCookieManager _cookieManager = ParsingCookieManager();
+  final CaptchaHandler _captchaHandler = const CaptchaHandler();
+  final ErrorRetry _errorRetry = const ErrorRetry();
+  late final CompositeAntiAntiCrawler _antiAntiCrawler =
+      CompositeAntiAntiCrawler(const [
+        WebdriverHider(),
+        FingerprintSpoofer(),
+        JsHook(),
+      ]);
+
   @override
   Future<void> init() async {
     headlessWebView ??= HeadlessInAppWebView(
       initialSettings: InAppWebViewSettings(
-        userAgent:
-            'Mozilla/5.0 (Linux; Android 13; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Mobile Safari/537.36',
+        userAgent: _uaDynamicGeneration.generate(),
         mediaPlaybackRequiresUserGesture: true,
         cacheEnabled: false,
         blockNetworkImage: true,
@@ -34,7 +61,8 @@ class ParsingAndroid
         if (isVideoSourceLoaded) return null;
         final url = request.url.toString();
         final lower = url.toLowerCase();
-        if (_isAdUrl(lower)) return null;
+        if (!_requestInterceptor.shouldAllow(lower)) return null;
+        if (!_resourceFilter.allow(lower)) return null;
         if (_isM3U8Url(lower) || _isRangeVideoRequest(lower, request.headers)) {
           _onPotentialVideoRequest(url);
         }
@@ -43,8 +71,9 @@ class ParsingAndroid
       onLoadStart: (controller, url) async {
         logEventController.add('started loading: $url');
       },
-      onLoadStop: (controller, url) {
+      onLoadStop: (controller, url) async {
         logEventController.add('loading completed: $url');
+        await _runAfterLoadStrategies(url?.toString() ?? '');
       },
       onConsoleMessage: (controller, consoleMessage) {
         logEventController.add('Console: ${consoleMessage.message}');
@@ -74,6 +103,8 @@ class ParsingAndroid
     isIframeLoaded = false;
     isVideoSourceLoaded = false;
     videoLoadingEventController.add(true);
+    await _runBeforeLoadStrategies(url, useAlternativeParser, offset);
+    await Future.delayed(_requestDelay.nextDelay());
     await webviewController?.loadUrl(urlRequest: URLRequest(url: WebUri(url)));
   }
 
@@ -297,6 +328,44 @@ class ParsingAndroid
     await webviewController?.addUserScripts(userScripts: scripts);
   }
 
+  Future<void> _runBeforeLoadStrategies(
+    String requestUrl,
+    bool useAlternativeParser,
+    int offset,
+  ) async {
+    final context = AntiAntiCrawlerContext(
+      controller: webviewController,
+      requestUrl: requestUrl,
+      useAlternativeParser: useAlternativeParser,
+      offset: offset,
+    );
+    _proxyStrategy.nextProxy();
+    _cookieManager.save('last_request_url', requestUrl);
+    await _antiAntiCrawler.onBeforeLoad(context);
+  }
+
+  Future<void> _runAfterLoadStrategies(String requestUrl) async {
+    final context = AntiAntiCrawlerContext(
+      controller: webviewController,
+      requestUrl: requestUrl,
+      useAlternativeParser: false,
+      offset: offset,
+    );
+    await _antiAntiCrawler.onAfterLoad(context);
+
+    final html = await webviewController?.evaluateJavascript(
+      source: 'document.documentElement ? document.documentElement.outerHTML : "";',
+    );
+    final htmlText = html?.toString() ?? '';
+    if (_captchaHandler.detect(htmlText)) {
+      final shouldRetry = _errorRetry.shouldRetry(count);
+      logEventController.add('captcha detected, shouldRetry=$shouldRetry');
+      if (shouldRetry) {
+        count++;
+      }
+    }
+  }
+
   @override
   Future<void> unloadPage() async {
     await webviewController
@@ -305,6 +374,8 @@ class ParsingAndroid
 
   @override
   void dispose() {
+    _antiAntiCrawler.dispose();
+    _cookieManager.clear();
     headlessWebView?.dispose();
     headlessWebView = null;
     webviewController = null;
