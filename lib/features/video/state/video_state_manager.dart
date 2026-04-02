@@ -1,4 +1,4 @@
-import 'package:mikomi/features/video/models/episode.dart';
+import 'package:mikomi/features/video/models/episode_model.dart';
 
 class VideoStateManager {
   int currentEpisode = 1;

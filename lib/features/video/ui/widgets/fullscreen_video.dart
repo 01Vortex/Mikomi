@@ -8,7 +8,7 @@ import 'package:mikomi/features/video/ui/widgets/danmaku_settings_sheet.dart';
 import 'package:mikomi/features/video/ui/widgets/fullscreen_episode.dart';
 import 'package:mikomi/features/video/ui/widgets/video_fit.dart';
 import 'package:mikomi/features/video/ui/widgets/video_gesture.dart';
-import 'package:mikomi/features/video/models/episode.dart';
+import 'package:mikomi/features/video/models/episode_model.dart';
 import 'package:mikomi/features/settings/video_play/service/play_setting_service.dart';
 
 // 顶部/底部控制栏统一左右边距（不含安全区），确保两侧完全对齐

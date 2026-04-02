@@ -1,10 +1,10 @@
 import 'package:canvas_danmaku/canvas_danmaku.dart';
-import 'package:mikomi/features/video/models/danmaku.dart';
+import 'package:mikomi/features/video/models/danmaku_model.dart';
 
 /// 弹幕广播管理器
 /// 小屏和全屏的 [DanmakuController] 都注册到这里
 /// 发弹幕时自动广播给所有已注册的 controller
-class DanmakuBroadcaster {
+class DanmakuBroadcasterService {
   final List<DanmakuController> _controllers = [];
 
   /// 注册一个 canvas controller

@@ -2,7 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:html/parser.dart' as html_parser;
 import 'package:xpath_selector_html_parser/xpath_selector_html_parser.dart';
-import 'package:mikomi/features/video/models/episode.dart';
+import 'package:mikomi/features/video/models/episode_model.dart';
 import 'package:mikomi/core/models/road.dart';
 import 'package:mikomi/features/video/models/video_plugin.dart';
 import 'package:mikomi/features/video/services/video_plugin_service.dart';

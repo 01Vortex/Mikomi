@@ -2,8 +2,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:mikomi/features/anime/selector/video_source_selector.dart';
 import 'package:mikomi/features/video/ui/pages/video_page.dart';
-import 'package:mikomi/features/video/models/episode.dart';
-import 'package:mikomi/core/services/bangumi_episodes_service.dart';
+import 'package:mikomi/features/video/models/episode_model.dart';
+import 'package:mikomi/features/video/services/episodes_service.dart';
 import 'package:mikomi/features/video/services/video_content_service.dart';
 import 'package:mikomi/features/video/services/video_plugin_service.dart';
 import 'package:mikomi/shared/message_dialog.dart';
@@ -29,7 +29,7 @@ class PlayButton extends StatefulWidget {
 }
 
 class _PlayButtonState extends State<PlayButton> {
-  final BangumiEpisodesService _episodesService = BangumiEpisodesService();
+  final EpisodesService _episodesService = EpisodesService();
   final VideoContentService _videoSourceRepo = VideoContentService();
   final VideoPluginService _pluginService = VideoPluginService();
 

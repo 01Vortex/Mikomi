@@ -1,12 +1,12 @@
 import 'package:flutter/foundation.dart';
-import 'package:mikomi/features/video/models/episode.dart';
-import 'package:mikomi/core/services/bangumi_episodes_service.dart';
+import 'package:mikomi/features/video/models/episode_model.dart';
+import 'package:mikomi/features/video/services/episodes_service.dart';
 import 'package:mikomi/features/video/services/video_content_service.dart';
 import 'package:mikomi/features/video/services/video_source_provider.dart'
     show CaptchaRequiredException;
 
 class VideoEpisodeService {
-  final BangumiEpisodesService _episodesService = BangumiEpisodesService();
+  final EpisodesService _episodesService = EpisodesService();
   final VideoContentService _videoSourceRepo = VideoContentService();
 
   Future<List<Episode>> loadEpisodesWithVideoSource(

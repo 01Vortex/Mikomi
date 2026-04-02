@@ -1,15 +1,15 @@
 import 'package:flutter/foundation.dart';
 import 'package:canvas_danmaku/canvas_danmaku.dart';
-import 'package:mikomi/features/video/models/danmaku.dart';
-import 'package:mikomi/core/services/danmaku_service.dart';
+import 'package:mikomi/features/video/models/danmaku_model.dart';
+import 'package:mikomi/features/video/repository/danmaku_repository.dart';
 
-class BangumiDanmakuService {
+class DanmakuService {
   static const int _maxDanmakuPerSecond = 24;
 
   static final Map<int, int> _bgmToDanDanCache = {};
   static final Map<String, int> _titleToDanDanCache = {};
 
-  final DanmakuService _danmakuService = DanmakuService();
+  final DanmakuRepository _danmakuRepository = DanmakuRepository();
   DanmakuController? canvasController;
 
   /// 弹幕数据，按秒分组
@@ -25,7 +25,7 @@ class BangumiDanmakuService {
     try {
       final titleKey = _normalizeTitle(title);
       final bangumiId = _titleToDanDanCache[titleKey] ??
-          await _danmakuService.getBangumiIdByTitle(title);
+          await _danmakuRepository.getBangumiIdByTitle(title);
 
       if (bangumiId == 0) {
         lastError = '未找到弹幕番剧ID';
@@ -35,7 +35,7 @@ class BangumiDanmakuService {
       _titleToDanDanCache[titleKey] = bangumiId;
       danmakuBangumiId = bangumiId;
 
-      final danmakus = await _danmakuService.getDanmakuByEpisode(bangumiId, episode);
+      final danmakus = await _danmakuRepository.getDanmakuByEpisode(bangumiId, episode);
       _groupDanmakuBySecond(danmakus);
 
       isLoaded = danmakuMap.isNotEmpty;
@@ -44,7 +44,7 @@ class BangumiDanmakuService {
     } catch (e) {
       clear();
       lastError = '加载弹幕失败: $e';
-      debugPrint('BangumiDanmakuService: $lastError');
+      debugPrint('DanmakuService: $lastError');
       return false;
     }
   }
@@ -59,12 +59,12 @@ class BangumiDanmakuService {
     try {
       final cachedDanDanId = _bgmToDanDanCache[bangumiId];
       int finalDanDanId =
-          cachedDanDanId ?? await _danmakuService.getDanDanBangumiIdByBgmId(bangumiId);
+          cachedDanDanId ?? await _danmakuRepository.getDanDanBangumiIdByBgmId(bangumiId);
 
       if (finalDanDanId == 0 && fallbackTitle != null && fallbackTitle.isNotEmpty) {
         final titleKey = _normalizeTitle(fallbackTitle);
         finalDanDanId = _titleToDanDanCache[titleKey] ??
-            await _danmakuService.getBangumiIdByTitle(fallbackTitle);
+            await _danmakuRepository.getBangumiIdByTitle(fallbackTitle);
         if (finalDanDanId > 0) _titleToDanDanCache[titleKey] = finalDanDanId;
       }
 
@@ -77,7 +77,7 @@ class BangumiDanmakuService {
       danmakuBangumiId = finalDanDanId;
 
       final danmakus =
-          await _danmakuService.getDanmakuByEpisode(finalDanDanId, episode);
+          await _danmakuRepository.getDanmakuByEpisode(finalDanDanId, episode);
       _groupDanmakuBySecond(danmakus);
 
       isLoaded = danmakuMap.isNotEmpty;
@@ -86,7 +86,7 @@ class BangumiDanmakuService {
     } catch (e) {
       clear();
       lastError = '加载弹幕失败: $e';
-      debugPrint('BangumiDanmakuService: $lastError');
+      debugPrint('DanmakuService: $lastError');
       return false;
     }
   }

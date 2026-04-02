@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:mikomi/features/video/models/episode.dart';
+import 'package:mikomi/features/video/models/episode_model.dart';
 import 'package:mikomi/shared/theme_extensions.dart';
 import 'package:mikomi/shared/scrolling_text.dart';
 

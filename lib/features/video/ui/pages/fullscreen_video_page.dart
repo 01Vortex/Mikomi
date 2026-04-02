@@ -7,7 +7,7 @@ import 'package:mikomi/features/video/ui/widgets/danmaku_overlay.dart';
 import 'package:mikomi/features/video/ui/widgets/fullscreen_video.dart';
 import 'package:mikomi/features/video/ui/widgets/smallscreen_video.dart';
 import 'package:mikomi/features/video/ui/widgets/video_fit.dart';
-import 'package:mikomi/features/video/models/episode.dart';
+import 'package:mikomi/features/video/models/episode_model.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 import 'package:mikomi/features/settings/danmaku/danmaku_setting_service.dart';
 import 'package:mikomi/features/settings/video_play/service/play_setting_service.dart';
@@ -69,23 +69,23 @@ class _FullscreenVideoPageState extends State<FullscreenVideoPage> {
     if (!mounted) return;
     final newState = widget.stateNotifier.value;
     // broadcaster 更新时重新注册
-    if (newState.danmakuBroadcaster != _state.danmakuBroadcaster &&
+    if (newState.danmakuBroadcasterService != _state.danmakuBroadcasterService &&
         _fullscreenDanmakuController != null) {
-      _state.danmakuBroadcaster?.unregister(_fullscreenDanmakuController!);
-      newState.danmakuBroadcaster?.register(_fullscreenDanmakuController!);
+      _state.danmakuBroadcasterService?.unregister(_fullscreenDanmakuController!);
+      newState.danmakuBroadcasterService?.register(_fullscreenDanmakuController!);
     }
     setState(() => _state = newState);
   }
 
   void _registerFullscreenController(DanmakuController controller) {
     _fullscreenDanmakuController = controller;
-    _state.danmakuBroadcaster?.register(controller);
+    _state.danmakuBroadcasterService?.register(controller);
   }
 
   @override
   void dispose() {
     if (_fullscreenDanmakuController != null) {
-      _state.danmakuBroadcaster?.unregister(_fullscreenDanmakuController!);
+      _state.danmakuBroadcasterService?.unregister(_fullscreenDanmakuController!);
     }
     widget.stateNotifier.removeListener(_onStateChanged);
     _exitFullscreen();
@@ -191,7 +191,7 @@ class _FullscreenVideoPageState extends State<FullscreenVideoPage> {
                   episodeTitle: _state.episodeTitle,
                   isDanmakuEnabled: enabled,
                   danmakuController: _state.danmakuController,
-                  danmakuBroadcaster: _state.danmakuBroadcaster,
+                  danmakuBroadcasterService: _state.danmakuBroadcasterService,
                 );
               },
             ),
