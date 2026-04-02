@@ -3,14 +3,17 @@ import 'package:mikomi/features/video/models/episode_model.dart';
 import 'package:mikomi/features/video/services/video_content_service.dart';
 import 'package:mikomi/features/video/services/video_source_provider.dart'
     show CaptchaRequiredException;
+import 'package:mikomi/features/video/services/small_title_service.dart';
 
 class VideoEpisodeService {
   final VideoContentService _videoSourceRepo = VideoContentService();
+  final SmallTitleService _smallTitleService = SmallTitleService();
 
   Future<List<Episode>> loadEpisodesWithVideoSource(
     String pluginName,
     String? animeTitle,
     String? animeName,
+    int? bangumiId,
   ) async {
     if (animeTitle == null) return [];
 
@@ -27,7 +30,12 @@ class VideoEpisodeService {
             .timeout(const Duration(seconds: 60), onTimeout: () => []);
       }
 
-      return videoEpisodes;
+      return await _smallTitleService.applyEpisodeSmallTitles(
+        episodes: videoEpisodes,
+        bangumiId: bangumiId,
+        animeTitle: animeTitle,
+        animeName: animeName,
+      );
     } on CaptchaRequiredException catch (e) {
       debugPrint('验证码: $e');
       rethrow;

@@ -141,6 +141,7 @@ class _VideoPageState extends State<VideoPage>
           _state.currentPluginName!,
           widget.animeTitle,
           widget.animeName,
+          widget.bangumiId,
         );
         if (episodes.isNotEmpty && mounted) {
           setState(() {
@@ -266,6 +267,7 @@ class _VideoPageState extends State<VideoPage>
         source.name,
         widget.animeTitle,
         widget.animeName,
+        widget.bangumiId,
       );
       if (episodes.isNotEmpty && mounted) {
         setState(() => _state.episodes = episodes);
