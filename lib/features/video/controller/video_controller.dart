@@ -3,12 +3,16 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:mikomi/features/anime/selector/video_source_selector.dart';
 import 'package:mikomi/features/video/models/episode_model.dart';
-import 'package:mikomi/features/video/services/video_page_service.dart';
+import 'package:mikomi/features/video/services/video_episode_service.dart';
+import 'package:mikomi/features/video/services/video_history_service.dart';
+import 'package:mikomi/features/video/services/video_parsing_service.dart';
 import 'package:mikomi/features/video/services/video_playback_service.dart';
 import 'package:mikomi/features/video/state/video_state_manager.dart';
 
-class VideoPageController {
-  final VideoPageService _pageService;
+class VideoController {
+  final VideoEpisodeService _episodeService;
+  final VideoParsingService _parsingService;
+  final VideoHistoryService _historyService;
   final VideoPlaybackService playbackService;
   final String title;
   final String? animeTitle;
@@ -30,7 +34,7 @@ class VideoPageController {
   final ValueNotifier<VideoSourceViewState> sourceViewNotifier;
   final ValueNotifier<Duration?> initialProgressNotifier;
 
-  factory VideoPageController({
+  factory VideoController({
     required String title,
     required String videoUrl,
     required int currentEpisode,
@@ -40,7 +44,9 @@ class VideoPageController {
     required String? animeTitle,
     required String? animeName,
     required int? bangumiId,
-    VideoPageService? pageService,
+    VideoEpisodeService? episodeService,
+    VideoParsingService? parsingService,
+    VideoHistoryService? historyService,
     VideoPlaybackService? playbackService,
   }) {
     final initialState = VideoStateManager(
@@ -50,28 +56,34 @@ class VideoPageController {
       currentSourceName: sourceName,
     );
 
-    return VideoPageController._(
+    return VideoController._(
       title: title,
       animeTitle: animeTitle,
       animeName: animeName,
       bangumiId: bangumiId,
-      pageService: pageService ?? VideoPageService(),
+      episodeService: episodeService ?? VideoEpisodeService(),
+      parsingService: parsingService ?? VideoParsingService(),
+      historyService: historyService ?? VideoHistoryService(),
       playbackService: playbackService ?? VideoPlaybackService(),
       initialState: initialState,
       initialProgress: initialProgress,
     );
   }
 
-  VideoPageController._({
+  VideoController._({
     required this.title,
     required this.animeTitle,
     required this.animeName,
     required this.bangumiId,
-    required VideoPageService pageService,
+    required VideoEpisodeService episodeService,
+    required VideoParsingService parsingService,
+    required VideoHistoryService historyService,
     required this.playbackService,
     required VideoStateManager initialState,
     required Duration? initialProgress,
-  }) : _pageService = pageService,
+  }) : _episodeService = episodeService,
+       _parsingService = parsingService,
+       _historyService = historyService,
        _state = initialState,
        playerViewNotifier = ValueNotifier(initialState.playerViewState),
        episodeViewNotifier = ValueNotifier(initialState.episodeViewState),
@@ -88,10 +100,7 @@ class VideoPageController {
   }
 
   void _syncNotifiers() {
-    if (_isDisposed) {
-      return;
-    }
-
+    if (_isDisposed) return;
     playerViewNotifier.value = _state.playerViewState;
     episodeViewNotifier.value = _state.episodeViewState;
     danmakuViewNotifier.value = _state.danmakuViewState;
@@ -99,9 +108,7 @@ class VideoPageController {
   }
 
   void _setState(VideoStateManager nextState) {
-    if (_isDisposed) {
-      return;
-    }
+    if (_isDisposed) return;
     _state = nextState;
     _syncNotifiers();
   }
@@ -114,7 +121,7 @@ class VideoPageController {
         _state.currentSourceName != null &&
         animeTitle != null) {
       if (_state.currentVideoPageUrl.isNotEmpty) {
-        if (_pageService.isDirectStreamUrl(_state.currentVideoPageUrl)) {
+        if (_parsingService.isDirectStreamUrl(_state.currentVideoPageUrl)) {
           _setState(_state.markUseCachedResolvedUrl());
         } else {
           _setState(_state.setInitialResolving());
@@ -137,9 +144,7 @@ class VideoPageController {
     _timeoutTimer?.cancel();
     _saveHistoryTimer?.cancel();
     _timeoutTimer = Timer(const Duration(seconds: 3), () {
-      if (_isDisposed) {
-        return;
-      }
+      if (_isDisposed) return;
       _setState(_state.showTimeout());
     });
     _saveHistoryTimer = Timer.periodic(const Duration(seconds: 10), (_) {
@@ -150,9 +155,7 @@ class VideoPageController {
   void _restartTimeoutTimer() {
     _timeoutTimer?.cancel();
     _timeoutTimer = Timer(const Duration(seconds: 3), () {
-      if (_isDisposed) {
-        return;
-      }
+      if (_isDisposed) return;
       _setState(_state.showTimeout());
     });
   }
@@ -165,7 +168,7 @@ class VideoPageController {
     final token = ++_episodeRequestToken;
     _setState(_state.startEpisodeLoading());
     try {
-      final episodes = await _pageService.loadEpisodes(
+      final episodes = await _episodeService.loadEpisodes(
         sourceName: _state.currentSourceName!,
         animeTitle: animeTitle,
         animeName: animeName,
@@ -208,10 +211,10 @@ class VideoPageController {
     final token = ++_silentRefreshToken;
     try {
       final pageUrl = _state.currentEpisode!.url ?? _state.currentVideoPageUrl;
-      final resolvedUrl = await _pageService.refreshResolvedVideoUrl(
-        pageUrl: pageUrl,
-        sourceName: _state.currentSourceName!,
-        previousResolvedUrl: _state.lastResolvedVideoUrl,
+      final resolvedUrl = await _parsingService.refreshParsedUrl(
+        pageUrl,
+        _state.currentSourceName!,
+        _state.lastResolvedVideoUrl,
       );
 
       if (!_canApplySilentRefreshResult(token) ||
@@ -230,11 +233,11 @@ class VideoPageController {
     _restartTimeoutTimer();
 
     try {
-      final resolvedUrl = await _pageService.resolveVideoUrl(
-        videoPageUrl: _state.currentVideoPageUrl,
-        sourceName: _state.currentSourceName,
-        episodes: _state.episodes,
-        currentEpisodeNumber: _state.currentEpisodeNumber,
+      final resolvedUrl = await _parsingService.resolveVideoUrl(
+        _state.currentVideoPageUrl,
+        _state.currentSourceName,
+        _state.episodes,
+        _state.currentEpisodeNumber,
       );
 
       if (!_canApplyResolveResult(token)) {
@@ -269,22 +272,18 @@ class VideoPageController {
 
   Future<void> playNextEpisode() async {
     final episode = _state.getNextEpisode();
-    if (episode == null) {
-      return;
-    }
+    if (episode == null) return;
     await playEpisode(episode);
   }
 
   Future<void> playPreviousEpisode() async {
     final episode = _state.getPreviousEpisode();
-    if (episode == null) {
-      return;
-    }
+    if (episode == null) return;
     await playEpisode(episode);
   }
 
   Future<void> switchVideoSource(VideoSource source) async {
-    _pageService.cancelVideoResolving();
+    _parsingService.cancelParsing();
     _setState(
       _state.copyWith(
         currentSourceName: source.name,
@@ -297,8 +296,8 @@ class VideoPageController {
     await playbackService.stop();
 
     try {
-      final episodes = await _pageService.switchVideoSource(
-        source: source,
+      final episodes = await _episodeService.loadEpisodes(
+        sourceName: source.name,
         animeTitle: animeTitle,
         animeName: animeName,
         bangumiId: bangumiId,
@@ -348,11 +347,11 @@ class VideoPageController {
   }
 
   void saveHistory() {
-    _pageService.saveHistory(
+    _historyService.saveHistory(
       bangumiId: bangumiId,
       title: title,
       animeTitle: animeTitle,
-      currentEpisodeNumber: _state.currentEpisodeNumber,
+      currentEpisode: _state.currentEpisodeNumber,
       currentSmallTitle: _state.currentSmallTitle,
       currentSourceName: _state.currentSourceName,
       lastResolvedVideoUrl: _state.lastResolvedVideoUrl,

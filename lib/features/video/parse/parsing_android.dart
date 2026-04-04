@@ -15,7 +15,7 @@ import 'package:mikomi/features/video/parse/anti_anti_crawler/resource_filter.da
 import 'package:mikomi/features/video/parse/anti_anti_crawler/ua_dynamic_generation.dart';
 import 'package:mikomi/features/video/parse/anti_anti_crawler/webdriver_hider.dart';
 import 'package:mikomi/features/video/parse/parsing.dart';
-import 'package:mikomi/features/video/services/video_stream_service.dart';
+import 'package:mikomi/features/video/services/video_parsing_service.dart';
 
 /// 平台 WebView 解析实现
 class ParsingAndroid extends Parsing<InAppWebViewController> {

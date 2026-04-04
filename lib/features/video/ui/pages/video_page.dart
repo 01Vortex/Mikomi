@@ -6,9 +6,11 @@ import 'package:flutter/services.dart';
 import 'package:mikomi/features/anime/selector/video_source_selector.dart';
 import 'package:mikomi/features/settings/danmaku/danmaku_setting_service.dart';
 import 'package:mikomi/features/settings/video_play/service/plugin_manager_service.dart';
-import 'package:mikomi/features/video/controller/video_page_controller.dart';
+import 'package:mikomi/features/video/controller/video_controller.dart';
 import 'package:mikomi/features/video/models/episode_model.dart';
-import 'package:mikomi/features/video/services/video_page_service.dart';
+import 'package:mikomi/features/video/services/video_episode_service.dart';
+import 'package:mikomi/features/video/services/video_history_service.dart';
+import 'package:mikomi/features/video/services/video_parsing_service.dart';
 import 'package:mikomi/features/video/services/video_playback_service.dart';
 import 'package:mikomi/features/video/state/video_state_manager.dart';
 import 'package:mikomi/features/video/ui/widgets/comment_tab_content.dart';
@@ -29,7 +31,9 @@ class VideoPage extends StatefulWidget {
   final int? bangumiId;
   final String? coverUrl;
   final Duration? initialProgress;
-  final VideoPageService? pageService;
+  final VideoEpisodeService? episodeService;
+  final VideoParsingService? parsingService;
+  final VideoHistoryService? historyService;
   final VideoPlaybackService? playbackService;
 
   const VideoPage({
@@ -45,7 +49,9 @@ class VideoPage extends StatefulWidget {
     this.bangumiId,
     this.coverUrl,
     this.initialProgress,
-    this.pageService,
+    this.episodeService,
+    this.parsingService,
+    this.historyService,
     this.playbackService,
   });
 
@@ -56,7 +62,7 @@ class VideoPage extends StatefulWidget {
 class _VideoPageState extends State<VideoPage>
     with SingleTickerProviderStateMixin {
   late final TabController _tabController;
-  late final VideoPageController _controller;
+  late final VideoController _controller;
 
   final TextEditingController _danmakuController = TextEditingController();
   final VideoPluginManager _pluginManager = VideoPluginManager();
@@ -64,7 +70,7 @@ class _VideoPageState extends State<VideoPage>
   @override
   void initState() {
     super.initState();
-    _controller = VideoPageController(
+    _controller = VideoController(
       title: widget.title,
       videoUrl: widget.videoUrl,
       currentEpisode: widget.currentEpisode,
@@ -74,7 +80,9 @@ class _VideoPageState extends State<VideoPage>
       animeTitle: widget.animeTitle,
       animeName: widget.animeName,
       bangumiId: widget.bangumiId,
-      pageService: widget.pageService,
+      episodeService: widget.episodeService,
+      parsingService: widget.parsingService,
+      historyService: widget.historyService,
       playbackService: widget.playbackService,
     );
     _tabController = TabController(length: 2, vsync: this);

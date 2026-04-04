@@ -1,11 +1,14 @@
 import 'package:mikomi/features/my/models/history_model.dart';
-import 'package:mikomi/features/my/service/watch_history_service.dart';
+import 'package:mikomi/features/video/repository/video_history_repository.dart';
 import 'package:mikomi/features/video/services/video_playback_service.dart';
 
 class VideoHistoryService {
-  final HistoryModelService _historyService = HistoryModelService();
+  final VideoHistoryRepository _repository;
 
-  void saveHistoryModel({
+  VideoHistoryService({VideoHistoryRepository? repository})
+    : _repository = repository ?? VideoHistoryRepository();
+
+  void saveHistory({
     required int? bangumiId,
     required String title,
     required String? animeTitle,
@@ -25,7 +28,7 @@ class VideoHistoryService {
       final duration = playbackService.player!.state.duration;
       if (progress.inSeconds == 0 || duration.inSeconds == 0) return;
 
-      _historyService.addHistory(
+      _repository.save(
         HistoryModel(
           bangumiId: bangumiId,
           bangumiName: title,

@@ -3,7 +3,7 @@ import 'dart:io';
 
 import 'package:mikomi/features/video/parse/parsing_android.dart';
 import 'package:mikomi/features/video/parse/parsing_ios.dart';
-import 'package:mikomi/features/video/services/video_stream_service.dart';
+import 'package:mikomi/features/video/services/video_parsing_service.dart';
 
 abstract class Parsing<T> {
   T? webviewController;

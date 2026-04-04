@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:mikomi/features/video/services/video_service.dart';
-import 'package:mikomi/features/settings/video_play/service/plugin_manager_service.dart';
+import 'package:mikomi/features/video/services/video_episode_service.dart';
+import 'package:mikomi/features/video/services/video_source_service.dart';
 
 class VideoSource {
   final String name;
@@ -28,8 +28,8 @@ class _VideoSourceSelectorState extends State<VideoSourceSelector>
     with TickerProviderStateMixin {
   late TabController _tabController;
   late List<VideoSource> _sources;
-  final VideoService _videoService = VideoService();
-  final VideoPluginManager _pluginManager = VideoPluginManager();
+  final VideoEpisodeService _videoService = VideoEpisodeService();
+  final VideoSourceService _sourceService = VideoSourceService();
   final Map<String, bool?> _sourceAvailability = {};
   final Map<String, int> _sourceEpisodeCount = {};
   bool _isChecking = false;
@@ -60,10 +60,9 @@ class _VideoSourceSelectorState extends State<VideoSourceSelector>
 
   /// 根据VideoPluginManager中的插件顺序排序视频源
   void _sortSourcesByPluginOrder() {
-    final plugins = _pluginManager.plugins;
+    final plugins = _sourceService.getAvailableSources();
     final pluginOrder = <String, int>{};
 
-    // 建立插件名称到索引的映射
     for (int i = 0; i < plugins.length; i++) {
       pluginOrder[plugins[i].name] = i;
     }
@@ -115,9 +114,12 @@ class _VideoSourceSelectorState extends State<VideoSourceSelector>
       debugPrint('[${source.name}] 搜索关键词: ${widget.animeTitle}');
       debugPrint('========================================');
 
-      final episodes = await _videoService
-          .episodeGateway(widget.animeTitle!, source.name)
-          .timeout(
+      final episodes = await _videoService.loadEpisodes(
+        sourceName: source.name,
+        animeTitle: widget.animeTitle,
+        animeName: null,
+        bangumiId: null,
+      ).timeout(
             const Duration(seconds: 60), // 增加到60秒
             onTimeout: () {
               debugPrint('[${source.name}] ⏱️ 检查超时(60秒)');

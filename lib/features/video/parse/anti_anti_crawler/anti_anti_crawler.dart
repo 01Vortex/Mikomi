@@ -1,5 +1,5 @@
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
-import 'package:mikomi/features/video/services/video_stream_service.dart';
+import 'package:mikomi/features/video/services/video_parsing_service.dart';
 
 class AntiAntiCrawlerContext {
   final InAppWebViewController? controller;

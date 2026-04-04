@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:mikomi/features/anime/selector/video_source_selector.dart';
 import 'package:mikomi/features/video/ui/pages/video_page.dart';
 import 'package:mikomi/features/video/models/episode_model.dart';
-import 'package:mikomi/features/video/services/video_service.dart';
-import 'package:mikomi/features/video/services/video_plugin_service.dart';
+import 'package:mikomi/features/video/services/video_episode_service.dart';
+import 'package:mikomi/features/video/services/video_source_service.dart';
 import 'package:mikomi/shared/message_dialog.dart';
 
 class PlayButton extends StatefulWidget {
@@ -28,8 +28,8 @@ class PlayButton extends StatefulWidget {
 }
 
 class _PlayButtonState extends State<PlayButton> {
-  final VideoService _videoService = VideoService();
-  final VideoPluginService _pluginService = VideoPluginService();
+  final VideoEpisodeService _videoService = VideoEpisodeService();
+  final VideoSourceService _sourceService = VideoSourceService();
 
   List<Episode>? _episodes;
   bool _isLoading = false;
@@ -43,7 +43,7 @@ class _PlayButtonState extends State<PlayButton> {
   void _initializePluginsInBackground() {
     Future.microtask(() async {
       try {
-        await _pluginService.initialize().timeout(
+        await _sourceService.initialize().timeout(
           const Duration(seconds: 5),
           onTimeout: () {
             debugPrint('插件初始化超时');
@@ -66,30 +66,18 @@ class _PlayButtonState extends State<PlayButton> {
     }
 
     try {
-      var videoEpisodes = await _videoService
-          .episodeGateway(widget.animeTitle!, pluginName)
-          .timeout(
+      final videoEpisodes = await _videoService.loadEpisodes(
+        sourceName: pluginName,
+        animeTitle: widget.animeTitle,
+        animeName: widget.animeName,
+        bangumiId: widget.bangumiId,
+      ).timeout(
             const Duration(seconds: 30),
             onTimeout: () {
               debugPrint('搜索视频源超时');
               return [];
             },
           );
-
-      if (videoEpisodes.isEmpty &&
-          widget.animeName != null &&
-          widget.animeName != widget.animeTitle) {
-        debugPrint('中文名搜索无结果，尝试原名: ${widget.animeName}');
-        videoEpisodes = await _videoService
-            .episodeGateway(widget.animeName!, pluginName)
-            .timeout(
-              const Duration(seconds: 30),
-              onTimeout: () {
-                debugPrint('原名搜索视频源超时');
-                return [];
-              },
-            );
-      }
 
       if (mounted) {
         setState(() {

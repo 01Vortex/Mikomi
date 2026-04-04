@@ -5,7 +5,7 @@ import 'package:canvas_danmaku/canvas_danmaku.dart';
 import 'package:mikomi/features/video/services/video_playback_service.dart';
 import 'package:mikomi/features/video/ui/widgets/danmaku_overlay.dart';
 import 'package:mikomi/features/video/services/danmaku_service.dart';
-import 'package:mikomi/features/video/services/danmaku_broadcaster_service.dart';
+import 'package:mikomi/features/video/controller/danmaku_broadcaster.dart';
 import 'package:mikomi/features/video/ui/pages/fullscreen_video_page.dart';
 import 'package:mikomi/features/video/ui/widgets/video_gesture.dart';
 import 'package:mikomi/features/video/models/episode_model.dart';
@@ -94,7 +94,7 @@ class _SmallscreenVideoState extends State<SmallscreenVideo> {
 
   // 弹幕控制
   final DanmakuService _danmakuController = DanmakuService();
-  final DanmakuBroadcasterService _danmakuBroadcasterService = DanmakuBroadcasterService();
+  final DanmakuBroadcaster _danmakuBroadcasterService = DanmakuBroadcaster();
   int _lastDanmakuSecond = -1;
   DanmakuController? _canvasController;
   StreamSubscription<bool>? _bufferingSub;
@@ -868,7 +868,7 @@ class FullscreenVideoState {
   final String? currentSmallTitle;
   final bool isDanmakuEnabled;
   final DanmakuController? danmakuController;
-  final DanmakuBroadcasterService? danmakuBroadcasterService;
+  final DanmakuBroadcaster? danmakuBroadcasterService;
 
   const FullscreenVideoState({
     required this.currentEpisode,
@@ -893,7 +893,7 @@ class FullscreenVideoState {
     Object? currentSmallTitle = _sentinel,
     bool? isDanmakuEnabled,
     DanmakuController? danmakuController,
-    DanmakuBroadcasterService? danmakuBroadcasterService,
+    DanmakuBroadcaster? danmakuBroadcasterService,
   }) {
     return FullscreenVideoState(
       currentEpisode: currentEpisode ?? this.currentEpisode,

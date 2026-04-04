@@ -1,46 +1,49 @@
 import 'package:flutter/foundation.dart';
 import 'package:mikomi/features/video/models/episode_model.dart';
-import 'package:mikomi/features/video/services/video_exception.dart';
-import 'package:mikomi/features/video/services/video_service.dart';
-import 'package:mikomi/features/video/services/small_title_service.dart';
+import 'package:mikomi/features/video/repository/video_episode_repository.dart';
+import 'package:mikomi/features/video/exception/video_exception.dart';
 
 class VideoEpisodeService {
-  final VideoService _videoService = VideoService();
-  final SmallTitleService _smallTitleService = SmallTitleService();
+  final VideoEpisodeRepository _repository;
 
-  Future<List<Episode>> loadEpisodesWithVideoSource(
-    String pluginName,
-    String? animeTitle,
-    String? animeName,
-    int? bangumiId,
-  ) async {
+  VideoEpisodeService({VideoEpisodeRepository? repository})
+    : _repository = repository ?? VideoEpisodeRepository();
+
+  Future<List<Episode>> loadEpisodes({
+    required String sourceName,
+    required String? animeTitle,
+    required String? animeName,
+    required int? bangumiId,
+  }) async {
     if (animeTitle == null) return [];
 
     try {
-      var videoEpisodes = await _videoService
-          .episodeGateway(animeTitle, pluginName)
-          .timeout(const Duration(seconds: 60), onTimeout: () => []);
+      final episodes = await _repository.fetchEpisodes(
+        sourceName: sourceName,
+        animeTitle: animeTitle,
+        animeName: animeName,
+      );
 
-      if (videoEpisodes.isEmpty &&
-          animeName != null &&
-          animeName != animeTitle) {
-        videoEpisodes = await _videoService
-            .episodeGateway(animeName, pluginName)
-            .timeout(const Duration(seconds: 60), onTimeout: () => []);
-      }
-
-      return await _smallTitleService.applyEpisodeSmallTitles(
-        episodes: videoEpisodes,
+      return _applyEpisodeSmallTitles(
+        episodes: episodes,
         bangumiId: bangumiId,
         animeTitle: animeTitle,
         animeName: animeName,
       );
-    } on VideoCaptchaRequiredException catch (e) {
-      debugPrint('验证码: $e');
+    } on VideoCaptchaRequiredException {
       rethrow;
     } catch (e) {
       debugPrint('加载视频源剧集失败: $e');
       return [];
     }
+  }
+
+  Future<List<Episode>> _applyEpisodeSmallTitles({
+    required List<Episode> episodes,
+    int? bangumiId,
+    String? animeTitle,
+    String? animeName,
+  }) async {
+    return episodes;
   }
 }
