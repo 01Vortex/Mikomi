@@ -11,9 +11,7 @@ import 'package:mikomi/features/video/models/episode_model.dart';
 import 'package:mikomi/features/video/services/video_playback_service.dart';
 import 'package:mikomi/features/settings/danmaku/danmaku_setting_service.dart';
 import 'package:mikomi/features/video/state/video_state_manager.dart';
-import 'package:mikomi/features/video/services/video_parsing_service.dart';
-import 'package:mikomi/features/video/services/video_episode_service.dart';
-import 'package:mikomi/features/video/services/video_history_service.dart';
+import 'package:mikomi/features/video/services/video_page_service.dart';
 import 'package:mikomi/features/video/ui/widgets/video_player_area.dart';
 import 'package:mikomi/features/video/ui/widgets/episcode_tab_content.dart';
 
@@ -53,9 +51,7 @@ class _VideoPageState extends State<VideoPage>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   late VideoStateManager _state;
-  late VideoParsingService _videoParsingService;
-  late VideoEpisodeService _episodeManager;
-  late VideoHistoryService _historyManager;
+  late VideoPageService _pageService;
   late VideoPlaybackService _playerController;
 
   final TextEditingController _danmakuController = TextEditingController();
@@ -70,15 +66,16 @@ class _VideoPageState extends State<VideoPage>
   void initState() {
     super.initState();
     _state = VideoStateManager();
-    _videoParsingService = VideoParsingService();
-    _episodeManager = VideoEpisodeService();
-    _historyManager = VideoHistoryService();
+    _pageService = VideoPageService();
     _playerController = VideoPlaybackService();
 
-    _state.currentEpisode = widget.currentEpisode;
-    _state.episodes = widget.episodes;
-    _state.videoUrl = widget.videoUrl;
-    _state.currentPluginName = widget.pluginName;
+    _pageService.initializeState(
+      state: _state,
+      currentEpisode: widget.currentEpisode,
+      episodes: widget.episodes,
+      videoUrl: widget.videoUrl,
+      pluginName: widget.pluginName,
+    );
     _currentInitialProgress = widget.initialProgress;
 
     _tabController = TabController(length: 2, vsync: this);
@@ -99,23 +96,11 @@ class _VideoPageState extends State<VideoPage>
   }
 
   void _initializeVideoUrl() {
-    if (_state.episodes.isEmpty && _state.currentPluginName != null && widget.animeTitle != null) {
-      if (_state.videoUrl.isNotEmpty) {
-        if (_videoParsingService.isDirectStreamUrl(_state.videoUrl)) {
-          _state.isUsingCachedPlayUrl = true;
-          _state.shouldParseAfterEpisodesLoaded = true;
-          _state.lastResolvedVideoUrl = _state.videoUrl;
-          _currentVideoUrlFuture = Future.value(_state.videoUrl);
-        } else {
-          _currentVideoUrlFuture = _getCurrentVideoUrl();
-        }
-      } else {
-        _state.shouldParseAfterEpisodesLoaded = true;
-        _currentVideoUrlFuture = Future.value('');
-      }
-    } else {
-      _currentVideoUrlFuture = _getCurrentVideoUrl();
-    }
+    final result = _pageService.initializeVideoUrl(
+      state: _state,
+      animeTitle: widget.animeTitle,
+    );
+    _currentVideoUrlFuture = result.currentVideoUrlFuture;
   }
 
   void _setupTimers() {
@@ -129,78 +114,47 @@ class _VideoPageState extends State<VideoPage>
 
   void _loadEpisodesIfNeeded() {
     if (_state.episodes.isEmpty && _state.currentPluginName != null) {
-      _state.isLoadingEpisodes = true;
+      _pageService.beginEpisodeLoading(_state);
       _loadEpisodesInBackground();
     }
   }
 
   Future<void> _loadEpisodesInBackground() async {
     try {
-      if (widget.animeTitle != null && _state.currentPluginName != null) {
-        final episodes = await _episodeManager.loadEpisodesWithVideoSource(
-          _state.currentPluginName!,
-          widget.animeTitle,
-          widget.animeName,
-          widget.bangumiId,
-        );
-        if (episodes.isNotEmpty && mounted) {
-          setState(() {
-            _state.episodes = episodes;
-            if (_state.currentEpisode > _state.episodes.length) {
-              _state.currentEpisode = 1;
-            }
-          });
-          if (_state.shouldParseAfterEpisodesLoaded) {
-            _state.shouldParseAfterEpisodesLoaded = false;
-            if (_state.isUsingCachedPlayUrl) {
-              _state.isUsingCachedPlayUrl = false;
-              await _refreshParsedUrlSilently();
-            } else {
-              _updateCurrentVideoUrl();
-            }
-          }
-        }
-      } else {
-        final episodes = <Episode>[];
-        if (mounted && episodes.isNotEmpty) {
-          setState(() => _state.episodes = episodes);
+      final result = await _pageService.loadEpisodesInBackground(
+        state: _state,
+        animeTitle: widget.animeTitle,
+        animeName: widget.animeName,
+        bangumiId: widget.bangumiId,
+      );
+      if (result.didLoadEpisodes && mounted) {
+        setState(() {});
+        if (result.shouldRefreshParsedUrlSilently) {
+          await _refreshParsedUrlSilently();
+        } else if (result.shouldUpdateCurrentVideoUrl) {
+          _updateCurrentVideoUrl();
         }
       }
-    } catch (e) {
-      debugPrint('后台加载剧集失败: $e');
     } finally {
-      if (mounted) setState(() => _state.isLoadingEpisodes = false);
+      _pageService.endEpisodeLoading(_state);
+      if (mounted) setState(() {});
     }
   }
 
   Future<void> _refreshParsedUrlSilently() async {
-    if (_state.currentPluginName == null || _state.episodes.isEmpty) return;
-    try {
-      final pageUrl = _state.episodes
-          .firstWhere((ep) => ep.number == _state.currentEpisode)
-          .url ??
-          _state.videoUrl;
-      final parsedUrl = await _videoParsingService.refreshParsedUrl(
-        pageUrl,
-        _state.currentPluginName!,
-        _state.lastResolvedVideoUrl,
-      );
-      if (!mounted || parsedUrl.isEmpty || parsedUrl == _state.lastResolvedVideoUrl) {
-        return;
-      }
-      _state.lastResolvedVideoUrl = parsedUrl;
-      setState(() => _currentVideoUrlFuture = Future.value(parsedUrl));
-    } catch (e) {
-      debugPrint('静默刷新失败: $e');
+    final previousUrl = _state.lastResolvedVideoUrl;
+    final parsedUrl = await _pageService.refreshParsedUrlSilently(_state);
+    if (!mounted || parsedUrl.isEmpty || parsedUrl == previousUrl) {
+      return;
     }
+    setState(() => _currentVideoUrlFuture = Future.value(parsedUrl));
   }
 
   void _updateCurrentVideoUrl() {
-    _videoParsingService.cancelParsing();
+    _pageService.cancelParsing();
     setState(() {
-      _state.showTimeoutHint = false;
-      _state.hasParseError = false;
-      _currentVideoUrlFuture = _getCurrentVideoUrl();
+      _pageService.resetResolveState(_state);
+      _currentVideoUrlFuture = _pageService.getCurrentVideoUrl(_state);
     });
     _timeoutTimer?.cancel();
     _timeoutTimer = Timer(const Duration(seconds: 3), () {
@@ -208,84 +162,65 @@ class _VideoPageState extends State<VideoPage>
     });
   }
 
-  Future<String> _getCurrentVideoUrl() async {
-    try {
-      final url = await _videoParsingService.resolveVideoUrl(
-        _state.videoUrl,
-        _state.currentPluginName,
-        _state.episodes,
-        _state.currentEpisode,
-      );
-      _state.lastResolvedVideoUrl = url;
-      return url;
-    } catch (e) {
-      if (mounted) setState(() => _state.hasParseError = true);
-      rethrow;
-    }
-  }
-
   Future<void> _playEpisode(Episode episode) async {
-    if (episode.number == _state.currentEpisode) return;
+    if (!_pageService.playEpisode(_state, episode)) return;
     _saveHistoryModel();
     await _playerController.stop();
     if (!mounted) return;
     setState(() {
-      _state.currentEpisode = episode.number;
       _currentInitialProgress = null;
     });
     _updateCurrentVideoUrl();
   }
 
   Future<void> _playNextEpisode() async {
-    if (!_state.hasNextEpisode) return;
-    final ep = _state.episodes.firstWhere(
-      (e) => e.number == _state.currentEpisode + 1,
-      orElse: () => Episode(number: _state.currentEpisode + 1),
-    );
+    final ep = _pageService.getNextEpisode(_state);
+    if (ep == null) return;
     await _playEpisode(ep);
   }
 
   Future<void> _playPreviousEpisode() async {
-    if (!_state.hasPreviousEpisode) return;
-    final ep = _state.episodes.firstWhere(
-      (e) => e.number == _state.currentEpisode - 1,
-      orElse: () => Episode(number: _state.currentEpisode - 1),
-    );
+    final ep = _pageService.getPreviousEpisode(_state);
+    if (ep == null) return;
     await _playEpisode(ep);
   }
 
   Future<void> _switchVideoSource(VideoSource source) async {
-    _videoParsingService.cancelParsing();
+    _pageService.beginSourceSwitch(_state);
     await _playerController.stop();
     setState(() {
-      _state.currentPluginName = source.name;
-      _state.isLoadingEpisodes = true;
       _currentInitialProgress = null;
     });
     try {
-      final episodes = await _episodeManager.loadEpisodesWithVideoSource(
-        source.name,
-        widget.animeTitle,
-        widget.animeName,
-        widget.bangumiId,
+      final result = await _pageService.switchVideoSource(
+        state: _state,
+        source: source,
+        animeTitle: widget.animeTitle,
+        animeName: widget.animeName,
+        bangumiId: widget.bangumiId,
       );
-      if (episodes.isNotEmpty && mounted) {
-        setState(() => _state.episodes = episodes);
+      if (result.didLoadEpisodes && mounted) {
+        setState(() {});
       }
-      if (mounted) _updateCurrentVideoUrl();
+      if (mounted) {
+        _updateCurrentVideoUrl();
+      }
     } finally {
-      if (mounted) setState(() => _state.isLoadingEpisodes = false);
+      _pageService.endEpisodeLoading(_state);
+      if (mounted) setState(() {});
     }
   }
 
   void _showVideoSourceSelector() {
-    final sources = (widget.videoSources != null && widget.videoSources!.isNotEmpty)
+    final sources =
+        (widget.videoSources != null && widget.videoSources!.isNotEmpty)
         ? widget.videoSources!
         : <VideoSource>[];
     if (sources.isEmpty) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('暂无可用视频源')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('暂无可用视频源')));
       return;
     }
     showModalBottomSheet(
@@ -308,14 +243,11 @@ class _VideoPageState extends State<VideoPage>
   }
 
   void _saveHistoryModel() {
-    _historyManager.saveHistoryModel(
+    _pageService.saveHistoryModel(
       bangumiId: widget.bangumiId,
       title: widget.title,
       animeTitle: widget.animeTitle,
-      currentEpisode: _state.currentEpisode,
-      currentEpisodeTitle: _state.currentEpisodeTitle,
-      currentPluginName: _state.currentPluginName,
-      lastResolvedVideoUrl: _state.lastResolvedVideoUrl,
+      state: _state,
       playerController: _playerController,
     );
   }
@@ -352,10 +284,12 @@ class _VideoPageState extends State<VideoPage>
       SystemUiMode.manual,
       overlays: [SystemUiOverlay.top, SystemUiOverlay.bottom],
     );
-    SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
-      statusBarColor: Colors.transparent,
-      statusBarIconBrightness: Brightness.dark,
-    ));
+    SystemChrome.setSystemUIOverlayStyle(
+      const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.dark,
+      ),
+    );
     _tabController.dispose();
     _danmakuController.dispose();
     super.dispose();
@@ -399,10 +333,12 @@ class _VideoPageState extends State<VideoPage>
                     final availableHeight =
                         MediaQuery.of(context).size.height -
                         MediaQuery.of(context).padding.top;
-                    final videoHeight =
-                        math.min(MediaQuery.of(context).size.width / (16 / 9), availableHeight);
-                    final isLoading = snapshot.connectionState ==
-                            ConnectionState.waiting ||
+                    final videoHeight = math.min(
+                      MediaQuery.of(context).size.width / (16 / 9),
+                      availableHeight,
+                    );
+                    final isLoading =
+                        snapshot.connectionState == ConnectionState.waiting ||
                         (_state.isLoadingEpisodes &&
                             videoUrl.isEmpty &&
                             !snapshot.hasError);
@@ -464,11 +400,13 @@ class _VideoPageState extends State<VideoPage>
                                         _danmakuController.clear();
                                       }
                                     });
-                                    DanmakuSettingService()
-                                        .setShowDanmaku(_state.isDanmakuEnabled);
+                                    DanmakuSettingService().setShowDanmaku(
+                                      _state.isDanmakuEnabled,
+                                    );
                                   },
-                                  onDanmakuInputTap: () => setState(() =>
-                                      _state.isDanmakuInputExpanded = true),
+                                  onDanmakuInputTap: () => setState(
+                                    () => _state.isDanmakuInputExpanded = true,
+                                  ),
                                   onVideoSourceTap: _showVideoSourceSelector,
                                   currentPluginName: _state.currentPluginName,
                                 ),

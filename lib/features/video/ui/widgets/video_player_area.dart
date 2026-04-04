@@ -121,7 +121,7 @@ class VideoPlayerArea extends StatelessWidget {
                         color: Colors.white, strokeWidth: 3),
                     if (showTimeoutHint) ...[
                       const SizedBox(height: 12),
-                      Text('加载视频较长,点击右下角切换视频源',
+                      Text('视频加载慢，可点右下角换源',
                           style: TextStyle(
                               color: Colors.white.withValues(alpha: 0.7),
                               fontSize: 13)),
