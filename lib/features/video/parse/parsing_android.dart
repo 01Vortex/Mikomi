@@ -22,6 +22,35 @@ class ParsingAndroid
   HeadlessInAppWebView? headlessWebView;
   bool hasInjectedScripts = false;
 
+  static const String _stealthScript = """
+    (function(){
+      try {
+        Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
+        if (!window.chrome) { window.chrome = { runtime: {} }; }
+        const origQuery = window.navigator.permissions.query;
+        window.navigator.permissions.query = (params) => (
+          params.name === 'notifications'
+            ? Promise.resolve({ state: Notification.permission })
+            : origQuery(params)
+        );
+        Object.defineProperty(navigator, 'plugins', { get: () => [1,2,3,4,5] });
+        Object.defineProperty(navigator, 'languages', { get: () => ['zh-CN','zh','en'] });
+        Object.defineProperty(screen, 'availWidth', { get: () => 1920 });
+        Object.defineProperty(screen, 'availHeight', { get: () => 1080 });
+        [
+          '__webdriver_evaluate','__selenium_evaluate','__webdriver_script_func',
+          '__webdriver_script_fn','__fxdriver_evaluate','__driver_unwrapped',
+          '__webdriver_unwrapped','__driver_evaluate','__selenium_unwrapped',
+          '__fxdriver_unwrapped','_selenium','callSelenium','_Selenium_IDE_Recorder',
+          '__selenium_ids','__webdriverFunc','_phantom','__phantomas',
+          'domAutomation','domAutomationController'
+        ].forEach((k) => {
+          try { Object.defineProperty(window, k, { get: () => undefined }); } catch(_) {}
+        });
+      } catch(_) {}
+    })();
+  """;
+
   final UaDynamicGeneration _uaDynamicGeneration = UaDynamicGeneration();
   final RequestInterceptor _requestInterceptor = const RequestInterceptor();
   final ResourceFilter _resourceFilter = const ResourceFilter();
@@ -52,9 +81,15 @@ class ParsingAndroid
         geolocationEnabled: false,
         useShouldInterceptRequest: true,
       ),
-      onWebViewCreated: (controller) {
+      onWebViewCreated: (controller) async {
         debugPrint('[WebView] Created');
         webviewController = controller;
+        await controller.addUserScripts(userScripts: [
+          UserScript(
+            source: _stealthScript,
+            injectionTime: UserScriptInjectionTime.AT_DOCUMENT_START,
+          ),
+        ]);
         initEventController.add(true);
       },
       shouldInterceptRequest: (controller, request) async {
@@ -127,13 +162,6 @@ class ParsingAndroid
       return false;
     }
     return true;
-  }
-
-  bool _isAdUrl(String lower) {
-    return lower.contains('googleads') ||
-        lower.contains('googlesyndication') ||
-        lower.contains('adtrafficquality') ||
-        lower.contains('doubleclick');
   }
 
   void _onPotentialVideoRequest(String url) {
@@ -362,6 +390,11 @@ class ParsingAndroid
       logEventController.add('captcha detected, shouldRetry=$shouldRetry');
       if (shouldRetry) {
         count++;
+        logEventController.add('captcha retry loading: $requestUrl');
+        await Future.delayed(_requestDelay.nextDelay());
+        await webviewController?.loadUrl(
+          urlRequest: URLRequest(url: WebUri(requestUrl)),
+        );
       }
     }
   }

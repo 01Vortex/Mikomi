@@ -10,6 +10,9 @@ class FingerprintSpoofer implements AntiAntiCrawler {
         try {
           Object.defineProperty(navigator, 'language', { get: () => 'zh-CN' });
           Object.defineProperty(navigator, 'languages', { get: () => ['zh-CN', 'zh', 'en-US'] });
+          Object.defineProperty(navigator, 'plugins', { get: () => [1,2,3,4,5] });
+          Object.defineProperty(screen, 'availWidth', { get: () => 1920 });
+          Object.defineProperty(screen, 'availHeight', { get: () => 1080 });
         } catch(_) {}
       })();
     ''');
@@ -21,3 +24,4 @@ class FingerprintSpoofer implements AntiAntiCrawler {
   @override
   void dispose() {}
 }
+

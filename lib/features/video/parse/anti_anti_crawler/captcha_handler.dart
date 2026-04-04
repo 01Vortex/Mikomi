@@ -8,7 +8,17 @@ class CaptchaHandler implements AntiAntiCrawler {
     return lower.contains('captcha') ||
         lower.contains('验证码') ||
         lower.contains('verify') ||
-        lower.contains('turnstile');
+        lower.contains('人机验证') ||
+        lower.contains('geetest') ||
+        lower.contains('turnstile') ||
+        lower.contains('smart-verify') ||
+        lower.contains('verify-panel') ||
+        lower.contains('cf-browser-verification') ||
+        lower.contains('checking your browser') ||
+        lower.contains('just a moment') ||
+        lower.contains('ddos-guard') ||
+        lower.contains('__ddg') ||
+        lower.contains('robot or human');
   }
 
   @override
@@ -20,3 +30,4 @@ class CaptchaHandler implements AntiAntiCrawler {
   @override
   void dispose() {}
 }
+
