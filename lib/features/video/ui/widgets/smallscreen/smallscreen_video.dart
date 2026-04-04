@@ -226,6 +226,7 @@ class _SmallscreenVideoState extends State<SmallscreenVideo> {
     final config = await DanmakuSettingService.loadAll();
     if (!mounted) return;
     setState(() => _danmakuConfig = config);
+    _videoDanmakuController.requestCurrentWindowRefresh();
   }
 
   Future<void> _loadDanmaku() async {

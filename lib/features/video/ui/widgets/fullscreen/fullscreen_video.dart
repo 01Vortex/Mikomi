@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:mikomi/features/settings/danmaku/danmaku_setting_service.dart';
 import 'package:mikomi/features/video/controller/danmaku_broadcaster.dart';
 import 'package:mikomi/features/video/controller/danmaku_controller.dart' as app_danmaku;
 import 'package:mikomi/features/video/models/episode_model.dart';
@@ -78,6 +79,7 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
   double _playbackSpeed = 1.0;
   bool _showDanmakuInput = false;
   final TextEditingController _danmakuController = TextEditingController();
+  DanmakuConfig _danmakuConfig = const DanmakuConfig();
   late final VideoPlayerListenerController _playerListenerController;
   final GlobalKey _speedButtonKey = GlobalKey();
 
@@ -101,8 +103,24 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
       },
       onAutoPlayNext: widget.onNextEpisode,
     );
+    _loadDanmakuConfig();
     _bindPlayerState();
     _startHideTimer();
+  }
+
+  Future<void> _loadDanmakuConfig() async {
+    final config = await DanmakuSettingService.loadAll();
+    if (!mounted) return;
+    setState(() => _danmakuConfig = config);
+    widget.danmakuController?.requestCurrentWindowRefresh();
+  }
+
+  @override
+  void didUpdateWidget(covariant FullscreenVideoControls oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.isDanmakuEnabled != widget.isDanmakuEnabled) {
+      widget.danmakuController?.requestCurrentWindowRefresh();
+    }
   }
 
   void _bindPlayerState() {
@@ -641,9 +659,12 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
         final newEnabled = !widget.isDanmakuEnabled;
         setState(() {
           _showDanmakuInput = newEnabled;
-          if (!newEnabled) _danmakuController.clear();
+          if (!newEnabled) {
+            _danmakuController.clear();
+          }
         });
         widget.onDanmakuToggle?.call(newEnabled);
+        widget.danmakuController?.requestCurrentWindowRefresh();
       },
       child: Container(
         padding: const EdgeInsets.all(8),
@@ -684,6 +705,11 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
               curve: Curves.easeOutCubic,
             )),
             child: DanmakuSettingsSidePanel(
+              initialConfig: _danmakuConfig,
+              onConfigChanged: (config) {
+                setState(() => _danmakuConfig = config);
+                widget.danmakuController?.requestCurrentWindowRefresh();
+              },
               onClose: () => Navigator.of(dialogContext).pop(),
             ),
           ),

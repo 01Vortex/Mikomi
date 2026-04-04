@@ -4,6 +4,8 @@ import 'package:mikomi/features/video/models/danmaku_model.dart';
 class DanmakuBroadcaster {
   final List<dynamic> _controllers = [];
 
+  bool get isEmpty => _controllers.isEmpty;
+
   void register(dynamic controller) {
     if (!_controllers.contains(controller)) {
       _controllers.add(controller);

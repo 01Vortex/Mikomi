@@ -323,7 +323,15 @@ class _FullscreenDanmakuSettingsState extends State<FullscreenDanmakuSettings>
 
 class DanmakuSettingsSidePanel extends StatefulWidget {
   final VoidCallback? onClose;
-  const DanmakuSettingsSidePanel({super.key, this.onClose});
+  final DanmakuConfig initialConfig;
+  final ValueChanged<DanmakuConfig>? onConfigChanged;
+
+  const DanmakuSettingsSidePanel({
+    super.key,
+    this.onClose,
+    this.initialConfig = const DanmakuConfig(),
+    this.onConfigChanged,
+  });
   @override
   State<DanmakuSettingsSidePanel> createState() => _DanmakuSettingsSidePanelState();
 }
@@ -342,24 +350,27 @@ class _DanmakuSettingsSidePanelState extends State<DanmakuSettingsSidePanel> {
   @override
   void initState() {
     super.initState();
-    _loadConfig();
+    _fontSize = widget.initialConfig.fontSize;
+    _opacity = widget.initialConfig.opacity;
+    _area = widget.initialConfig.area;
+    _duration = widget.initialConfig.duration;
+    _strokeWidth = widget.initialConfig.strokeWidth;
+    _showTop = widget.initialConfig.showTop;
+    _showBottom = widget.initialConfig.showBottom;
+    _showScroll = widget.initialConfig.showScroll;
+    _loaded = true;
   }
 
-  Future<void> _loadConfig() async {
-    final config = await DanmakuSettingService.loadAll();
-    if (!mounted) return;
-    setState(() {
-      _fontSize = config.fontSize;
-      _opacity = config.opacity;
-      _area = config.area;
-      _duration = config.duration;
-      _strokeWidth = config.strokeWidth;
-      _showTop = config.showTop;
-      _showBottom = config.showBottom;
-      _showScroll = config.showScroll;
-      _loaded = true;
-    });
-  }
+  DanmakuConfig get _currentConfig => DanmakuConfig(
+    fontSize: _fontSize,
+    opacity: _opacity,
+    area: _area,
+    duration: _duration,
+    strokeWidth: _strokeWidth,
+    showTop: _showTop,
+    showBottom: _showBottom,
+    showScroll: _showScroll,
+  );
 
   void _save() {
     DanmakuSettingService.setFontSize(_fontSize);
@@ -370,15 +381,20 @@ class _DanmakuSettingsSidePanelState extends State<DanmakuSettingsSidePanel> {
     DanmakuSettingService.setShowTop(_showTop);
     DanmakuSettingService.setShowBottom(_showBottom);
     DanmakuSettingService.setShowScroll(_showScroll);
+    widget.onConfigChanged?.call(_currentConfig);
   }
 
   Widget _sectionLabel(String text) => Padding(
         padding: const EdgeInsets.fromLTRB(0, 20, 0, 6),
-        child: Text(text,
-            style: TextStyle(
-              fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 1.2,
-              color: Colors.black.withValues(alpha: 0.4),
-            )),
+        child: Text(
+          text,
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 1.2,
+            color: Colors.black.withValues(alpha: 0.4),
+          ),
+        ),
       );
 
   Widget _sliderItem({
@@ -426,7 +442,10 @@ class _DanmakuSettingsSidePanelState extends State<DanmakuSettingsSidePanel> {
             ),
             child: Slider(
               value: value.clamp(min, max), min: min, max: max, divisions: divisions,
-              onChanged: (v) { setState(() => onChanged(v)); _save(); },
+              onChanged: (v) {
+                setState(() => onChanged(v));
+                _save();
+              },
             ),
           ),
         ],
@@ -450,7 +469,10 @@ class _DanmakuSettingsSidePanelState extends State<DanmakuSettingsSidePanel> {
             const Spacer(),
             Switch(
               value: value,
-              onChanged: (v) { setState(() => onChanged(v)); _save(); },
+              onChanged: (v) {
+                setState(() => onChanged(v));
+                _save();
+              },
               activeTrackColor: Theme.of(context).colorScheme.primary,
               inactiveTrackColor: Colors.black.withValues(alpha: 0.15),
             ),

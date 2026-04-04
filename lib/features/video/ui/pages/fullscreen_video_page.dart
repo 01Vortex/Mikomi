@@ -67,6 +67,7 @@ class _FullscreenVideoPageState extends State<FullscreenVideoPage> {
     final config = await DanmakuSettingService.loadAll();
     if (!mounted) return;
     setState(() => _danmakuConfig = config);
+    _videoDanmakuController.requestCurrentWindowRefresh();
   }
 
   void _onStateChanged() {

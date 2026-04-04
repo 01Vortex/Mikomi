@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:mikomi/features/video/controller/danmaku_broadcaster.dart';
 import 'package:mikomi/features/video/models/danmaku_model.dart';
@@ -10,6 +12,8 @@ class DanmakuController extends ChangeNotifier {
   int _lastSyncedSecond = -1;
   int _lastLoadedEpisode = -1;
   bool _isLoadingDanmaku = false;
+  Duration _lastPlaybackPosition = Duration.zero;
+  bool _shouldResendCurrentWindow = false;
 
   DanmakuController({DanmakuService? danmakuService})
     : _danmakuService = danmakuService ?? DanmakuService();
@@ -70,6 +74,7 @@ class DanmakuController extends ChangeNotifier {
 
       _lastLoadedEpisode = displayedEpisode;
       _lastSyncedSecond = -1;
+      _shouldResendCurrentWindow = true;
 
       debugPrint('弹幕加载完成,已加载: $isLoaded');
       debugPrint('弹幕数据量: ${danmakuMap.length} 秒');
@@ -83,6 +88,8 @@ class DanmakuController extends ChangeNotifier {
 
   void attachCanvasController(dynamic canvasController) {
     _danmakuBroadcaster.register(canvasController);
+    _shouldResendCurrentWindow = true;
+    scheduleMicrotask(_flushCurrentWindowIfNeeded);
   }
 
   void detachCanvasController(dynamic canvasController) {
@@ -94,7 +101,14 @@ class DanmakuController extends ChangeNotifier {
     required bool isPlaying,
     required Duration position,
   }) {
+    _lastPlaybackPosition = position;
+
     if (!isDanmakuEnabled || !isPlaying || !isLoaded) {
+      return;
+    }
+
+    if (_shouldResendCurrentWindow) {
+      _flushCurrentWindowIfNeeded();
       return;
     }
 
@@ -108,6 +122,11 @@ class DanmakuController extends ChangeNotifier {
     }
   }
 
+  void requestCurrentWindowRefresh() {
+    _shouldResendCurrentWindow = true;
+    scheduleMicrotask(_flushCurrentWindowIfNeeded);
+  }
+
   List<Danmaku> getDanmakuAtTime(int second) {
     return _danmakuService.getDanmakuAtTime(second);
   }
@@ -115,6 +134,8 @@ class DanmakuController extends ChangeNotifier {
   void clear() {
     _lastSyncedSecond = -1;
     _lastLoadedEpisode = -1;
+    _lastPlaybackPosition = Duration.zero;
+    _shouldResendCurrentWindow = false;
     _danmakuService.clear();
     notifyListeners();
   }
@@ -124,6 +145,17 @@ class DanmakuController extends ChangeNotifier {
     _danmakuBroadcaster.clear();
     _danmakuService.dispose();
     super.dispose();
+  }
+
+  void _flushCurrentWindowIfNeeded() {
+    if (!isLoaded || _danmakuBroadcaster.isEmpty) {
+      return;
+    }
+
+    final currentSecond = _lastPlaybackPosition.inSeconds;
+    _lastSyncedSecond = currentSecond;
+    _shouldResendCurrentWindow = false;
+    _sendDanmakuWindow(currentSecond);
   }
 
   void _sendDanmakuAtSecond(int second) {
