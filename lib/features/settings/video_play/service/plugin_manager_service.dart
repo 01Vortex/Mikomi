@@ -12,7 +12,7 @@ class VideoPluginManager {
   factory VideoPluginManager() => _instance;
   VideoPluginManager._internal();
 
-  List<VideoPlugin> _plugins = [];
+  final List<VideoPlugin> _plugins = [];
   Directory? _pluginDirectory;
   static const String _pluginsFileName = 'plugins.json';
   bool _isInitialized = false;
@@ -56,21 +56,23 @@ class VideoPluginManager {
         return;
       }
 
-      for (var filePath in jsonFiles) {
+      var importedCount = 0;
+      for (final filePath in jsonFiles) {
         try {
           final jsonString = await rootBundle.loadString(filePath);
-          final json = jsonDecode(jsonString);
-          final plugin = VideoPlugin.fromJson(json);
-          _plugins.add(plugin);
+          final plugin = _decodePluginJson(jsonString);
+          if (_mergePlugin(plugin)) {
+            importedCount++;
+          }
         } catch (e) {
           debugPrint('加载默认插件失败 $filePath: $e');
         }
       }
 
-      if (_plugins.isNotEmpty) {
+      if (importedCount > 0) {
         await savePlugins();
-        debugPrint('已加载 ${_plugins.length} 个默认插件');
       }
+      debugPrint('已加载 $importedCount 个默认插件');
     } catch (e) {
       debugPrint('加载默认插件失败: $e');
     }
@@ -91,7 +93,10 @@ class VideoPluginManager {
     try {
       final jsonString = await pluginsFile.readAsString();
       final List<dynamic> jsonList = jsonDecode(jsonString);
-      _plugins = jsonList.map((json) => VideoPlugin.fromJson(json)).toList();
+      final loadedPlugins = jsonList.map((json) => VideoPlugin.fromJson(json));
+      for (final plugin in loadedPlugins) {
+        _mergePlugin(plugin);
+      }
     } catch (e) {
       debugPrint('加载插件失败: $e');
       _plugins.clear();
@@ -117,12 +122,7 @@ class VideoPluginManager {
 
   /// 添加或更新插件
   Future<void> updatePlugin(VideoPlugin plugin) async {
-    final index = _plugins.indexWhere((p) => p.id == plugin.id);
-    if (index != -1) {
-      _plugins[index] = plugin;
-    } else {
-      _plugins.add(plugin);
-    }
+    _mergePlugin(plugin);
     await savePlugins();
   }
 
@@ -170,7 +170,6 @@ class VideoPluginManager {
   Future<bool> importPluginFromBase64(String base64String) async {
     try {
       String cleanBase64 = base64String.trim();
-      // 去除已知前缀
       for (final prefix in ['mikomi://', 'kazumi://', 'mikomi:', 'kazumi:']) {
         if (cleanBase64.startsWith(prefix)) {
           cleanBase64 = cleanBase64.substring(prefix.length);
@@ -178,12 +177,35 @@ class VideoPluginManager {
         }
       }
       final jsonString = utf8.decode(base64Decode(cleanBase64));
-      final json = jsonDecode(jsonString);
-      final plugin = VideoPlugin.fromJson(json);
-      await updatePlugin(plugin);
-      return true;
+      return await importPluginFromJsonString(jsonString);
     } catch (e) {
       debugPrint('导入插件失败: $e');
+      return false;
+    }
+  }
+
+  Future<bool> importPluginFromJsonString(String jsonString) async {
+    try {
+      final plugin = _decodePluginJson(jsonString);
+      _mergePlugin(plugin);
+      await savePlugins();
+      return true;
+    } catch (e) {
+      debugPrint('导入 JSON 插件失败: $e');
+      return false;
+    }
+  }
+
+  Future<bool> importPluginFromJsonFile(String filePath) async {
+    try {
+      final file = File(filePath);
+      if (!await file.exists()) {
+        return false;
+      }
+      final jsonString = await file.readAsString();
+      return await importPluginFromJsonString(jsonString);
+    } catch (e) {
+      debugPrint('导入插件文件失败: $e');
       return false;
     }
   }
@@ -195,9 +217,38 @@ class VideoPluginManager {
     return 'mikomi://$base64';
   }
 
-  /// 重新加载默认插件(用于重置)
   Future<void> reloadDefaultPlugins() async {
     _plugins.clear();
     await loadDefaultPlugins();
+  }
+
+  VideoPlugin _decodePluginJson(String jsonString) {
+    final json = jsonDecode(jsonString);
+    if (json is! Map<String, dynamic>) {
+      throw const FormatException('插件 JSON 格式不正确');
+    }
+    return VideoPlugin.fromJson(json);
+  }
+
+  bool _mergePlugin(VideoPlugin plugin) {
+    final normalizedName = plugin.name.trim().toLowerCase();
+    final normalizedBaseUrl = plugin.baseURL.trim().toLowerCase();
+
+    final index = _plugins.indexWhere((item) {
+      if (item.id == plugin.id) {
+        return true;
+      }
+      return item.name.trim().toLowerCase() == normalizedName &&
+          item.baseURL.trim().toLowerCase() == normalizedBaseUrl;
+    });
+
+    if (index == -1) {
+      _plugins.add(plugin);
+      return true;
+    }
+
+    final existing = _plugins[index];
+    _plugins[index] = plugin.copyWith(id: existing.id);
+    return false;
   }
 }

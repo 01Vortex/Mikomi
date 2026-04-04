@@ -1,9 +1,9 @@
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mikomi/features/video/models/video_plugin.dart';
 import 'package:mikomi/features/settings/video_play/service/plugin_manager_service.dart';
 import 'package:mikomi/shared/message_dialog.dart';
-
 
 class PluginManagePage extends StatefulWidget {
   const PluginManagePage({super.key});
@@ -59,9 +59,9 @@ class _PluginManagePageState extends State<PluginManagePage> {
               padding: const EdgeInsets.all(16),
               child: Text(
                 '添加数据源',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
               ),
             ),
             ListTile(
@@ -84,6 +84,15 @@ class _PluginManagePageState extends State<PluginManagePage> {
               onTap: () {
                 Navigator.pop(context);
                 _showImportDialog();
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.upload_file_outlined),
+              title: const Text('从 JSON 文件导入'),
+              subtitle: const Text('选择本地 json 规则文件导入'),
+              onTap: () async {
+                Navigator.pop(context);
+                await _pickJsonFileAndImport();
               },
             ),
             ListTile(
@@ -133,7 +142,7 @@ class _PluginManagePageState extends State<PluginManagePage> {
               }
               Navigator.pop(dialogContext);
               if (success) {
-                MessageDialog.success(this.context, '导入成功');
+                MessageDialog.success(context, '导入成功');
                 setState(() {});
               } else {
                 MessageDialog.error(context, '导入失败，请检查格式');
@@ -144,6 +153,30 @@ class _PluginManagePageState extends State<PluginManagePage> {
         ],
       ),
     );
+  }
+
+  Future<void> _pickJsonFileAndImport() async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['json'],
+      withData: false,
+    );
+    final path = result?.files.single.path;
+    if (path == null || !mounted) {
+      return;
+    }
+
+    final success = await _pluginManager.importPluginFromJsonFile(path);
+    if (!mounted) {
+      return;
+    }
+
+    if (success) {
+      MessageDialog.success(context, '导入成功');
+      setState(() {});
+    } else {
+      MessageDialog.error(context, '导入失败，请检查 JSON 文件');
+    }
   }
 
   void _handleDelete() {
@@ -225,126 +258,127 @@ class _PluginManagePageState extends State<PluginManagePage> {
         body: _isLoading
             ? const Center(child: CircularProgressIndicator())
             : _pluginManager.plugins.isEmpty
-                ? Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.extension_off_outlined,
-                          size: 64,
-                          color: cs.onSurfaceVariant,
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          '暂无数据源',
-                          style: Theme.of(context).textTheme.titleMedium,
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          '点击右上角 + 添加第一个数据源',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: cs.onSurfaceVariant,
-                          ),
-                        ),
-                        const SizedBox(height: 24),
-                        FilledButton.icon(
-                          onPressed: _handleAdd,
-                          icon: const Icon(Icons.add),
-                          label: const Text('添加数据源'),
-                        ),
-                      ],
+            ? Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.extension_off_outlined,
+                      size: 64,
+                      color: cs.onSurfaceVariant,
                     ),
-                  )
-                : ReorderableListView.builder(
-                    buildDefaultDragHandles: false,
-                    onReorder: (oldIndex, newIndex) async {
-                      await _pluginManager.reorderPlugins(oldIndex, newIndex);
-                      setState(() {});
-                    },
-                    padding: const EdgeInsets.all(12),
-                    itemCount: _pluginManager.plugins.length,
-                    itemBuilder: (context, index) {
-                      final plugin = _pluginManager.plugins[index];
-                      final isSelected = _selectedIds.contains(plugin.id);
+                    const SizedBox(height: 16),
+                    Text(
+                      '暂无数据源',
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      '点击右上角 + 添加第一个数据源',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: cs.onSurfaceVariant,
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    FilledButton.icon(
+                      onPressed: _handleAdd,
+                      icon: const Icon(Icons.add),
+                      label: const Text('添加数据源'),
+                    ),
+                  ],
+                ),
+              )
+            : ReorderableListView.builder(
+                buildDefaultDragHandles: false,
+                onReorder: (oldIndex, newIndex) async {
+                  await _pluginManager.reorderPlugins(oldIndex, newIndex);
+                  setState(() {});
+                },
+                padding: const EdgeInsets.all(12),
+                itemCount: _pluginManager.plugins.length,
+                itemBuilder: (context, index) {
+                  final plugin = _pluginManager.plugins[index];
+                  final isSelected = _selectedIds.contains(plugin.id);
 
-                      return _PluginCard(
-                        key: ValueKey(plugin.id),
-                        plugin: plugin,
-                        isSelected: isSelected,
-                        isMultiSelectMode: _isMultiSelectMode,
-                        onLongPress: () {
-                          if (!_isMultiSelectMode) {
-                            setState(() {
-                              _isMultiSelectMode = true;
-                              _selectedIds.add(plugin.id);
-                            });
-                          }
-                        },
-                        onTap: () {
-                          if (_isMultiSelectMode) {
-                            setState(() {
-                              if (isSelected) {
-                                _selectedIds.remove(plugin.id);
-                                if (_selectedIds.isEmpty) {
-                                  _isMultiSelectMode = false;
-                                }
-                              } else {
-                                _selectedIds.add(plugin.id);
-                              }
-                            });
-                          }
-                        },
-                        onCheckboxChanged: (value) {
-                          setState(() {
-                            if (value == true) {
-                              _selectedIds.add(plugin.id);
-                            } else {
-                              _selectedIds.remove(plugin.id);
-                              if (_selectedIds.isEmpty) {
-                                _isMultiSelectMode = false;
-                              }
+                  return _PluginCard(
+                    key: ValueKey(plugin.id),
+                    plugin: plugin,
+                    isSelected: isSelected,
+                    isMultiSelectMode: _isMultiSelectMode,
+                    onLongPress: () {
+                      if (!_isMultiSelectMode) {
+                        setState(() {
+                          _isMultiSelectMode = true;
+                          _selectedIds.add(plugin.id);
+                        });
+                      }
+                    },
+                    onTap: () {
+                      if (_isMultiSelectMode) {
+                        setState(() {
+                          if (isSelected) {
+                            _selectedIds.remove(plugin.id);
+                            if (_selectedIds.isEmpty) {
+                              _isMultiSelectMode = false;
                             }
-                          });
-                        },
-                        onEdit: () async {
-                          final result = await Navigator.pushNamed(
-                            context,
-                            '/plugin_editor',
-                            arguments: plugin,
-                          );
-                          if (result == true && mounted) {
-                            setState(() {});
+                          } else {
+                            _selectedIds.add(plugin.id);
                           }
-                        },
-                        onTest: () async {
-                          await Navigator.pushNamed(
-                            context,
-                            '/plugin_test',
-                            arguments: plugin,
-                          );
-                        },
-                        onShare: () async {
-                          final base64 =
-                              _pluginManager.exportPluginToBase64(plugin);
-                          await Clipboard.setData(ClipboardData(text: base64));
-                          if (mounted) {
-                            MessageDialog.success(this.context, '已复制到剪贴板');
+                        });
+                      }
+                    },
+                    onCheckboxChanged: (value) {
+                      setState(() {
+                        if (value == true) {
+                          _selectedIds.add(plugin.id);
+                        } else {
+                          _selectedIds.remove(plugin.id);
+                          if (_selectedIds.isEmpty) {
+                            _isMultiSelectMode = false;
                           }
-                        },
-                        onDelete: () async {
-                          await _pluginManager.removePlugin(plugin);
-                          if (mounted) {
-                            setState(() {});
-                          }
-                        },
-                        dragHandle: ReorderableDragStartListener(
-                          index: index,
-                          child: const Icon(Icons.drag_handle),
-                        ),
+                        }
+                      });
+                    },
+                    onEdit: () async {
+                      final result = await Navigator.pushNamed(
+                        context,
+                        '/plugin_editor',
+                        arguments: plugin,
+                      );
+                      if (result == true && mounted) {
+                        setState(() {});
+                      }
+                    },
+                    onTest: () async {
+                      await Navigator.pushNamed(
+                        context,
+                        '/plugin_test',
+                        arguments: plugin,
                       );
                     },
-                  ),
+                    onShare: () async {
+                      final base64 = _pluginManager.exportPluginToBase64(
+                        plugin,
+                      );
+                      await Clipboard.setData(ClipboardData(text: base64));
+                      if (mounted) {
+                        MessageDialog.success(this.context, '已复制到剪贴板');
+                      }
+                    },
+                    onDelete: () async {
+                      await _pluginManager.removePlugin(plugin);
+                      if (mounted) {
+                        setState(() {});
+                      }
+                    },
+                    dragHandle: ReorderableDragStartListener(
+                      index: index,
+                      child: const Icon(Icons.drag_handle),
+                    ),
+                  );
+                },
+              ),
       ),
     );
   }
@@ -403,10 +437,7 @@ class _PluginCard extends StatelessWidget {
               Row(
                 children: [
                   if (isMultiSelectMode)
-                    Checkbox(
-                      value: isSelected,
-                      onChanged: onCheckboxChanged,
-                    )
+                    Checkbox(value: isSelected, onChanged: onCheckboxChanged)
                   else
                     Padding(
                       padding: const EdgeInsets.only(right: 8),
