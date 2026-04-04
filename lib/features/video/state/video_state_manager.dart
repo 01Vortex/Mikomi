@@ -126,15 +126,17 @@ class VideoStateManager {
 
   int get totalEpisodes => episodes.length;
 
-  String? get currentEpisodeTitle {
+  Episode? get currentEpisode {
     try {
-      return episodes
-          .firstWhere((episode) => episode.number == currentEpisodeNumber)
-          .title;
+      return episodes.firstWhere(
+        (episode) => episode.number == currentEpisodeNumber,
+      );
     } catch (_) {
       return null;
     }
   }
+
+  String? get currentEpisodeTitle => currentEpisode?.title;
 
   bool get hasNextEpisode => currentEpisodeNumber < totalEpisodes;
   bool get hasPreviousEpisode => currentEpisodeNumber > 1;

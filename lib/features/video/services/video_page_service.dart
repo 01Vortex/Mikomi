@@ -28,11 +28,11 @@ class VideoPageService {
     required String? animeName,
     required int? bangumiId,
   }) {
-    return _videoEpisodeService.loadEpisodesWithVideoSource(
-      sourceName,
-      animeTitle,
-      animeName,
-      bangumiId,
+    return _loadEpisodesBySourceName(
+      sourceName: sourceName,
+      animeTitle: animeTitle,
+      animeName: animeName,
+      bangumiId: bangumiId,
     );
   }
 
@@ -68,8 +68,22 @@ class VideoPageService {
     required String? animeName,
     required int? bangumiId,
   }) {
+    return _loadEpisodesBySourceName(
+      sourceName: source.name,
+      animeTitle: animeTitle,
+      animeName: animeName,
+      bangumiId: bangumiId,
+    );
+  }
+
+  Future<List<Episode>> _loadEpisodesBySourceName({
+    required String sourceName,
+    required String? animeTitle,
+    required String? animeName,
+    required int? bangumiId,
+  }) {
     return _videoEpisodeService.loadEpisodesWithVideoSource(
-      source.name,
+      sourceName,
       animeTitle,
       animeName,
       bangumiId,

@@ -95,23 +95,16 @@ class _VideoPageState extends State<VideoPage>
     _loadFallbackVideoSources();
   }
 
-  void _clearDanmakuInputIfNeeded(bool enabled) {
-    if (!enabled) {
-      _danmakuController.clear();
-    }
+  void _clearDanmakuInput() {
+    _danmakuController.clear();
   }
 
-  Future<void> _updateDanmakuEnabled(bool enabled) async {
+  Future<void> _setDanmakuEnabled(bool enabled) async {
     _controller.setDanmakuEnabled(enabled);
-    _clearDanmakuInputIfNeeded(enabled);
+    if (!enabled) {
+      _clearDanmakuInput();
+    }
     await DanmakuSettingService().setShowDanmaku(enabled);
-  }
-
-  Future<void> _toggleDanmakuEnabled(bool currentEnabled) async {
-    final nextEnabled = !currentEnabled;
-    _controller.setDanmakuEnabled(nextEnabled);
-    _clearDanmakuInputIfNeeded(nextEnabled);
-    await DanmakuSettingService().setShowDanmaku(nextEnabled);
   }
 
   void _showVideoSourceSelector() {
@@ -245,7 +238,7 @@ class _VideoPageState extends State<VideoPage>
                               isDanmakuEnabled: playerState.isDanmakuEnabled,
                               animeTitle: widget.animeTitle,
                               bangumiId: widget.bangumiId,
-                              onDanmakuToggle: _updateDanmakuEnabled,
+                              onDanmakuToggle: _setDanmakuEnabled,
                               isLoading: playerState.isResolvingVideo,
                               hasError: playerState.hasPlaybackError,
                               showTimeoutHint: playerState.showTimeoutNotice,
@@ -273,8 +266,8 @@ class _VideoPageState extends State<VideoPage>
                                       isDanmakuInputExpanded:
                                           danmakuState.isInputExpanded,
                                       onDanmakuToggle: () {
-                                        _toggleDanmakuEnabled(
-                                          danmakuState.isDanmakuEnabled,
+                                        _setDanmakuEnabled(
+                                          !danmakuState.isDanmakuEnabled,
                                         );
                                       },
                                       onDanmakuInputTap:
@@ -333,7 +326,7 @@ class _VideoPageState extends State<VideoPage>
                                   controller: _danmakuController,
                                   onSend: () {
                                     if (_danmakuController.text.isNotEmpty) {
-                                      _danmakuController.clear();
+                                    _clearDanmakuInput();
                                     }
                                   },
                                   onClose: () {

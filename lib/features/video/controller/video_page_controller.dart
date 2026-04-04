@@ -30,58 +30,53 @@ class VideoPageController {
   final ValueNotifier<VideoSourceViewState> sourceViewNotifier;
   final ValueNotifier<Duration?> initialProgressNotifier;
 
-  VideoPageController({
-    required this.title,
+  factory VideoPageController({
+    required String title,
     required String videoUrl,
     required int currentEpisode,
     required List<Episode> episodes,
     required String? sourceName,
     required Duration? initialProgress,
+    required String? animeTitle,
+    required String? animeName,
+    required int? bangumiId,
+    VideoPageService? pageService,
+    VideoPlaybackService? playbackService,
+  }) {
+    final initialState = VideoStateManager(
+      currentEpisodeNumber: currentEpisode,
+      episodes: episodes,
+      currentVideoPageUrl: videoUrl,
+      currentSourceName: sourceName,
+    );
+
+    return VideoPageController._(
+      title: title,
+      animeTitle: animeTitle,
+      animeName: animeName,
+      bangumiId: bangumiId,
+      pageService: pageService ?? VideoPageService(),
+      playbackService: playbackService ?? VideoPlaybackService(),
+      initialState: initialState,
+      initialProgress: initialProgress,
+    );
+  }
+
+  VideoPageController._({
+    required this.title,
     required this.animeTitle,
     required this.animeName,
     required this.bangumiId,
-    VideoPageService? pageService,
-    VideoPlaybackService? playbackService,
-  }) : _pageService = pageService ?? VideoPageService(),
-       playbackService = playbackService ?? VideoPlaybackService(),
-       _state = VideoStateManager(
-         currentEpisodeNumber: currentEpisode,
-         episodes: episodes,
-         currentVideoPageUrl: videoUrl,
-         currentSourceName: sourceName,
-       ),
-       playerViewNotifier = ValueNotifier(
-         VideoStateManager(
-           currentEpisodeNumber: currentEpisode,
-           episodes: episodes,
-           currentVideoPageUrl: videoUrl,
-           currentSourceName: sourceName,
-         ).playerViewState,
-       ),
-       episodeViewNotifier = ValueNotifier(
-         VideoStateManager(
-           currentEpisodeNumber: currentEpisode,
-           episodes: episodes,
-           currentVideoPageUrl: videoUrl,
-           currentSourceName: sourceName,
-         ).episodeViewState,
-       ),
-       danmakuViewNotifier = ValueNotifier(
-         VideoStateManager(
-           currentEpisodeNumber: currentEpisode,
-           episodes: episodes,
-           currentVideoPageUrl: videoUrl,
-           currentSourceName: sourceName,
-         ).danmakuViewState,
-       ),
-       sourceViewNotifier = ValueNotifier(
-         VideoStateManager(
-           currentEpisodeNumber: currentEpisode,
-           episodes: episodes,
-           currentVideoPageUrl: videoUrl,
-           currentSourceName: sourceName,
-         ).sourceViewState,
-       ),
+    required VideoPageService pageService,
+    required this.playbackService,
+    required VideoStateManager initialState,
+    required Duration? initialProgress,
+  }) : _pageService = pageService,
+       _state = initialState,
+       playerViewNotifier = ValueNotifier(initialState.playerViewState),
+       episodeViewNotifier = ValueNotifier(initialState.episodeViewState),
+       danmakuViewNotifier = ValueNotifier(initialState.danmakuViewState),
+       sourceViewNotifier = ValueNotifier(initialState.sourceViewState),
        initialProgressNotifier = ValueNotifier(initialProgress);
 
   bool get isDisposed => _isDisposed;
@@ -206,19 +201,13 @@ class VideoPageController {
   }
 
   Future<void> refreshResolvedVideoUrlSilently() async {
-    if (_state.currentSourceName == null || _state.episodes.isEmpty) {
+    if (_state.currentSourceName == null || _state.currentEpisode == null) {
       return;
     }
 
     final token = ++_silentRefreshToken;
     try {
-      final pageUrl =
-          _state.episodes
-              .firstWhere(
-                (episode) => episode.number == _state.currentEpisodeNumber,
-              )
-              .url ??
-          _state.currentVideoPageUrl;
+      final pageUrl = _state.currentEpisode!.url ?? _state.currentVideoPageUrl;
       final resolvedUrl = await _pageService.refreshResolvedVideoUrl(
         pageUrl: pageUrl,
         sourceName: _state.currentSourceName!,
