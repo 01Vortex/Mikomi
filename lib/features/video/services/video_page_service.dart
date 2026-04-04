@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:mikomi/features/anime/selector/video_source_selector.dart';
 import 'package:mikomi/features/video/models/episode_model.dart';
@@ -8,21 +10,23 @@ import 'package:mikomi/features/video/services/video_playback_service.dart';
 import 'package:mikomi/features/video/state/video_state_manager.dart';
 
 class VideoPageInitializeResult {
-  final Future<String> currentVideoUrlFuture;
+  final VideoStateManager state;
   final bool shouldLoadEpisodes;
 
   const VideoPageInitializeResult({
-    required this.currentVideoUrlFuture,
+    required this.state,
     required this.shouldLoadEpisodes,
   });
 }
 
 class VideoPageEpisodeLoadResult {
+  final VideoStateManager state;
   final bool didLoadEpisodes;
   final bool shouldRefreshParsedUrlSilently;
   final bool shouldUpdateCurrentVideoUrl;
 
   const VideoPageEpisodeLoadResult({
+    required this.state,
     required this.didLoadEpisodes,
     required this.shouldRefreshParsedUrlSilently,
     required this.shouldUpdateCurrentVideoUrl,
@@ -30,9 +34,23 @@ class VideoPageEpisodeLoadResult {
 }
 
 class VideoPageSourceSwitchResult {
+  final VideoStateManager state;
   final bool didLoadEpisodes;
 
-  const VideoPageSourceSwitchResult({required this.didLoadEpisodes});
+  const VideoPageSourceSwitchResult({
+    required this.state,
+    required this.didLoadEpisodes,
+  });
+}
+
+class VideoTimerHandles {
+  final Timer timeoutTimer;
+  final Timer saveHistoryTimer;
+
+  const VideoTimerHandles({
+    required this.timeoutTimer,
+    required this.saveHistoryTimer,
+  });
 }
 
 class VideoPageService {
@@ -48,17 +66,44 @@ class VideoPageService {
        _episodeService = episodeService ?? VideoEpisodeService(),
        _historyService = historyService ?? VideoHistoryService();
 
-  void initializeState({
-    required VideoStateManager state,
+  VideoStateManager initializeState({
     required int currentEpisode,
     required List<Episode> episodes,
     required String videoUrl,
     required String? pluginName,
   }) {
-    state.currentEpisode = currentEpisode;
-    state.episodes = episodes;
-    state.videoUrl = videoUrl;
-    state.currentPluginName = pluginName;
+    return VideoStateManager(
+      currentEpisode: currentEpisode,
+      episodes: episodes,
+      videoUrl: videoUrl,
+      currentPluginName: pluginName,
+    );
+  }
+
+  VideoStateManager updateDanmakuEnabled(
+    VideoStateManager state,
+    bool enabled,
+  ) {
+    return state.copyWith(
+      isDanmakuEnabled: enabled,
+      isDanmakuInputExpanded: enabled ? state.isDanmakuInputExpanded : false,
+    );
+  }
+
+  VideoStateManager expandDanmakuInput(VideoStateManager state) {
+    return state.copyWith(isDanmakuInputExpanded: true);
+  }
+
+  VideoStateManager collapseDanmakuInput(VideoStateManager state) {
+    return state.copyWith(isDanmakuInputExpanded: false);
+  }
+
+  VideoStateManager toggleEpisodeSort(VideoStateManager state) {
+    return state.copyWith(isDescending: !state.isDescending);
+  }
+
+  VideoStateManager toggleEpisodeExpand(VideoStateManager state) {
+    return state.copyWith(isEpisodesExpanded: !state.isEpisodesExpanded);
   }
 
   VideoPageInitializeResult initializeVideoUrl({
@@ -73,49 +118,80 @@ class VideoPageService {
         animeTitle != null) {
       if (state.videoUrl.isNotEmpty) {
         if (_videoParsingService.isDirectStreamUrl(state.videoUrl)) {
-          state.isUsingCachedPlayUrl = true;
-          state.shouldParseAfterEpisodesLoaded = true;
-          state.lastResolvedVideoUrl = state.videoUrl;
+          final nextState = state.copyWith(
+            isUsingCachedPlayUrl: true,
+            shouldParseAfterEpisodesLoaded: true,
+            lastResolvedVideoUrl: state.videoUrl,
+            playbackStatus: VideoPlaybackReady(state.videoUrl),
+          );
           return VideoPageInitializeResult(
-            currentVideoUrlFuture: Future.value(state.videoUrl),
+            state: nextState,
             shouldLoadEpisodes: shouldLoadEpisodes,
           );
         }
         return VideoPageInitializeResult(
-          currentVideoUrlFuture: getCurrentVideoUrl(state),
+          state: state.copyWith(playbackStatus: const VideoPlaybackLoading()),
           shouldLoadEpisodes: shouldLoadEpisodes,
         );
       }
 
-      state.shouldParseAfterEpisodesLoaded = true;
       return VideoPageInitializeResult(
-        currentVideoUrlFuture: Future.value(''),
+        state: state.copyWith(
+          shouldParseAfterEpisodesLoaded: true,
+          playbackStatus: const VideoPlaybackIdle(),
+        ),
         shouldLoadEpisodes: shouldLoadEpisodes,
       );
     }
 
     return VideoPageInitializeResult(
-      currentVideoUrlFuture: getCurrentVideoUrl(state),
+      state: state.copyWith(playbackStatus: const VideoPlaybackLoading()),
       shouldLoadEpisodes: shouldLoadEpisodes,
     );
   }
 
-  void beginEpisodeLoading(VideoStateManager state) {
-    state.isLoadingEpisodes = true;
+  VideoTimerHandles startTimers({
+    required VoidCallback onTimeout,
+    required VoidCallback onSaveHistory,
+  }) {
+    return VideoTimerHandles(
+      timeoutTimer: Timer(const Duration(seconds: 3), onTimeout),
+      saveHistoryTimer: Timer.periodic(
+        const Duration(seconds: 10),
+        (_) => onSaveHistory(),
+      ),
+    );
   }
 
-  void endEpisodeLoading(VideoStateManager state) {
-    state.isLoadingEpisodes = false;
+  Timer restartTimeoutTimer({required VoidCallback onTimeout}) {
+    return Timer(const Duration(seconds: 3), onTimeout);
   }
 
-  void resetResolveState(VideoStateManager state) {
-    state.showTimeoutHint = false;
-    state.hasParseError = false;
+  VideoStateManager beginEpisodeLoading(VideoStateManager state) {
+    return state.copyWith(isLoadingEpisodes: true);
   }
 
-  void beginSourceSwitch(VideoStateManager state) {
+  VideoStateManager endEpisodeLoading(VideoStateManager state) {
+    return state.copyWith(isLoadingEpisodes: false);
+  }
+
+  VideoStateManager showTimeoutHint(VideoStateManager state) {
+    return state.copyWith(showTimeoutHint: true);
+  }
+
+  VideoStateManager resetResolveState(VideoStateManager state) {
+    return state.copyWith(
+      showTimeoutHint: false,
+      playbackStatus: const VideoPlaybackLoading(),
+    );
+  }
+
+  VideoStateManager beginSourceSwitch(VideoStateManager state) {
     cancelParsing();
-    state.isLoadingEpisodes = true;
+    return state.copyWith(
+      isLoadingEpisodes: true,
+      playbackStatus: const VideoPlaybackLoading(),
+    );
   }
 
   Future<VideoPageEpisodeLoadResult> loadEpisodesInBackground({
@@ -125,7 +201,8 @@ class VideoPageService {
     required int? bangumiId,
   }) async {
     if (animeTitle == null || state.currentPluginName == null) {
-      return const VideoPageEpisodeLoadResult(
+      return VideoPageEpisodeLoadResult(
+        state: state,
         didLoadEpisodes: false,
         shouldRefreshParsedUrlSilently: false,
         shouldUpdateCurrentVideoUrl: false,
@@ -141,36 +218,43 @@ class VideoPageService {
       );
 
       if (episodes.isEmpty) {
-        return const VideoPageEpisodeLoadResult(
+        return VideoPageEpisodeLoadResult(
+          state: state,
           didLoadEpisodes: false,
           shouldRefreshParsedUrlSilently: false,
           shouldUpdateCurrentVideoUrl: false,
         );
       }
 
-      state.episodes = episodes;
-      if (state.currentEpisode > state.episodes.length) {
-        state.currentEpisode = 1;
-      }
+      var nextState = state.copyWith(
+        episodes: episodes,
+        currentEpisode: state.currentEpisode > episodes.length
+            ? 1
+            : state.currentEpisode,
+      );
 
       final shouldRefreshParsedUrlSilently =
-          state.shouldParseAfterEpisodesLoaded && state.isUsingCachedPlayUrl;
+          nextState.shouldParseAfterEpisodesLoaded &&
+          nextState.isUsingCachedPlayUrl;
       final shouldUpdateCurrentVideoUrl =
-          state.shouldParseAfterEpisodesLoaded && !state.isUsingCachedPlayUrl;
+          nextState.shouldParseAfterEpisodesLoaded &&
+          !nextState.isUsingCachedPlayUrl;
 
-      state.shouldParseAfterEpisodesLoaded = false;
-      if (state.isUsingCachedPlayUrl) {
-        state.isUsingCachedPlayUrl = false;
-      }
+      nextState = nextState.copyWith(
+        shouldParseAfterEpisodesLoaded: false,
+        isUsingCachedPlayUrl: false,
+      );
 
       return VideoPageEpisodeLoadResult(
+        state: nextState,
         didLoadEpisodes: true,
         shouldRefreshParsedUrlSilently: shouldRefreshParsedUrlSilently,
         shouldUpdateCurrentVideoUrl: shouldUpdateCurrentVideoUrl,
       );
     } catch (e) {
       debugPrint('后台加载剧集失败: $e');
-      return const VideoPageEpisodeLoadResult(
+      return VideoPageEpisodeLoadResult(
+        state: state,
         didLoadEpisodes: false,
         shouldRefreshParsedUrlSilently: false,
         shouldUpdateCurrentVideoUrl: false,
@@ -178,9 +262,11 @@ class VideoPageService {
     }
   }
 
-  Future<String> refreshParsedUrlSilently(VideoStateManager state) async {
+  Future<VideoStateManager> refreshParsedUrlSilently(
+    VideoStateManager state,
+  ) async {
     if (state.currentPluginName == null || state.episodes.isEmpty) {
-      return state.lastResolvedVideoUrl;
+      return state;
     }
 
     try {
@@ -194,17 +280,22 @@ class VideoPageService {
         state.currentPluginName!,
         state.lastResolvedVideoUrl,
       );
-      if (parsedUrl.isNotEmpty) {
-        state.lastResolvedVideoUrl = parsedUrl;
+      if (parsedUrl.isEmpty || parsedUrl == state.lastResolvedVideoUrl) {
+        return state;
       }
-      return state.lastResolvedVideoUrl;
+      return state.copyWith(
+        lastResolvedVideoUrl: parsedUrl,
+        playbackStatus: VideoPlaybackReady(parsedUrl),
+      );
     } catch (e) {
       debugPrint('静默刷新失败: $e');
-      return state.lastResolvedVideoUrl;
+      return state;
     }
   }
 
-  Future<String> getCurrentVideoUrl(VideoStateManager state) async {
+  Future<VideoStateManager> resolveCurrentVideoUrl(
+    VideoStateManager state,
+  ) async {
     try {
       final url = await _videoParsingService.resolveVideoUrl(
         state.videoUrl,
@@ -212,11 +303,14 @@ class VideoPageService {
         state.episodes,
         state.currentEpisode,
       );
-      state.lastResolvedVideoUrl = url;
-      return url;
+      return state.copyWith(
+        lastResolvedVideoUrl: url,
+        playbackStatus: url.isEmpty
+            ? const VideoPlaybackIdle()
+            : VideoPlaybackReady(url),
+      );
     } catch (e) {
-      state.hasParseError = true;
-      rethrow;
+      return state.copyWith(playbackStatus: VideoPlaybackError(e));
     }
   }
 
@@ -224,12 +318,15 @@ class VideoPageService {
     _videoParsingService.cancelParsing();
   }
 
-  bool playEpisode(VideoStateManager state, Episode episode) {
+  VideoStateManager? playEpisode(VideoStateManager state, Episode episode) {
     if (episode.number == state.currentEpisode) {
-      return false;
+      return null;
     }
-    state.currentEpisode = episode.number;
-    return true;
+    return state.copyWith(
+      currentEpisode: episode.number,
+      playbackStatus: const VideoPlaybackLoading(),
+      showTimeoutHint: false,
+    );
   }
 
   Episode? getNextEpisode(VideoStateManager state) {
@@ -255,18 +352,31 @@ class VideoPageService {
     required String? animeName,
     required int? bangumiId,
   }) async {
-    state.currentPluginName = source.name;
     final episodes = await _episodeService.loadEpisodesWithVideoSource(
       source.name,
       animeTitle,
       animeName,
       bangumiId,
     );
-    if (episodes.isNotEmpty) {
-      state.episodes = episodes;
-      return const VideoPageSourceSwitchResult(didLoadEpisodes: true);
+    final nextState = state.copyWith(
+      currentPluginName: source.name,
+      episodes: episodes.isNotEmpty ? episodes : state.episodes,
+    );
+    return VideoPageSourceSwitchResult(
+      state: nextState,
+      didLoadEpisodes: episodes.isNotEmpty,
+    );
+  }
+
+  VideoStateManager beginReassemble(VideoStateManager state) {
+    if (state.isReassembling) {
+      return state;
     }
-    return const VideoPageSourceSwitchResult(didLoadEpisodes: false);
+    return state.copyWith(isReassembling: true);
+  }
+
+  VideoStateManager endReassemble(VideoStateManager state) {
+    return state.copyWith(isReassembling: false);
   }
 
   void saveHistoryModel({
