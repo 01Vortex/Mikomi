@@ -2,14 +2,14 @@ import 'dart:async';
 import 'package:canvas_danmaku/canvas_danmaku.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:mikomi/features/video/models/episode_model.dart';
 import 'package:mikomi/features/video/services/video_playback_service.dart';
+import 'package:mikomi/features/video/state/video_player_listener.dart';
 import 'package:mikomi/features/video/ui/widgets/danmaku_overlay.dart';
-import 'package:mikomi/features/video/ui/widgets/danmaku_settings_sheet.dart';
-import 'package:mikomi/features/video/ui/widgets/fullscreen_episode.dart';
+import 'package:mikomi/features/video/ui/widgets/fullscreen/fullscreen_danmaku_settings.dart';
+import 'package:mikomi/features/video/ui/widgets/fullscreen/fullscreen_episode.dart';
 import 'package:mikomi/features/video/ui/widgets/video_fit.dart';
 import 'package:mikomi/features/video/ui/widgets/video_gesture.dart';
-import 'package:mikomi/features/video/models/episode_model.dart';
-import 'package:mikomi/features/settings/video_play/service/play_setting_service.dart';
 
 // 顶部/底部控制栏统一左右边距（不含安全区），确保两侧完全对齐
 const double _kSideMargin = 16.0;
@@ -75,102 +75,46 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
   double _playbackSpeed = 1.0;
   bool _showDanmakuInput = false;
   final TextEditingController _danmakuController = TextEditingController();
-  StreamSubscription<bool>? _playingSub;
-  StreamSubscription<bool>? _bufferingSub;
-  StreamSubscription<Duration>? _positionSub;
-  StreamSubscription<Duration>? _durationSub;
-  StreamSubscription<bool>? _completedSub;
-  final PlaySettingsService _playSettingsService = PlaySettingsService();
+  late final VideoPlayerListenerController _playerListenerController;
   final GlobalKey _speedButtonKey = GlobalKey();
 
   @override
   void initState() {
     super.initState();
-    _initializePlayerState();
-    _setupListeners();
+    _playerListenerController = VideoPlayerListenerController(
+      onSnapshotChanged: (snapshot) {
+        if (!mounted) return;
+        setState(() {
+          _isPlaying = snapshot.isPlaying;
+          _position = snapshot.position;
+          _duration = snapshot.duration;
+          _isBuffering = snapshot.isBuffering;
+          _playbackSpeed = snapshot.playbackSpeed;
+        });
+      },
+      onPositionChanged: (position) {
+        if (!mounted || _isDragging) return;
+        setState(() => _position = position);
+      },
+      onAutoPlayNext: widget.onNextEpisode,
+    );
+    _bindPlayerState();
     _startHideTimer();
   }
 
-  void _initializePlayerState() {
-    final player = widget.playbackService.player;
-    if (player != null) {
-      // 获取播放器当前状态
-      _isPlaying = player.state.playing;
-      _position = player.state.position;
-      _duration = player.state.duration;
-      _isBuffering = player.state.buffering;
-      _playbackSpeed = player.state.rate;
-    }
-  }
-
-  void _cancelPlayerSubscriptions() {
-    _playingSub?.cancel();
-    _bufferingSub?.cancel();
-    _positionSub?.cancel();
-    _durationSub?.cancel();
-    _completedSub?.cancel();
-    _playingSub = null;
-    _bufferingSub = null;
-    _positionSub = null;
-    _durationSub = null;
-    _completedSub = null;
+  void _bindPlayerState() {
+    _playerListenerController.bind(
+      widget.playbackService.player,
+      hasNextEpisode: widget.hasNextEpisode,
+    );
   }
 
   @override
   void dispose() {
-    _cancelPlayerSubscriptions();
+    _playerListenerController.dispose();
     _hideTimer?.cancel();
     _danmakuController.dispose();
     super.dispose();
-  }
-
-  void _setupListeners() {
-    final player = widget.playbackService.player;
-    if (player == null) return;
-
-    _cancelPlayerSubscriptions();
-
-    _playingSub = player.stream.playing.listen((playing) {
-      if (mounted) {
-        setState(() => _isPlaying = playing);
-      }
-    });
-
-    _bufferingSub = player.stream.buffering.listen((buffering) {
-      if (mounted) {
-        setState(() => _isBuffering = buffering);
-      }
-    });
-
-    _positionSub = player.stream.position.listen((position) {
-      if (mounted && !_isDragging) {
-        setState(() => _position = position);
-      }
-    });
-
-    _durationSub = player.stream.duration.listen((duration) {
-      if (mounted) {
-        setState(() => _duration = duration);
-      }
-    });
-
-    player.stream.rate.listen((rate) {
-      if (mounted) {
-        setState(() => _playbackSpeed = rate);
-      }
-    });
-
-    _completedSub = player.stream.completed.listen((completed) async {
-      if (!completed || !mounted) return;
-      // 确认进度接近结尾才触发(避免误触)
-      final pos = player.state.position.inSeconds;
-      final dur = player.state.duration.inSeconds;
-      if (dur <= 0 || pos < dur - 3) return;
-      final autoPlayNext = await _playSettingsService.getAutoPlayNext();
-      if (autoPlayNext && widget.hasNextEpisode) {
-        widget.onNextEpisode?.call();
-      }
-    });
   }
 
   void _startHideTimer() {
@@ -322,15 +266,7 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
   }
 
   String _formatDuration(Duration duration) {
-    String twoDigits(int n) => n.toString().padLeft(2, '0');
-    final hours = duration.inHours;
-    final minutes = duration.inMinutes.remainder(60);
-    final seconds = duration.inSeconds.remainder(60);
-
-    if (hours > 0) {
-      return '$hours:${twoDigits(minutes)}:${twoDigits(seconds)}';
-    }
-    return '${twoDigits(minutes)}:${twoDigits(seconds)}';
+    return formatVideoDuration(duration);
   }
 
   @override

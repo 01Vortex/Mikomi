@@ -2,14 +2,14 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 import 'package:canvas_danmaku/canvas_danmaku.dart';
-import 'package:mikomi/features/video/services/video_playback_service.dart';
-import 'package:mikomi/features/video/ui/widgets/danmaku_overlay.dart';
-import 'package:mikomi/features/video/services/danmaku_service.dart';
 import 'package:mikomi/features/video/controller/danmaku_broadcaster.dart';
-import 'package:mikomi/features/video/ui/pages/fullscreen_video_page.dart';
-import 'package:mikomi/features/video/ui/widgets/video_gesture.dart';
 import 'package:mikomi/features/video/models/episode_model.dart';
-import 'package:mikomi/features/settings/video_play/service/play_setting_service.dart';
+import 'package:mikomi/features/video/services/danmaku_service.dart';
+import 'package:mikomi/features/video/services/video_playback_service.dart';
+import 'package:mikomi/features/video/state/video_player_listener.dart';
+import 'package:mikomi/features/video/ui/pages/fullscreen_video_page.dart';
+import 'package:mikomi/features/video/ui/widgets/danmaku_overlay.dart';
+import 'package:mikomi/features/video/ui/widgets/video_gesture.dart';
 import 'package:mikomi/features/settings/danmaku/danmaku_setting_service.dart';
 
 class SmallscreenVideo extends StatefulWidget {
@@ -95,19 +95,72 @@ class _SmallscreenVideoState extends State<SmallscreenVideo> {
   // 弹幕控制
   final DanmakuService _danmakuController = DanmakuService();
   final DanmakuBroadcaster _danmakuBroadcasterService = DanmakuBroadcaster();
+  late final VideoPlayerListenerController _playerListenerController;
   int _lastDanmakuSecond = -1;
   DanmakuController? _canvasController;
-  StreamSubscription<bool>? _bufferingSub;
-  StreamSubscription<bool>? _playingSub;
-  StreamSubscription<Duration>? _positionSub;
-  StreamSubscription<Duration>? _durationSub;
-  StreamSubscription<bool>? _completedSub;
-  final PlaySettingsService _playSettingsService = PlaySettingsService();
   DanmakuConfig _danmakuConfig = const DanmakuConfig();
 
   @override
   void initState() {
     super.initState();
+    _playerListenerController = VideoPlayerListenerController(
+      onSnapshotChanged: (snapshot) {
+        if (!mounted) return;
+        setState(() {
+          _isBuffering = snapshot.isBuffering;
+          _isPlaying = snapshot.isPlaying;
+          _currentPosition = snapshot.position;
+          _totalDuration = snapshot.duration;
+        });
+      },
+      onPositionChanged: (position) {
+        if (!mounted || _isDragging) return;
+        setState(() {
+          _currentPosition = position;
+        });
+
+        if (widget.isDanmakuEnabled && _isPlaying) {
+          final currentSecond = position.inSeconds;
+          if ((currentSecond - _lastDanmakuSecond).abs() > 2) {
+            _lastDanmakuSecond = currentSecond;
+            _sendDanmakuWindow(currentSecond);
+          } else if (currentSecond != _lastDanmakuSecond) {
+            _lastDanmakuSecond = currentSecond;
+            _sendDanmakuAtTime(currentSecond);
+          }
+        }
+      },
+      onDurationChanged: (duration) {
+        if (!mounted) return;
+        setState(() {
+          _totalDuration = duration;
+        });
+
+        if (!_hasRestoredProgress &&
+            widget.initialProgress != null &&
+            widget.initialProgress!.inSeconds > 0 &&
+            duration.inSeconds > 0) {
+          _hasRestoredProgress = true;
+          debugPrint('========== 恢复播放进度 ==========');
+          debugPrint('目标进度: ${widget.initialProgress!.inSeconds}秒');
+          debugPrint('视频总时长: ${duration.inSeconds}秒');
+          debugPrint('==================================');
+
+          final player = widget.playbackService.player;
+          Future.delayed(const Duration(milliseconds: 500), () {
+            if (mounted &&
+                player != null &&
+                player.state.duration.inSeconds > 0 &&
+                widget.initialProgress!.inSeconds <
+                    player.state.duration.inSeconds) {
+              player.seek(widget.initialProgress!);
+              debugPrint('进度恢复成功');
+            }
+          });
+        }
+      },
+      onAutoPlayNext: widget.onNextEpisode,
+    );
     _loadDanmakuConfig();
     _fullscreenNotifier = ValueNotifier(FullscreenVideoState(
       currentEpisode: widget.currentEpisode,
@@ -175,21 +228,12 @@ class _SmallscreenVideoState extends State<SmallscreenVideo> {
   }
 
   void _cancelPlayerSubscriptions() {
-    _bufferingSub?.cancel();
-    _playingSub?.cancel();
-    _positionSub?.cancel();
-    _durationSub?.cancel();
-    _completedSub?.cancel();
-    _bufferingSub = null;
-    _playingSub = null;
-    _positionSub = null;
-    _durationSub = null;
-    _completedSub = null;
+    _playerListenerController.cancel();
   }
 
   @override
   void dispose() {
-    _cancelPlayerSubscriptions();
+    _playerListenerController.dispose();
     _danmakuBroadcasterService.clear();
     _fullscreenNotifier.dispose();
     _hideTimer?.cancel();
@@ -305,89 +349,11 @@ class _SmallscreenVideoState extends State<SmallscreenVideo> {
       if (mounted && widget.videoUrl.isNotEmpty) {
         await widget.playbackService.play(widget.videoUrl);
 
-        final player = widget.playbackService.player;
-        if (player != null) {
-          _cancelPlayerSubscriptions();
-          _bufferingSub = player.stream.buffering.listen((buffering) {
-            if (mounted) {
-              setState(() {
-                _isBuffering = buffering;
-              });
-            }
-          });
-
-          _playingSub = player.stream.playing.listen((playing) {
-            if (mounted) {
-              setState(() {
-                _isPlaying = playing;
-              });
-            }
-          });
-
-          _positionSub = player.stream.position.listen((position) {
-            if (mounted && !_isDragging) {
-              setState(() {
-                _currentPosition = position;
-              });
-
-              // 发送弹幕
-              if (widget.isDanmakuEnabled && _isPlaying) {
-                final currentSecond = position.inSeconds;
-                if ((currentSecond - _lastDanmakuSecond).abs() > 2) {
-                  _lastDanmakuSecond = currentSecond;
-                  _sendDanmakuWindow(currentSecond);
-                } else if (currentSecond != _lastDanmakuSecond) {
-                  _lastDanmakuSecond = currentSecond;
-                  _sendDanmakuAtTime(currentSecond);
-                }
-              }
-            }
-          });
-
-          _durationSub = player.stream.duration.listen((duration) {
-            if (mounted) {
-              setState(() {
-                _totalDuration = duration;
-              });
-
-              // 当视频时长加载完成后,跳转到初始进度(只执行一次)
-              if (!_hasRestoredProgress &&
-                  widget.initialProgress != null &&
-                  widget.initialProgress!.inSeconds > 0 &&
-                  duration.inSeconds > 0) {
-                _hasRestoredProgress = true;
-                debugPrint('========== 恢复播放进度 ==========');
-                debugPrint('目标进度: ${widget.initialProgress!.inSeconds}秒');
-                debugPrint('视频总时长: ${duration.inSeconds}秒');
-                debugPrint('==================================');
-
-                // 延迟一小段时间再跳转,确保播放器完全准备好
-                Future.delayed(const Duration(milliseconds: 500), () {
-                  if (mounted &&
-                      player.state.duration.inSeconds > 0 &&
-                      widget.initialProgress!.inSeconds <
-                          player.state.duration.inSeconds) {
-                    player.seek(widget.initialProgress!);
-                    debugPrint('进度恢复成功');
-                  }
-                });
-              }
-            }
-          });
-
-          _completedSub = player.stream.completed.listen((completed) async {
-            if (!completed || !mounted) return;
-            // 确认进度接近结尾才触发(避免误触)
-            final pos = player.state.position.inSeconds;
-            final dur = player.state.duration.inSeconds;
-            if (dur <= 0 || pos < dur - 3) return;
-            final autoPlayNext =
-                await _playSettingsService.getAutoPlayNext();
-            if (autoPlayNext && widget.hasNextEpisode) {
-              widget.onNextEpisode?.call();
-            }
-          });
-        }
+        _cancelPlayerSubscriptions();
+        _playerListenerController.bind(
+          widget.playbackService.player,
+          hasNextEpisode: widget.hasNextEpisode,
+        );
 
         if (mounted) {
           setState(() {
@@ -423,15 +389,7 @@ class _SmallscreenVideoState extends State<SmallscreenVideo> {
   }
 
   String _formatDuration(Duration duration) {
-    final hours = duration.inHours;
-    final minutes = duration.inMinutes.remainder(60);
-    final seconds = duration.inSeconds.remainder(60);
-
-    if (hours > 0) {
-      return '${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
-    } else {
-      return '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
-    }
+    return formatVideoDuration(duration);
   }
 
   void _handleTap() {

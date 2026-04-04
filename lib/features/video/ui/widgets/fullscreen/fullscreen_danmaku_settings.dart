@@ -2,21 +2,21 @@ import 'package:canvas_danmaku/canvas_danmaku.dart';
 import 'package:flutter/material.dart';
 import 'package:mikomi/features/settings/danmaku/danmaku_setting_service.dart';
 
-class DanmakuSettingsBottomSheet extends StatefulWidget {
+class FullscreenDanmakuSettings extends StatefulWidget {
   final DanmakuController? danmakuController;
   final void Function(DanmakuConfig config)? onConfigChanged;
 
-  const DanmakuSettingsBottomSheet({
+  const FullscreenDanmakuSettings({
     super.key,
     this.danmakuController,
     this.onConfigChanged,
   });
 
   @override
-  State<DanmakuSettingsBottomSheet> createState() => _DanmakuSettingsBottomSheetState();
+  State<FullscreenDanmakuSettings> createState() => _FullscreenDanmakuSettingsState();
 }
 
-class _DanmakuSettingsBottomSheetState extends State<DanmakuSettingsBottomSheet>
+class _FullscreenDanmakuSettingsState extends State<FullscreenDanmakuSettings>
     with SingleTickerProviderStateMixin {
   late double _fontSize;
   late double _opacity;

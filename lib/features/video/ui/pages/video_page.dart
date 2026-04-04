@@ -16,7 +16,7 @@ import 'package:mikomi/features/video/state/video_state_manager.dart';
 import 'package:mikomi/features/video/ui/widgets/comment_tab_content.dart';
 import 'package:mikomi/features/video/ui/widgets/danmaku_overlay.dart';
 import 'package:mikomi/features/video/ui/widgets/episcode_tab_content.dart';
-import 'package:mikomi/features/video/ui/widgets/video_player_area.dart';
+import 'package:mikomi/features/video/ui/widgets/smallscreen/smallscreen_area.dart';
 import 'package:mikomi/features/video/ui/widgets/video_tab.dart';
 
 class VideoPage extends StatefulWidget {
