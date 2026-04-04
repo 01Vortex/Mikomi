@@ -15,10 +15,10 @@ import 'package:mikomi/features/video/parse/anti_anti_crawler/resource_filter.da
 import 'package:mikomi/features/video/parse/anti_anti_crawler/ua_dynamic_generation.dart';
 import 'package:mikomi/features/video/parse/anti_anti_crawler/webdriver_hider.dart';
 import 'package:mikomi/features/video/parse/parsing.dart';
+import 'package:mikomi/features/video/services/video_stream_service.dart';
 
 /// 平台 WebView 解析实现
-class ParsingAndroid
-    extends Parsing<InAppWebViewController> {
+class ParsingAndroid extends Parsing<InAppWebViewController> {
   HeadlessInAppWebView? headlessWebView;
   bool hasInjectedScripts = false;
 
@@ -84,12 +84,14 @@ class ParsingAndroid
       onWebViewCreated: (controller) async {
         debugPrint('[WebView] Created');
         webviewController = controller;
-        await controller.addUserScripts(userScripts: [
-          UserScript(
-            source: _stealthScript,
-            injectionTime: UserScriptInjectionTime.AT_DOCUMENT_START,
-          ),
-        ]);
+        await controller.addUserScripts(
+          userScripts: [
+            UserScript(
+              source: _stealthScript,
+              injectionTime: UserScriptInjectionTime.AT_DOCUMENT_START,
+            ),
+          ],
+        );
         initEventController.add(true);
       },
       shouldInterceptRequest: (controller, request) async {
@@ -114,8 +116,9 @@ class ParsingAndroid
         logEventController.add('Console: ${consoleMessage.message}');
       },
       onReceivedServerTrustAuthRequest: (controller, challenge) async {
-        logEventController
-            .add('ServerTrust challenge: ${challenge.protectionSpace.host}');
+        logEventController.add(
+          'ServerTrust challenge: ${challenge.protectionSpace.host}',
+        );
         return ServerTrustAuthResponse(
           action: ServerTrustAuthResponseAction.PROCEED,
         );
@@ -125,8 +128,12 @@ class ParsingAndroid
   }
 
   @override
-  Future<void> loadUrl(String url, bool useAlternativeParser,
-      {int offset = 0}) async {
+  Future<void> loadUrl(
+    String url,
+    bool useAlternativeParser, {
+    int offset = 0,
+    VideoStreamResolveOptions options = const VideoStreamResolveOptions(),
+  }) async {
     await unloadPage();
     if (!hasInjectedScripts) {
       _addJavaScriptHandlers(useAlternativeParser);
@@ -135,10 +142,11 @@ class ParsingAndroid
     }
     count = 0;
     this.offset = offset;
+    resolveOptions = options;
     isIframeLoaded = false;
     isVideoSourceLoaded = false;
     videoLoadingEventController.add(true);
-    await _runBeforeLoadStrategies(url, useAlternativeParser, offset);
+    await _runBeforeLoadStrategies(url, useAlternativeParser, offset, options);
     await Future.delayed(_requestDelay.nextDelay());
     await webviewController?.loadUrl(urlRequest: URLRequest(url: WebUri(url)));
   }
@@ -153,11 +161,16 @@ class ParsingAndroid
     if (headers == null) return false;
     final range = headers['Range'] ?? headers['range'];
     if (range == null || !range.startsWith('bytes=')) return false;
-    if (lower.endsWith('.js') || lower.endsWith('.css') ||
-        lower.endsWith('.html') || lower.endsWith('.json') ||
-        lower.endsWith('.png') || lower.endsWith('.jpg') ||
-        lower.endsWith('.gif') || lower.endsWith('.svg') ||
-        lower.endsWith('.woff') || lower.endsWith('.woff2') ||
+    if (lower.endsWith('.js') ||
+        lower.endsWith('.css') ||
+        lower.endsWith('.html') ||
+        lower.endsWith('.json') ||
+        lower.endsWith('.png') ||
+        lower.endsWith('.jpg') ||
+        lower.endsWith('.gif') ||
+        lower.endsWith('.svg') ||
+        lower.endsWith('.woff') ||
+        lower.endsWith('.woff2') ||
         lower.endsWith('.wasm')) {
       return false;
     }
@@ -177,53 +190,56 @@ class ParsingAndroid
   void _addJavaScriptHandlers(bool useAlternativeParser) {
     logEventController.add('Adding ParserLogBridge handler');
     webviewController?.addJavaScriptHandler(
-        handlerName: 'ParserLogBridge',
-        callback: (args) {
-          final message = args.isNotEmpty ? args[0].toString() : '';
-          if (message.contains('about:blank')) return;
-          logEventController.add(message);
-        });
+      handlerName: 'ParserLogBridge',
+      callback: (args) {
+        final message = args.isNotEmpty ? args[0].toString() : '';
+        if (message.contains('about:blank')) return;
+        logEventController.add(message);
+      },
+    );
     if (useAlternativeParser) {
       logEventController.add('Adding ParserCandidateBridge handler');
       webviewController?.addJavaScriptHandler(
-          handlerName: 'ParserCandidateBridge',
-          callback: (args) {
-            final message = args.isNotEmpty ? args[0].toString() : '';
-            logEventController.add('Callback received: $message');
-            if ((message.contains('http') || message.startsWith('//')) &&
-                !message.contains('googleads') &&
-                !message.contains('googlesyndication.com') &&
-                !message.contains('prestrain.html') &&
-                !message.contains('prestrain%2Ehtml') &&
-                !message.contains('adtrafficquality')) {
-              final encodedUrl = Uri.encodeFull(message);
-              final decoded = _decodeVideoSource(encodedUrl);
-              if (decoded != encodedUrl) {
-                isIframeLoaded = true;
-                isVideoSourceLoaded = true;
-                videoLoadingEventController.add(false);
-                logEventController.add('Loading video source $decoded');
-                unawaited(unloadPage());
-                videoParserEventController.add((decoded, offset));
-              }
-            }
-          });
-    } else {
-      logEventController.add('Adding ParserStreamBridge handler');
-      webviewController?.addJavaScriptHandler(
-          handlerName: 'ParserStreamBridge',
-          callback: (args) {
-            final message = args.isNotEmpty ? args[0].toString() : '';
-            logEventController.add('Callback received: $message');
-            if (message.contains('http') && !isVideoSourceLoaded) {
-              logEventController.add('Loading video source: $message');
+        handlerName: 'ParserCandidateBridge',
+        callback: (args) {
+          final message = args.isNotEmpty ? args[0].toString() : '';
+          logEventController.add('Callback received: $message');
+          if ((message.contains('http') || message.startsWith('//')) &&
+              !message.contains('googleads') &&
+              !message.contains('googlesyndication.com') &&
+              !message.contains('prestrain.html') &&
+              !message.contains('prestrain%2Ehtml') &&
+              !message.contains('adtrafficquality')) {
+            final encodedUrl = Uri.encodeFull(message);
+            final decoded = _decodeVideoSource(encodedUrl);
+            if (decoded != encodedUrl) {
               isIframeLoaded = true;
               isVideoSourceLoaded = true;
               videoLoadingEventController.add(false);
+              logEventController.add('Loading video source $decoded');
               unawaited(unloadPage());
-              videoParserEventController.add((message, offset));
+              videoParserEventController.add((decoded, offset));
             }
-          });
+          }
+        },
+      );
+    } else {
+      logEventController.add('Adding ParserStreamBridge handler');
+      webviewController?.addJavaScriptHandler(
+        handlerName: 'ParserStreamBridge',
+        callback: (args) {
+          final message = args.isNotEmpty ? args[0].toString() : '';
+          logEventController.add('Callback received: $message');
+          if (message.contains('http') && !isVideoSourceLoaded) {
+            logEventController.add('Loading video source: $message');
+            isIframeLoaded = true;
+            isVideoSourceLoaded = true;
+            videoLoadingEventController.add(false);
+            unawaited(unloadPage());
+            videoParserEventController.add((message, offset));
+          }
+        },
+      );
     }
   }
 
@@ -251,10 +267,12 @@ class ParsingAndroid
         });
         _observer.observe(document.documentElement, { childList: true, subtree: true, attributes: true, attributeFilter: ['src'] });
       """;
-      scripts.add(UserScript(
-        source: parserCandidateScript,
-        injectionTime: UserScriptInjectionTime.AT_DOCUMENT_START,
-      ));
+      scripts.add(
+        UserScript(
+          source: parserCandidateScript,
+          injectionTime: UserScriptInjectionTime.AT_DOCUMENT_START,
+        ),
+      );
     } else {
       logEventController.add('Adding ParserStreamBridge UserScripts');
       const String blobParserScript = """
@@ -350,8 +368,18 @@ class ParsingAndroid
         if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', setupVideoProcessing); }
         else { setupVideoProcessing(); }
       """;
-      scripts.add(UserScript(source: blobParserScript, injectionTime: UserScriptInjectionTime.AT_DOCUMENT_START));
-      scripts.add(UserScript(source: videoTagParserScript, injectionTime: UserScriptInjectionTime.AT_DOCUMENT_START));
+      scripts.add(
+        UserScript(
+          source: blobParserScript,
+          injectionTime: UserScriptInjectionTime.AT_DOCUMENT_START,
+        ),
+      );
+      scripts.add(
+        UserScript(
+          source: videoTagParserScript,
+          injectionTime: UserScriptInjectionTime.AT_DOCUMENT_START,
+        ),
+      );
     }
     await webviewController?.addUserScripts(userScripts: scripts);
   }
@@ -360,12 +388,14 @@ class ParsingAndroid
     String requestUrl,
     bool useAlternativeParser,
     int offset,
+    VideoStreamResolveOptions options,
   ) async {
     final context = AntiAntiCrawlerContext(
       controller: webviewController,
       requestUrl: requestUrl,
       useAlternativeParser: useAlternativeParser,
       offset: offset,
+      options: options,
     );
     _proxyStrategy.nextProxy();
     _cookieManager.save('last_request_url', requestUrl);
@@ -378,11 +408,14 @@ class ParsingAndroid
       requestUrl: requestUrl,
       useAlternativeParser: false,
       offset: offset,
+      options: resolveOptions,
     );
     await _antiAntiCrawler.onAfterLoad(context);
+    await _captchaHandler.onAfterLoad(context);
 
     final html = await webviewController?.evaluateJavascript(
-      source: 'document.documentElement ? document.documentElement.outerHTML : "";',
+      source:
+          'document.documentElement ? document.documentElement.outerHTML : "";',
     );
     final htmlText = html?.toString() ?? '';
     if (_captchaHandler.detect(htmlText)) {
@@ -401,8 +434,9 @@ class ParsingAndroid
 
   @override
   Future<void> unloadPage() async {
-    await webviewController
-        ?.loadUrl(urlRequest: URLRequest(url: WebUri('about:blank')));
+    await webviewController?.loadUrl(
+      urlRequest: URLRequest(url: WebUri('about:blank')),
+    );
   }
 
   @override

@@ -68,7 +68,12 @@ class VideoService {
         final href = resultNode.attributes['href'] ?? '';
         if (name.isEmpty || href.isEmpty) continue;
 
-        results.add(SearchResult(name: name, url: _buildAbsoluteUrl(plugin.baseURL, href)));
+        results.add(
+          SearchResult(
+            name: name,
+            url: _buildAbsoluteUrl(plugin.baseURL, href),
+          ),
+        );
       }
 
       return results;
@@ -118,6 +123,12 @@ class VideoService {
       pageUrl,
       useAlternativeParser: plugin.useLegacyParser,
       timeout: const Duration(seconds: 45),
+      options: VideoStreamResolveOptions(
+        captchaType: plugin.antiCrawlerConfig.captchaType,
+        captchaImageXpath: plugin.antiCrawlerConfig.captchaImage,
+        captchaInputXpath: plugin.antiCrawlerConfig.captchaInput,
+        captchaButtonXpath: plugin.antiCrawlerConfig.captchaButton,
+      ),
     );
     return source.url;
   }
@@ -173,7 +184,11 @@ class VideoService {
 
         if (chapterUrls.isNotEmpty && chapterNames.isNotEmpty) {
           roadList.add(
-            Road(name: '播放列表$count', data: chapterUrls, identifier: chapterNames),
+            Road(
+              name: '播放列表$count',
+              data: chapterUrls,
+              identifier: chapterNames,
+            ),
           );
           count++;
         }
@@ -188,8 +203,14 @@ class VideoService {
     }
   }
 
-  void _throwIfCaptchaRequired(String html, VideoPlugin plugin, String pageUrl) {
-    if (!_looksLikeCaptchaPage(html) || !plugin.antiCrawlerConfig.enabled) return;
+  void _throwIfCaptchaRequired(
+    String html,
+    VideoPlugin plugin,
+    String pageUrl,
+  ) {
+    if (!_looksLikeCaptchaPage(html) || !plugin.antiCrawlerConfig.enabled) {
+      return;
+    }
 
     throw VideoCaptchaRequiredException(
       pluginName: plugin.name,
@@ -251,8 +272,10 @@ class VideoService {
     if (candidates.isEmpty) return null;
 
     candidates.sort((a, b) {
-      final aDiff = (_normalizeTitle(a.name).length - normalizedKeyword.length).abs();
-      final bDiff = (_normalizeTitle(b.name).length - normalizedKeyword.length).abs();
+      final aDiff = (_normalizeTitle(a.name).length - normalizedKeyword.length)
+          .abs();
+      final bDiff = (_normalizeTitle(b.name).length - normalizedKeyword.length)
+          .abs();
       return aDiff.compareTo(bDiff);
     });
 
@@ -265,7 +288,9 @@ class VideoService {
       episodes.add(
         Episode.fromRoadData(
           index: i,
-          identifier: i < road.identifier.length ? road.identifier[i] : '第${i + 1}集',
+          identifier: i < road.identifier.length
+              ? road.identifier[i]
+              : '第${i + 1}集',
           url: road.data[i],
         ),
       );

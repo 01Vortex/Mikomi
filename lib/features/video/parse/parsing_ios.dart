@@ -2,10 +2,10 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:mikomi/features/video/parse/parsing.dart';
+import 'package:mikomi/features/video/services/video_stream_service.dart';
 
 /// 平台 WebView 解析实现
-class ParsingIos
-    extends Parsing<InAppWebViewController> {
+class ParsingIos extends Parsing<InAppWebViewController> {
   HeadlessInAppWebView? headlessWebView;
   bool hasRegisteredHandlers = false;
   bool _useAlternativeParser = false;
@@ -57,7 +57,9 @@ class ParsingIos
         logEventController.add('Console: ${consoleMessage.message}');
       },
       onReceivedServerTrustAuthRequest: (controller, challenge) async {
-        logEventController.add('ServerTrust challenge: ${challenge.protectionSpace.host}');
+        logEventController.add(
+          'ServerTrust challenge: ${challenge.protectionSpace.host}',
+        );
         return ServerTrustAuthResponse(
           action: ServerTrustAuthResponseAction.PROCEED,
         );
@@ -67,8 +69,12 @@ class ParsingIos
   }
 
   @override
-  Future<void> loadUrl(String url, bool useAlternativeParser,
-      {int offset = 0}) async {
+  Future<void> loadUrl(
+    String url,
+    bool useAlternativeParser, {
+    int offset = 0,
+    VideoStreamResolveOptions options = const VideoStreamResolveOptions(),
+  }) async {
     await unloadPage();
     if (!hasRegisteredHandlers) {
       _addJavaScriptHandlers(useAlternativeParser);
@@ -76,6 +82,7 @@ class ParsingIos
     }
     count = 0;
     this.offset = offset;
+    resolveOptions = options;
     _useAlternativeParser = useAlternativeParser;
     isIframeLoaded = false;
     isVideoSourceLoaded = false;
@@ -85,51 +92,55 @@ class ParsingIos
 
   void _addJavaScriptHandlers(bool useAlternativeParser) {
     webviewController?.addJavaScriptHandler(
-        handlerName: 'ParserLogBridge',
-        callback: (args) {
-          final message = args.isNotEmpty ? args[0].toString() : '';
-          if (message.contains('about:blank')) return;
-          logEventController.add(message);
-        });
+      handlerName: 'ParserLogBridge',
+      callback: (args) {
+        final message = args.isNotEmpty ? args[0].toString() : '';
+        if (message.contains('about:blank')) return;
+        logEventController.add(message);
+      },
+    );
     if (useAlternativeParser) {
       webviewController?.addJavaScriptHandler(
-          handlerName: 'ParserCandidateBridge',
-          callback: (args) {
-            final message = args.isNotEmpty ? args[0].toString() : '';
-            if ((message.contains('http') || message.startsWith('//')) &&
-                !message.contains('googleads') &&
-                !message.contains('googlesyndication.com') &&
-                !message.contains('adtrafficquality')) {
-              final encodedUrl = Uri.encodeFull(message);
-              final decoded = _decodeVideoSource(encodedUrl);
-              if (decoded != encodedUrl) {
-                isIframeLoaded = true;
-                isVideoSourceLoaded = true;
-                videoLoadingEventController.add(false);
-                unawaited(unloadPage());
-                videoParserEventController.add((decoded, offset));
-              }
-            }
-          });
-    } else {
-      webviewController?.addJavaScriptHandler(
-          handlerName: 'ParserStreamBridge',
-          callback: (args) {
-            final message = args.isNotEmpty ? args[0].toString() : '';
-            if (message.contains('http') && !isVideoSourceLoaded) {
+        handlerName: 'ParserCandidateBridge',
+        callback: (args) {
+          final message = args.isNotEmpty ? args[0].toString() : '';
+          if ((message.contains('http') || message.startsWith('//')) &&
+              !message.contains('googleads') &&
+              !message.contains('googlesyndication.com') &&
+              !message.contains('adtrafficquality')) {
+            final encodedUrl = Uri.encodeFull(message);
+            final decoded = _decodeVideoSource(encodedUrl);
+            if (decoded != encodedUrl) {
               isIframeLoaded = true;
               isVideoSourceLoaded = true;
               videoLoadingEventController.add(false);
               unawaited(unloadPage());
-              videoParserEventController.add((message, offset));
+              videoParserEventController.add((decoded, offset));
             }
-          });
+          }
+        },
+      );
+    } else {
+      webviewController?.addJavaScriptHandler(
+        handlerName: 'ParserStreamBridge',
+        callback: (args) {
+          final message = args.isNotEmpty ? args[0].toString() : '';
+          if (message.contains('http') && !isVideoSourceLoaded) {
+            isIframeLoaded = true;
+            isVideoSourceLoaded = true;
+            videoLoadingEventController.add(false);
+            unawaited(unloadPage());
+            videoParserEventController.add((message, offset));
+          }
+        },
+      );
     }
   }
 
   Future<void> _onLoadStart() async {
     if (_useAlternativeParser || isVideoSourceLoaded) return;
-    await webviewController?.evaluateJavascript(source: """
+    await webviewController?.evaluateJavascript(
+      source: """
       (function() {
         function hookFetch(win) {
           try {
@@ -183,12 +194,14 @@ class ParsingIos
         if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',setupIframes);
         else setupIframes();
       })();
-    """);
+    """,
+    );
   }
 
   Future<void> _onLoadStop() async {
     if (!_useAlternativeParser && !isVideoSourceLoaded) {
-      await webviewController?.evaluateJavascript(source: """
+      await webviewController?.evaluateJavascript(
+        source: """
         (function() {
           function pv(video) {
             var src=video.getAttribute('src');
@@ -203,17 +216,20 @@ class ParsingIos
           });
           if(document.body)obs.observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['src']});
         })();
-      """);
+      """,
+      );
     }
     if (_useAlternativeParser && !isVideoSourceLoaded) {
-      await webviewController?.evaluateJavascript(source: """
+      await webviewController?.evaluateJavascript(
+        source: """
         (function() {
           function pi(iframe){var src=iframe.getAttribute('src');if(src)window.flutter_inappwebview.callHandler('ParserCandidateBridge',src);}
           var ifs=document.querySelectorAll('iframe');for(var i=0;i<ifs.length;i++)pi(ifs[i]);
           var obs=new MutationObserver(function(ms){ms.forEach(function(m){if(m.type==='attributes'&&m.target.nodeName==='IFRAME')pi(m.target);m.addedNodes.forEach(function(node){if(node.nodeName==='IFRAME')pi(node);if(node.querySelectorAll){var fs=node.querySelectorAll('iframe');for(var i=0;i<fs.length;i++)pi(fs[i]);}});});});
           obs.observe(document.documentElement,{childList:true,subtree:true,attributes:true,attributeFilter:['src']});
         })();
-      """);
+      """,
+      );
     }
     _startVideoParserTimer();
   }
@@ -232,11 +248,15 @@ class ParsingIos
   Future<void> _pollVideoSource() async {
     if (isVideoSourceLoaded) return;
     if (_useAlternativeParser) {
-      await webviewController?.evaluateJavascript(source:
-          "(function(){var ifs=document.querySelectorAll('iframe');for(var i=0;i<ifs.length;i++){var src=ifs[i].getAttribute('src');if(src)window.flutter_inappwebview.callHandler('ParserCandidateBridge',src);}})();");
+      await webviewController?.evaluateJavascript(
+        source:
+            "(function(){var ifs=document.querySelectorAll('iframe');for(var i=0;i<ifs.length;i++){var src=ifs[i].getAttribute('src');if(src)window.flutter_inappwebview.callHandler('ParserCandidateBridge',src);}})();",
+      );
     } else {
-      await webviewController?.evaluateJavascript(source:
-          "(function(){var vs=document.querySelectorAll('video');for(var i=0;i<vs.length;i++){var src=vs[i].getAttribute('src');if(src&&src.trim()!==''&&src.indexOf('blob:')!==0&&src.indexOf('googleads')===-1){window.flutter_inappwebview.callHandler('ParserStreamBridge',src);return;}}})();");
+      await webviewController?.evaluateJavascript(
+        source:
+            "(function(){var vs=document.querySelectorAll('video');for(var i=0;i<vs.length;i++){var src=vs[i].getAttribute('src');if(src&&src.trim()!==''&&src.indexOf('blob:')!==0&&src.indexOf('googleads')===-1){window.flutter_inappwebview.callHandler('ParserStreamBridge',src);return;}}})();",
+      );
     }
   }
 
@@ -244,8 +264,9 @@ class ParsingIos
   Future<void> unloadPage() async {
     videoParserTimer?.cancel();
     videoParserTimer = null;
-    await webviewController
-        ?.loadUrl(urlRequest: URLRequest(url: WebUri('about:blank')));
+    await webviewController?.loadUrl(
+      urlRequest: URLRequest(url: WebUri('about:blank')),
+    );
   }
 
   @override
@@ -267,25 +288,35 @@ class ParsingIos
     if (headers == null) return false;
     final range = headers['Range'] ?? headers['range'];
     if (range == null || !range.startsWith('bytes=')) return false;
-    if (lower.endsWith('.js') || lower.endsWith('.css') || lower.endsWith('.html') ||
-        lower.endsWith('.json') || lower.endsWith('.png') || lower.endsWith('.jpg') ||
-        lower.endsWith('.gif') || lower.endsWith('.svg') || lower.endsWith('.woff') ||
-        lower.endsWith('.woff2') || lower.endsWith('.wasm')) {
+    if (lower.endsWith('.js') ||
+        lower.endsWith('.css') ||
+        lower.endsWith('.html') ||
+        lower.endsWith('.json') ||
+        lower.endsWith('.png') ||
+        lower.endsWith('.jpg') ||
+        lower.endsWith('.gif') ||
+        lower.endsWith('.svg') ||
+        lower.endsWith('.woff') ||
+        lower.endsWith('.woff2') ||
+        lower.endsWith('.wasm')) {
       return false;
     }
     return true;
   }
 
   bool _isAdUrl(String lower) {
-    return lower.contains('googleads') || lower.contains('googlesyndication') ||
-        lower.contains('adtrafficquality') || lower.contains('doubleclick');
+    return lower.contains('googleads') ||
+        lower.contains('googlesyndication') ||
+        lower.contains('adtrafficquality') ||
+        lower.contains('doubleclick');
   }
 
   String _decodeVideoSource(String iframeUrl) {
     final decodedUrl = Uri.decodeFull(iframeUrl);
     final regExp = RegExp(
-        r'(http[s]?://.*?\.m3u8)|(http[s]?://.*?\.mp4)',
-        caseSensitive: false);
+      r'(http[s]?://.*?\.m3u8)|(http[s]?://.*?\.mp4)',
+      caseSensitive: false,
+    );
     final uri = Uri.tryParse(decodedUrl);
     if (uri == null) return Uri.encodeFull(decodedUrl);
     String matchedUrl = iframeUrl;

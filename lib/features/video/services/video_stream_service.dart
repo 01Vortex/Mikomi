@@ -22,12 +22,33 @@ class ParsedVideoStream {
       'ParsedVideoStream(url: $url, offset: $offset, type: $type)';
 }
 
+class VideoStreamResolveOptions {
+  final int captchaType;
+  final String captchaImageXpath;
+  final String captchaInputXpath;
+  final String captchaButtonXpath;
+
+  const VideoStreamResolveOptions({
+    this.captchaType = 0,
+    this.captchaImageXpath = '',
+    this.captchaInputXpath = '',
+    this.captchaButtonXpath = '',
+  });
+
+  bool get hasCaptchaConfig =>
+      captchaType > 0 ||
+      captchaImageXpath.isNotEmpty ||
+      captchaInputXpath.isNotEmpty ||
+      captchaButtonXpath.isNotEmpty;
+}
+
 abstract class VideoStreamService {
   Future<ParsedVideoStream> resolveFromPage(
     String episodeUrl, {
     required bool useAlternativeParser,
     int offset = 0,
     Duration timeout = const Duration(seconds: 45),
+    VideoStreamResolveOptions options = const VideoStreamResolveOptions(),
   });
 
   void cancel();
@@ -45,6 +66,7 @@ class WebViewVideoStreamService implements VideoStreamService {
     required bool useAlternativeParser,
     int offset = 0,
     Duration timeout = const Duration(seconds: 45),
+    VideoStreamResolveOptions options = const VideoStreamResolveOptions(),
   }) async {
     _requestId++;
     final currentRequestId = _requestId;
@@ -61,7 +83,10 @@ class WebViewVideoStreamService implements VideoStreamService {
     try {
       await _parser!.loadUrl(
         episodeUrl,
-        useAlternativeParser, offset: offset);
+        useAlternativeParser,
+        offset: offset,
+        options: options,
+      );
 
       if (currentRequestId != _requestId) {
         throw const VideoStreamCancelledException();
@@ -99,7 +124,10 @@ class WebViewVideoStreamService implements VideoStreamService {
       if (currentRequestId != _requestId) {
         throw const VideoStreamCancelledException();
       }
-      throw VideoException(VideoExceptionCode.parseFailed, detail: e.toString());
+      throw VideoException(
+        VideoExceptionCode.parseFailed,
+        detail: e.toString(),
+      );
     } finally {
       if (currentRequestId == _requestId) {
         await _parser?.unloadPage();

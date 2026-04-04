@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:mikomi/features/video/parse/parsing_android.dart';
 import 'package:mikomi/features/video/parse/parsing_ios.dart';
+import 'package:mikomi/features/video/services/video_stream_service.dart';
 
 abstract class Parsing<T> {
   T? webviewController;
@@ -10,6 +11,7 @@ abstract class Parsing<T> {
   int offset = 0;
   bool isIframeLoaded = false;
   bool isVideoSourceLoaded = false;
+  VideoStreamResolveOptions resolveOptions = const VideoStreamResolveOptions();
 
   Future<void> init();
 
@@ -27,9 +29,16 @@ abstract class Parsing<T> {
 
   final StreamController<(String, int)> videoParserEventController =
       StreamController<(String, int)>.broadcast();
-  Stream<(String, int)> get onVideoURLParser => videoParserEventController.stream;
+  Stream<(String, int)> get onVideoURLParser =>
+      videoParserEventController.stream;
 
-  Future<void> loadUrl(String url, bool useAlternativeParser, {int offset = 0});
+  Future<void> loadUrl(
+    String url,
+    bool useAlternativeParser, {
+    int offset = 0,
+    VideoStreamResolveOptions options = const VideoStreamResolveOptions(),
+  });
+
   Future<void> unloadPage();
   void dispose();
 }
