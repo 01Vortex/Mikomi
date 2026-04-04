@@ -1,19 +1,21 @@
 import 'dart:async';
 import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:mikomi/features/video/ui/widgets/danmaku_overlay.dart';
-import 'package:mikomi/features/video/ui/widgets/comment_tab_content.dart';
-import 'package:mikomi/features/video/ui/widgets/video_tab.dart';
 import 'package:mikomi/features/anime/selector/video_source_selector.dart';
-import 'package:mikomi/features/settings/video_play/service/plugin_manager_service.dart';
-import 'package:mikomi/features/video/models/episode_model.dart';
-import 'package:mikomi/features/video/services/video_playback_service.dart';
 import 'package:mikomi/features/settings/danmaku/danmaku_setting_service.dart';
-import 'package:mikomi/features/video/state/video_state_manager.dart';
+import 'package:mikomi/features/settings/video_play/service/plugin_manager_service.dart';
+import 'package:mikomi/features/video/controller/video_page_controller.dart';
+import 'package:mikomi/features/video/models/episode_model.dart';
 import 'package:mikomi/features/video/services/video_page_service.dart';
-import 'package:mikomi/features/video/ui/widgets/video_player_area.dart';
+import 'package:mikomi/features/video/services/video_playback_service.dart';
+import 'package:mikomi/features/video/state/video_state_manager.dart';
+import 'package:mikomi/features/video/ui/widgets/comment_tab_content.dart';
+import 'package:mikomi/features/video/ui/widgets/danmaku_overlay.dart';
 import 'package:mikomi/features/video/ui/widgets/episcode_tab_content.dart';
+import 'package:mikomi/features/video/ui/widgets/video_player_area.dart';
+import 'package:mikomi/features/video/ui/widgets/video_tab.dart';
 
 class VideoPage extends StatefulWidget {
   final String title;
@@ -27,6 +29,8 @@ class VideoPage extends StatefulWidget {
   final int? bangumiId;
   final String? coverUrl;
   final Duration? initialProgress;
+  final VideoPageService? pageService;
+  final VideoPlaybackService? playerController;
 
   const VideoPage({
     super.key,
@@ -41,6 +45,8 @@ class VideoPage extends StatefulWidget {
     this.bangumiId,
     this.coverUrl,
     this.initialProgress,
+    this.pageService,
+    this.playerController,
   });
 
   @override
@@ -49,31 +55,28 @@ class VideoPage extends StatefulWidget {
 
 class _VideoPageState extends State<VideoPage>
     with SingleTickerProviderStateMixin {
-  late TabController _tabController;
-  late VideoStateManager _state;
-  late VideoPageService _pageService;
-  late VideoPlaybackService _playerController;
+  late final TabController _tabController;
+  late final VideoPageController _controller;
 
   final TextEditingController _danmakuController = TextEditingController();
   final VideoPluginManager _pluginManager = VideoPluginManager();
 
-  Timer? _timeoutTimer;
-  Timer? _saveHistoryTimer;
-  Duration? _currentInitialProgress;
-
   @override
   void initState() {
     super.initState();
-    _pageService = VideoPageService();
-    _playerController = VideoPlaybackService();
-    _state = _pageService.initializeState(
+    _controller = VideoPageController(
+      title: widget.title,
+      videoUrl: widget.videoUrl,
       currentEpisode: widget.currentEpisode,
       episodes: widget.episodes,
-      videoUrl: widget.videoUrl,
-      pluginName: widget.pluginName,
+      sourceName: widget.pluginName,
+      initialProgress: widget.initialProgress,
+      animeTitle: widget.animeTitle,
+      animeName: widget.animeName,
+      bangumiId: widget.bangumiId,
+      pageService: widget.pageService,
+      playbackService: widget.playerController,
     );
-    _currentInitialProgress = widget.initialProgress;
-
     _tabController = TabController(length: 2, vsync: this);
 
     SystemChrome.setEnabledSystemUIMode(
@@ -81,162 +84,34 @@ class _VideoPageState extends State<VideoPage>
       overlays: [SystemUiOverlay.top, SystemUiOverlay.bottom],
     );
 
-    DanmakuSettingService().getShowDanmaku().then((v) {
-      if (!mounted) return;
-      setState(() {
-        _state = _pageService.updateDanmakuEnabled(_state, v);
-      });
+    DanmakuSettingService().getShowDanmaku().then((enabled) {
+      if (!mounted || _controller.isDisposed) {
+        return;
+      }
+      _controller.setDanmakuEnabled(enabled);
     });
 
-    final initResult = _pageService.initializeVideoUrl(
-      state: _state,
-      animeTitle: widget.animeTitle,
-    );
-    _state = initResult.state;
-
-    _setupTimers();
-    if (initResult.shouldLoadEpisodes) {
-      _loadEpisodesIfNeeded();
-    } else if (_state.isResolvingVideo) {
-      unawaited(_resolveCurrentVideoUrl());
-    }
+    _controller.initialize();
     _loadFallbackVideoSources();
   }
 
-  void _setupTimers() {
-    final handles = _pageService.startTimers(
-      onTimeout: () {
-        if (!mounted) return;
-        setState(() {
-          _state = _pageService.showTimeoutHint(_state);
-        });
-      },
-      onSaveHistory: _saveHistoryModel,
-    );
-    _timeoutTimer = handles.timeoutTimer;
-    _saveHistoryTimer = handles.saveHistoryTimer;
-  }
-
-  void _restartTimeoutTimer() {
-    _timeoutTimer?.cancel();
-    _timeoutTimer = _pageService.restartTimeoutTimer(
-      onTimeout: () {
-        if (!mounted) return;
-        setState(() {
-          _state = _pageService.showTimeoutHint(_state);
-        });
-      },
-    );
-  }
-
-  void _loadEpisodesIfNeeded() {
-    if (_state.episodes.isEmpty && _state.currentPluginName != null) {
-      setState(() {
-        _state = _pageService.beginEpisodeLoading(_state);
-      });
-      unawaited(_loadEpisodesInBackground());
+  void _clearDanmakuInputIfNeeded(bool enabled) {
+    if (!enabled) {
+      _danmakuController.clear();
     }
   }
 
-  Future<void> _loadEpisodesInBackground() async {
-    try {
-      final result = await _pageService.loadEpisodesInBackground(
-        state: _state,
-        animeTitle: widget.animeTitle,
-        animeName: widget.animeName,
-        bangumiId: widget.bangumiId,
-      );
-      if (!mounted) return;
-      setState(() {
-        _state = result.state;
-      });
-      if (result.shouldRefreshParsedUrlSilently) {
-        await _refreshParsedUrlSilently();
-      } else if (result.shouldUpdateCurrentVideoUrl) {
-        await _resolveCurrentVideoUrl();
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _state = _pageService.endEpisodeLoading(_state);
-        });
-      }
-    }
+  Future<void> _updateDanmakuEnabled(bool enabled) async {
+    _controller.setDanmakuEnabled(enabled);
+    _clearDanmakuInputIfNeeded(enabled);
+    await DanmakuSettingService().setShowDanmaku(enabled);
   }
 
-  Future<void> _refreshParsedUrlSilently() async {
-    final nextState = await _pageService.refreshParsedUrlSilently(_state);
-    if (!mounted || identical(nextState, _state)) {
-      return;
-    }
-    setState(() {
-      _state = nextState;
-    });
-  }
-
-  Future<void> _resolveCurrentVideoUrl() async {
-    setState(() {
-      _state = _pageService.resetResolveState(_state);
-    });
-    _restartTimeoutTimer();
-    final nextState = await _pageService.resolveCurrentVideoUrl(_state);
-    if (!mounted) return;
-    setState(() {
-      _state = nextState;
-    });
-  }
-
-  Future<void> _playEpisode(Episode episode) async {
-    final nextState = _pageService.playEpisode(_state, episode);
-    if (nextState == null) return;
-    _saveHistoryModel();
-    await _playerController.stop();
-    if (!mounted) return;
-    setState(() {
-      _state = nextState;
-      _currentInitialProgress = null;
-    });
-    await _resolveCurrentVideoUrl();
-  }
-
-  Future<void> _playNextEpisode() async {
-    final ep = _pageService.getNextEpisode(_state);
-    if (ep == null) return;
-    await _playEpisode(ep);
-  }
-
-  Future<void> _playPreviousEpisode() async {
-    final ep = _pageService.getPreviousEpisode(_state);
-    if (ep == null) return;
-    await _playEpisode(ep);
-  }
-
-  Future<void> _switchVideoSource(VideoSource source) async {
-    setState(() {
-      _state = _pageService.beginSourceSwitch(_state);
-      _currentInitialProgress = null;
-    });
-    await _playerController.stop();
-    try {
-      final result = await _pageService.switchVideoSource(
-        state: _state,
-        source: source,
-        animeTitle: widget.animeTitle,
-        animeName: widget.animeName,
-        bangumiId: widget.bangumiId,
-      );
-      if (!mounted) return;
-      setState(() {
-        _state = result.state;
-      });
-      await _resolveCurrentVideoUrl();
-    } finally {
-      if (mounted) {
-        setState(() {
-          _state = _pageService.endEpisodeLoading(_state);
-        });
-      }
-    }
+  Future<void> _toggleDanmakuEnabled(bool currentEnabled) async {
+    final nextEnabled = !currentEnabled;
+    _controller.setDanmakuEnabled(nextEnabled);
+    _clearDanmakuInputIfNeeded(nextEnabled);
+    await DanmakuSettingService().setShowDanmaku(nextEnabled);
   }
 
   void _showVideoSourceSelector() {
@@ -245,12 +120,15 @@ class _VideoPageState extends State<VideoPage>
         ? widget.videoSources!
         : <VideoSource>[];
     if (sources.isEmpty) {
-      if (!mounted) return;
+      if (!mounted) {
+        return;
+      }
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('���޿�����ƵԴ')));
+      ).showSnackBar(const SnackBar(content: Text('暂无可用视频源')));
       return;
     }
+
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -260,7 +138,7 @@ class _VideoPageState extends State<VideoPage>
         animeTitle: widget.animeTitle,
         onSourceSelected: (source) {
           Navigator.pop(context);
-          _switchVideoSource(source);
+          _controller.switchVideoSource(source);
         },
       ),
     );
@@ -270,52 +148,18 @@ class _VideoPageState extends State<VideoPage>
     await _pluginManager.init();
   }
 
-  void _saveHistoryModel() {
-    _pageService.saveHistoryModel(
-      bangumiId: widget.bangumiId,
-      title: widget.title,
-      animeTitle: widget.animeTitle,
-      state: _state,
-      playerController: _playerController,
-    );
-  }
-
-  Future<void> _handleReassemble() async {
-    if (_state.isReassembling) return;
-    setState(() {
-      _state = _pageService.beginReassemble(_state);
-    });
-    try {
-      await _playerController.stop();
-      await Future.delayed(const Duration(milliseconds: 80));
-      if (mounted) {
-        await _resolveCurrentVideoUrl();
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _state = _pageService.endReassemble(_state);
-        });
-      }
-    }
-  }
-
   @override
   void reassemble() {
     super.reassemble();
-    unawaited(_handleReassemble());
+    unawaited(Future<void>(() async {
+      _controller.syncAfterReassemble();
+    }));
   }
 
   @override
   void dispose() {
-    _timeoutTimer?.cancel();
-    _saveHistoryTimer?.cancel();
-    _saveHistoryModel();
-    try {
-      _playerController.dispose();
-    } catch (e) {
-      debugPrint('�ͷŲ�����ʧ��: $e');
-    }
+    _controller.saveHistory();
+    unawaited(_controller.dispose());
     SystemChrome.setEnabledSystemUIMode(
       SystemUiMode.manual,
       overlays: [SystemUiOverlay.top, SystemUiOverlay.bottom],
@@ -333,7 +177,6 @@ class _VideoPageState extends State<VideoPage>
 
   @override
   Widget build(BuildContext context) {
-    final videoUrl = _state.resolvedVideoUrl;
     final availableHeight =
         MediaQuery.of(context).size.height - MediaQuery.of(context).padding.top;
     final videoHeight = math.min(
@@ -351,13 +194,9 @@ class _VideoPageState extends State<VideoPage>
       ),
       child: PopScope(
         canPop: true,
-        onPopInvokedWithResult: (didPop, result) async {
+        onPopInvokedWithResult: (didPop, result) {
           if (didPop) {
-            try {
-              await _playerController.dispose();
-            } catch (e) {
-              debugPrint('$e');
-            }
+            unawaited(_controller.disposePlaybackService());
           }
         },
         child: Scaffold(
@@ -372,135 +211,138 @@ class _VideoPageState extends State<VideoPage>
               Expanded(
                 child: Column(
                   children: [
-                    VideoPlayerArea(
-                      videoHeight: videoHeight,
-                      videoUrl: videoUrl,
-                      title: widget.title,
-                      currentEpisode: _state.currentEpisode,
-                      totalEpisodes: _state.totalEpisodes,
-                      playerController: _playerController,
-                      episodeTitle: _state.currentEpisodeTitle,
-                      onNextEpisode: _state.hasNextEpisode
-                          ? _playNextEpisode
-                          : null,
-                      onPreviousEpisode: _state.hasPreviousEpisode
-                          ? _playPreviousEpisode
-                          : null,
-                      hasNextEpisode: _state.hasNextEpisode,
-                      hasPreviousEpisode: _state.hasPreviousEpisode,
-                      initialProgress: _currentInitialProgress,
-                      episodes: _state.episodes,
-                      onEpisodeSelected: _playEpisode,
-                      isLoadingEpisodes: _state.isLoadingEpisodes,
-                      isDescending: _state.isDescending,
-                      onToggleSort: () {
-                        setState(() {
-                          _state = _pageService.toggleEpisodeSort(_state);
-                        });
+                    ValueListenableBuilder<VideoPlayerViewState>(
+                      valueListenable: _controller.playerViewNotifier,
+                      builder: (context, playerState, _) {
+                        return ValueListenableBuilder<Duration?>(
+                          valueListenable: _controller.initialProgressNotifier,
+                          builder: (context, initialProgress, _) {
+                            return VideoPlayerArea(
+                              videoHeight: videoHeight,
+                              videoUrl: playerState.resolvedVideoUrl,
+                              title: widget.title,
+                              currentEpisode: playerState.currentEpisodeNumber,
+                              totalEpisodes: playerState.totalEpisodes,
+                              playerController: _controller.playbackService,
+                              episodeTitle: playerState.currentEpisodeTitle,
+                              onNextEpisode: playerState.hasNextEpisode
+                                  ? _controller.playNextEpisode
+                                  : null,
+                              onPreviousEpisode: playerState.hasPreviousEpisode
+                                  ? _controller.playPreviousEpisode
+                                  : null,
+                              hasNextEpisode: playerState.hasNextEpisode,
+                              hasPreviousEpisode:
+                                  playerState.hasPreviousEpisode,
+                              initialProgress: initialProgress,
+                              episodes: playerState.episodes,
+                              onEpisodeSelected: _controller.playEpisode,
+                              isLoadingEpisodes:
+                                  playerState.isEpisodeListLoading,
+                              isDescending:
+                                  playerState.isEpisodeSortDescending,
+                              onToggleSort: _controller.toggleEpisodeSort,
+                              isDanmakuEnabled: playerState.isDanmakuEnabled,
+                              animeTitle: widget.animeTitle,
+                              bangumiId: widget.bangumiId,
+                              onDanmakuToggle: _updateDanmakuEnabled,
+                              isLoading: playerState.isResolvingVideo,
+                              hasError: playerState.hasPlaybackError,
+                              showTimeoutHint: playerState.showTimeoutNotice,
+                              onRetry: _controller.resolveCurrentVideoUrl,
+                            );
+                          },
+                        );
                       },
-                      isDanmakuEnabled: _state.isDanmakuEnabled,
-                      animeTitle: widget.animeTitle,
-                      bangumiId: widget.bangumiId,
-                      onDanmakuToggle: (enabled) {
-                        setState(() {
-                          _state = _pageService.updateDanmakuEnabled(
-                            _state,
-                            enabled,
-                          );
-                        });
-                        if (!enabled) {
-                          _danmakuController.clear();
-                        }
-                        DanmakuSettingService().setShowDanmaku(enabled);
-                      },
-                      isLoading: _state.isResolvingVideo,
-                      hasError: _state.hasParseError,
-                      showTimeoutHint: _state.showTimeoutHint,
-                      onRetry: _resolveCurrentVideoUrl,
                     ),
                     Expanded(
                       child: Container(
                         color: Theme.of(context).cardColor,
                         child: Column(
                           children: [
-                            VideoTab(
-                              tabController: _tabController,
-                              isDanmakuEnabled: _state.isDanmakuEnabled,
-                              isDanmakuInputExpanded:
-                                  _state.isDanmakuInputExpanded,
-                              onDanmakuToggle: () {
-                                final enabled = !_state.isDanmakuEnabled;
-                                setState(() {
-                                  _state = _pageService.updateDanmakuEnabled(
-                                    _state,
-                                    enabled,
-                                  );
-                                });
-                                if (!enabled) {
-                                  _danmakuController.clear();
-                                }
-                                DanmakuSettingService().setShowDanmaku(enabled);
+                            ValueListenableBuilder<VideoDanmakuViewState>(
+                              valueListenable: _controller.danmakuViewNotifier,
+                              builder: (context, danmakuState, _) {
+                                return ValueListenableBuilder<VideoSourceViewState>(
+                                  valueListenable: _controller.sourceViewNotifier,
+                                  builder: (context, sourceState, _) {
+                                    return VideoTab(
+                                      tabController: _tabController,
+                                      isDanmakuEnabled:
+                                          danmakuState.isDanmakuEnabled,
+                                      isDanmakuInputExpanded:
+                                          danmakuState.isInputExpanded,
+                                      onDanmakuToggle: () {
+                                        _toggleDanmakuEnabled(
+                                          danmakuState.isDanmakuEnabled,
+                                        );
+                                      },
+                                      onDanmakuInputTap:
+                                          _controller.expandDanmakuInput,
+                                      onVideoSourceTap: _showVideoSourceSelector,
+                                      currentPluginName:
+                                          sourceState.currentSourceName,
+                                    );
+                                  },
+                                );
                               },
-                              onDanmakuInputTap: () {
-                                setState(() {
-                                  _state = _pageService.expandDanmakuInput(
-                                    _state,
-                                  );
-                                });
-                              },
-                              onVideoSourceTap: _showVideoSourceSelector,
-                              currentPluginName: _state.currentPluginName,
                             ),
                             Expanded(
-                              child: TabBarView(
-                                controller: _tabController,
-                                physics: _state.isDanmakuEnabled
-                                    ? const NeverScrollableScrollPhysics()
-                                    : null,
-                                children: [
-                                  EpiscodeTabContent(
-                                    isLoading: _state.isLoadingEpisodes,
-                                    episodes: _state.episodes,
-                                    isDescending: _state.isDescending,
-                                    isEpisodesExpanded:
-                                        _state.isEpisodesExpanded,
-                                    currentEpisode: _state.currentEpisode,
-                                    onEpisodeSelected: _playEpisode,
-                                    onToggleExpand: () {
-                                      setState(() {
-                                        _state = _pageService
-                                            .toggleEpisodeExpand(_state);
-                                      });
+                              child: ValueListenableBuilder<VideoDanmakuViewState>(
+                                valueListenable: _controller.danmakuViewNotifier,
+                                builder: (context, danmakuState, _) {
+                                  return ValueListenableBuilder<VideoEpisodeViewState>(
+                                    valueListenable: _controller.episodeViewNotifier,
+                                    builder: (context, episodeState, _) {
+                                      return TabBarView(
+                                        controller: _tabController,
+                                        physics: danmakuState.isDanmakuEnabled
+                                            ? const NeverScrollableScrollPhysics()
+                                            : null,
+                                        children: [
+                                          EpiscodeTabContent(
+                                            isLoading: episodeState.isLoading,
+                                            episodes: episodeState.episodes,
+                                            isDescending: episodeState.isDescending,
+                                            isEpisodesExpanded:
+                                                episodeState.isExpanded,
+                                            currentEpisode:
+                                                episodeState.currentEpisodeNumber,
+                                            onEpisodeSelected:
+                                                _controller.playEpisode,
+                                            onToggleExpand:
+                                                _controller.toggleEpisodeListExpanded,
+                                            onToggleSort:
+                                                _controller.toggleEpisodeSort,
+                                          ),
+                                          const CommentTabContent.VideoComment(),
+                                        ],
+                                      );
                                     },
-                                    onToggleSort: () {
-                                      setState(() {
-                                        _state = _pageService.toggleEpisodeSort(
-                                          _state,
-                                        );
-                                      });
-                                    },
-                                  ),
-                                  const CommentTabContent.VideoComment(),
-                                ],
+                                  );
+                                },
                               ),
                             ),
-                            if (_state.isDanmakuInputExpanded)
-                              DanmakuInputBar(
-                                controller: _danmakuController,
-                                onSend: () {
-                                  if (_danmakuController.text.isNotEmpty) {
+                            ValueListenableBuilder<VideoDanmakuViewState>(
+                              valueListenable: _controller.danmakuViewNotifier,
+                              builder: (context, danmakuState, _) {
+                                if (!danmakuState.isInputExpanded) {
+                                  return const SizedBox.shrink();
+                                }
+                                return DanmakuInputBar(
+                                  controller: _danmakuController,
+                                  onSend: () {
+                                    if (_danmakuController.text.isNotEmpty) {
+                                      _danmakuController.clear();
+                                    }
+                                  },
+                                  onClose: () {
+                                    _controller.collapseDanmakuInput();
                                     _danmakuController.clear();
-                                  }
-                                },
-                                onClose: () {
-                                  setState(() {
-                                    _state = _pageService.collapseDanmakuInput(
-                                      _state,
-                                    );
-                                  });
-                                  _danmakuController.clear();
-                                },
-                              ),
+                                  },
+                                );
+                              },
+                            ),
                           ],
                         ),
                       ),
