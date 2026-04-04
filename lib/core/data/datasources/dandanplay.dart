@@ -77,4 +77,39 @@ class DanDanPlaySource {
     );
     return (response.data['comments'] as List?) ?? [];
   }
+
+  Future<int?> resolveEpisodeIdByBangumiId(int bangumiId, int episode) async {
+    final bangumiData = await fetchBangumiEpisodes(bangumiId);
+    final bangumi = bangumiData?['bangumi'];
+    final episodeList = bangumi is Map<String, dynamic>
+        ? (bangumi['episodes'] as List?) ?? const []
+        : (bangumiData?['episodes'] as List?) ?? const [];
+
+    for (final item in episodeList) {
+      if (item is! Map) continue;
+      final episodeNumber = item['episodeNumber'];
+      final episodeId = item['episodeId'];
+      final normalizedEpisodeNumber = int.tryParse('$episodeNumber');
+      if (normalizedEpisodeNumber == episode && episodeId is num) {
+        return episodeId.toInt();
+      }
+    }
+
+    return null;
+  }
+
+  Future<int?> resolveBangumiIdByTitle(String title) async {
+    final searchResult = await searchAnime(title);
+    final animeList = (searchResult?['animes'] as List?) ?? const [];
+
+    for (final item in animeList) {
+      if (item is! Map) continue;
+      final bangumiId = item['animeId'];
+      if (bangumiId is num) {
+        return bangumiId.toInt();
+      }
+    }
+
+    return null;
+  }
 }

@@ -3,11 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 import 'package:mikomi/config/app_theme.dart';
+import 'package:mikomi/features/video/controller/danmaku_controller.dart' as app_danmaku;
 import 'package:mikomi/features/video/models/episode_model.dart';
 import 'package:mikomi/features/video/services/video_playback_service.dart';
 import 'package:mikomi/features/video/ui/widgets/danmaku_overlay.dart';
-import 'package:mikomi/features/video/ui/widgets/smallscreen/smallscreen_video.dart';
 import 'package:mikomi/features/video/ui/widgets/fullscreen/fullscreen_video.dart';
+import 'package:mikomi/features/video/ui/widgets/smallscreen/smallscreen_video.dart';
 import 'package:mikomi/features/video/ui/widgets/video_fit.dart';
 import 'package:mikomi/features/settings/danmaku/danmaku_setting_service.dart';
 import 'package:mikomi/features/settings/video_play/service/play_setting_service.dart';
@@ -38,7 +39,8 @@ class FullscreenVideoPage extends StatefulWidget {
 
 class _FullscreenVideoPageState extends State<FullscreenVideoPage> {
   late FullscreenVideoState _state;
-  DanmakuController? _fullscreenDanmakuController;
+  DanmakuController<dynamic>? _fullscreenCanvasController;
+  late final app_danmaku.DanmakuController _videoDanmakuController;
   final PlaySettingsService _playSettingsService = PlaySettingsService();
   VideoFitMode _fitMode = VideoFitMode.contain;
   DanmakuConfig _danmakuConfig = const DanmakuConfig();
@@ -47,6 +49,8 @@ class _FullscreenVideoPageState extends State<FullscreenVideoPage> {
   void initState() {
     super.initState();
     _state = widget.stateNotifier.value;
+    _videoDanmakuController =
+        _state.danmakuController ?? app_danmaku.DanmakuController();
     widget.stateNotifier.addListener(_onStateChanged);
     _loadFitMode();
     _loadDanmakuConfig();
@@ -67,29 +71,19 @@ class _FullscreenVideoPageState extends State<FullscreenVideoPage> {
 
   void _onStateChanged() {
     if (!mounted) return;
-    final nextState = widget.stateNotifier.value;
-    if (nextState.danmakuBroadcasterService != _state.danmakuBroadcasterService &&
-        _fullscreenDanmakuController != null) {
-      _state.danmakuBroadcasterService?.unregister(
-        _fullscreenDanmakuController!,
-      );
-      nextState.danmakuBroadcasterService?.register(
-        _fullscreenDanmakuController!,
-      );
-    }
-    setState(() => _state = nextState);
+    setState(() => _state = widget.stateNotifier.value);
   }
 
   void _registerFullscreenController(DanmakuController controller) {
-    _fullscreenDanmakuController = controller;
-    _state.danmakuBroadcasterService?.register(controller);
+    _fullscreenCanvasController = controller;
+    _videoDanmakuController.attachCanvasController(controller);
   }
 
   @override
   void dispose() {
-    if (_fullscreenDanmakuController != null) {
-      _state.danmakuBroadcasterService?.unregister(
-        _fullscreenDanmakuController!,
+    if (_fullscreenCanvasController != null) {
+      _videoDanmakuController.detachCanvasController(
+        _fullscreenCanvasController!,
       );
     }
     widget.stateNotifier.removeListener(_onStateChanged);
@@ -167,7 +161,8 @@ class _FullscreenVideoPageState extends State<FullscreenVideoPage> {
               currentEpisode: _state.currentEpisode,
               currentSmallTitle: _state.currentSmallTitle,
               isDanmakuEnabled: _state.isDanmakuEnabled,
-              danmakuController: _state.danmakuController,
+              danmakuController: _videoDanmakuController,
+              danmakuBroadcaster: _videoDanmakuController.danmakuBroadcaster,
               fitMode: _fitMode,
               onFitModeChanged: (mode) async {
                 setState(() => _fitMode = mode);
@@ -187,8 +182,6 @@ class _FullscreenVideoPageState extends State<FullscreenVideoPage> {
                 DanmakuSettingService().setShowDanmaku(enabled);
                 widget.stateNotifier.value = _state.copyWith(
                   isDanmakuEnabled: enabled,
-                  danmakuController: _state.danmakuController,
-                  danmakuBroadcasterService: _state.danmakuBroadcasterService,
                 );
               },
             ),

@@ -1,7 +1,8 @@
 import 'dart:async';
-import 'package:canvas_danmaku/canvas_danmaku.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:mikomi/features/video/controller/danmaku_broadcaster.dart';
+import 'package:mikomi/features/video/controller/danmaku_controller.dart' as app_danmaku;
 import 'package:mikomi/features/video/models/episode_model.dart';
 import 'package:mikomi/features/video/services/video_playback_service.dart';
 import 'package:mikomi/features/video/state/video_player_listener.dart';
@@ -30,7 +31,8 @@ class FullscreenVideoControls extends StatefulWidget {
   final bool isDescending;
   final VoidCallback? onToggleSort;
   final bool isDanmakuEnabled;
-  final DanmakuController? danmakuController;
+  final app_danmaku.DanmakuController? danmakuController;
+  final DanmakuBroadcaster? danmakuBroadcaster;
   final void Function(bool)? onDanmakuToggle;
   final VideoFitMode fitMode;
   final ValueChanged<VideoFitMode>? onFitModeChanged;
@@ -53,6 +55,7 @@ class FullscreenVideoControls extends StatefulWidget {
     this.onToggleSort,
     this.isDanmakuEnabled = false,
     this.danmakuController,
+    this.danmakuBroadcaster,
     this.onDanmakuToggle,
     this.fitMode = VideoFitMode.contain,
     this.onFitModeChanged,

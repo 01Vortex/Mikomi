@@ -2,15 +2,15 @@ import 'package:canvas_danmaku/canvas_danmaku.dart';
 import 'package:mikomi/features/video/models/danmaku_model.dart';
 
 class DanmakuBroadcaster {
-  final List<DanmakuController> _controllers = [];
+  final List<dynamic> _controllers = [];
 
-  void register(DanmakuController controller) {
+  void register(dynamic controller) {
     if (!_controllers.contains(controller)) {
       _controllers.add(controller);
     }
   }
 
-  void unregister(DanmakuController controller) {
+  void unregister(dynamic controller) {
     _controllers.remove(controller);
   }
 
@@ -26,8 +26,8 @@ class DanmakuBroadcaster {
                 ? DanmakuItemType.bottom
                 : DanmakuItemType.scroll,
       );
-      for (final ctrl in _controllers) {
-        ctrl.addDanmaku(item);
+      for (final controller in _controllers) {
+        (controller as DanmakuController).addDanmaku(item);
       }
     }
   }

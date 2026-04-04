@@ -1,10 +1,9 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:media_kit_video/media_kit_video.dart';
-import 'package:canvas_danmaku/canvas_danmaku.dart';
 import 'package:mikomi/features/video/controller/danmaku_broadcaster.dart';
+import 'package:mikomi/features/video/controller/danmaku_controller.dart' as app_danmaku;
 import 'package:mikomi/features/video/models/episode_model.dart';
-import 'package:mikomi/features/video/services/danmaku_service.dart';
 import 'package:mikomi/features/video/services/video_playback_service.dart';
 import 'package:mikomi/features/video/state/video_player_listener.dart';
 import 'package:mikomi/features/video/ui/pages/fullscreen_video_page.dart';
@@ -81,8 +80,6 @@ class _SmallscreenVideoState extends State<SmallscreenVideo> {
   bool _lockPanel = false;
   Timer? _hideTimer;
   bool _hasRestoredProgress = false; // 是否已恢复进度
-  int _lastLoadedEpisode = -1;
-  bool _isDanmakuLoading = false;
 
   // 手势控制相关(预留)
   Timer? _hideVolumeUITimer;
@@ -93,16 +90,14 @@ class _SmallscreenVideoState extends State<SmallscreenVideo> {
   Timer? _doubleTapTimer;
 
   // 弹幕控制
-  final DanmakuService _danmakuController = DanmakuService();
-  final DanmakuBroadcaster _danmakuBroadcasterService = DanmakuBroadcaster();
+  late final app_danmaku.DanmakuController _videoDanmakuController;
   late final VideoPlayerListenerController _playerListenerController;
-  int _lastDanmakuSecond = -1;
-  DanmakuController? _canvasController;
   DanmakuConfig _danmakuConfig = const DanmakuConfig();
 
   @override
   void initState() {
     super.initState();
+    _videoDanmakuController = app_danmaku.DanmakuController();
     _playerListenerController = VideoPlayerListenerController(
       onSnapshotChanged: (snapshot) {
         if (!mounted) return;
@@ -113,23 +108,7 @@ class _SmallscreenVideoState extends State<SmallscreenVideo> {
           _totalDuration = snapshot.duration;
         });
       },
-      onPositionChanged: (position) {
-        if (!mounted || _isDragging) return;
-        setState(() {
-          _currentPosition = position;
-        });
-
-        if (widget.isDanmakuEnabled && _isPlaying) {
-          final currentSecond = position.inSeconds;
-          if ((currentSecond - _lastDanmakuSecond).abs() > 2) {
-            _lastDanmakuSecond = currentSecond;
-            _sendDanmakuWindow(currentSecond);
-          } else if (currentSecond != _lastDanmakuSecond) {
-            _lastDanmakuSecond = currentSecond;
-            _sendDanmakuAtTime(currentSecond);
-          }
-        }
-      },
+      onPositionChanged: _handlePlaybackPositionChanged,
       onDurationChanged: (duration) {
         if (!mounted) return;
         setState(() {
@@ -171,8 +150,8 @@ class _SmallscreenVideoState extends State<SmallscreenVideo> {
       hasPreviousEpisode: widget.hasPreviousEpisode,
       currentSmallTitle: widget.currentSmallTitle,
       isDanmakuEnabled: widget.isDanmakuEnabled,
-      danmakuController: _canvasController,
-      danmakuBroadcasterService: _danmakuBroadcasterService,
+      danmakuController: _videoDanmakuController,
+      danmakuBroadcaster: _videoDanmakuController.danmakuBroadcaster,
     ));
     _initPlayer();
     _startControlsTimer();
@@ -184,7 +163,7 @@ class _SmallscreenVideoState extends State<SmallscreenVideo> {
     super.didUpdateWidget(oldWidget);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
-        _fullscreenNotifier.value = FullscreenVideoState(
+        _fullscreenNotifier.value = _fullscreenNotifier.value.copyWith(
           currentEpisode: widget.currentEpisode,
           episodes: widget.episodes,
           isLoadingEpisodes: widget.isLoadingEpisodes,
@@ -193,8 +172,8 @@ class _SmallscreenVideoState extends State<SmallscreenVideo> {
           hasPreviousEpisode: widget.hasPreviousEpisode,
           currentSmallTitle: widget.currentSmallTitle,
           isDanmakuEnabled: widget.isDanmakuEnabled,
-          danmakuController: _canvasController,
-          danmakuBroadcasterService: _danmakuBroadcasterService,
+          danmakuController: _videoDanmakuController,
+          danmakuBroadcaster: _videoDanmakuController.danmakuBroadcaster,
         );
       }
     });
@@ -204,7 +183,7 @@ class _SmallscreenVideoState extends State<SmallscreenVideo> {
       debugPrint(
         '弹幕开关状态变化: ${oldWidget.isDanmakuEnabled} -> ${widget.isDanmakuEnabled}',
       );
-      if (widget.isDanmakuEnabled && !_danmakuController.isLoaded) {
+      if (widget.isDanmakuEnabled && !_videoDanmakuController.isLoaded) {
         _loadDanmaku();
       }
     }
@@ -234,13 +213,12 @@ class _SmallscreenVideoState extends State<SmallscreenVideo> {
   @override
   void dispose() {
     _playerListenerController.dispose();
-    _danmakuBroadcasterService.clear();
+    _videoDanmakuController.dispose();
     _fullscreenNotifier.dispose();
     _hideTimer?.cancel();
     _hideVolumeUITimer?.cancel();
     _hideBrightnessUITimer?.cancel();
     _doubleTapTimer?.cancel();
-    _danmakuController.dispose();
     super.dispose();
   }
 
@@ -251,69 +229,41 @@ class _SmallscreenVideoState extends State<SmallscreenVideo> {
   }
 
   Future<void> _loadDanmaku() async {
-    debugPrint('========== 开始加载弹幕 ==========');
-    debugPrint('弹幕开关状态: ${widget.isDanmakuEnabled}');
-    debugPrint('番剧ID: ${widget.bangumiId}');
-    debugPrint('番剧标题: ${widget.animeTitle}');
-    debugPrint('当前集数: ${widget.currentEpisode}');
+    final int danmakuEpisodeNumber = _resolveDanmakuEpisodeNumber();
+    final bool didLoadDanmaku = await _videoDanmakuController.loadDanmaku(
+      isDanmakuEnabled: widget.isDanmakuEnabled,
+      episode: danmakuEpisodeNumber,
+      displayedEpisode: widget.currentEpisode,
+      bangumiId: widget.bangumiId,
+      animeTitle: widget.animeTitle,
+    );
 
-    if (!widget.isDanmakuEnabled) {
-      debugPrint('弹幕未开启,跳过加载');
-      debugPrint('==================================');
-      return;
-    }
-
-    if (_isDanmakuLoading) return;
-    if (_lastLoadedEpisode == widget.currentEpisode &&
-        _danmakuController.isLoaded) {
-      return;
-    }
-
-    _isDanmakuLoading = true;
-    bool loaded = false;
-
-    if (widget.bangumiId != null) {
-      loaded = await _danmakuController.loadDanmakuByBangumiId(
-        widget.bangumiId!,
-        widget.currentEpisode,
-        fallbackTitle: widget.animeTitle,
-      );
-    } else if (widget.animeTitle != null) {
-      loaded = await _danmakuController.loadDanmakuByTitle(
-        widget.animeTitle!,
-        widget.currentEpisode,
-      );
-    } else {
-      debugPrint('没有番剧ID或标题,无法加载弹幕');
-    }
-
-    _isDanmakuLoading = false;
-    _lastLoadedEpisode = widget.currentEpisode;
-
-    if (mounted && !loaded) {
-      final message = _danmakuController.lastError ?? '弹幕加载失败';
+    if (mounted && !didLoadDanmaku && widget.isDanmakuEnabled) {
+      final message = _videoDanmakuController.lastError ?? '弹幕加载失败';
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(message), duration: const Duration(seconds: 2)),
       );
     }
-
-    debugPrint('弹幕加载完成,已加载: ${_danmakuController.isLoaded}');
-    debugPrint('弹幕数据量: ${_danmakuController.danmakuMap.length} 秒');
-    debugPrint('==================================');
   }
 
-  void _sendDanmakuAtTime(int second) {
-    if (!widget.isDanmakuEnabled || !_danmakuController.isLoaded) {
-      return;
-    }
-    final danmakus = _danmakuController.getDanmakuAtTime(second);
-    _danmakuBroadcasterService.send(danmakus);
+  int _resolveDanmakuEpisodeNumber() {
+    final seasonEpisodeOffset = widget.episodes.isNotEmpty
+        ? widget.episodes.first.number - 1
+        : 0;
+    final resolvedEpisodeNumber = widget.currentEpisode + seasonEpisodeOffset;
+    return resolvedEpisodeNumber > 0 ? resolvedEpisodeNumber : widget.currentEpisode;
   }
 
-  void _sendDanmakuWindow(int second) {
-    _sendDanmakuAtTime(second - 1);
-    _sendDanmakuAtTime(second);
-    _sendDanmakuAtTime(second + 1);
+  void _handlePlaybackPositionChanged(Duration position) {
+    if (!mounted || _isDragging) return;
+    setState(() {
+      _currentPosition = position;
+    });
+    _videoDanmakuController.syncPlaybackPosition(
+      isDanmakuEnabled: widget.isDanmakuEnabled,
+      isPlaying: _isPlaying,
+      position: position,
+    );
   }
 
   void _startControlsTimer() {
@@ -480,25 +430,7 @@ class _SmallscreenVideoState extends State<SmallscreenVideo> {
             Positioned.fill(
               child: DanmakuLayer(
                 onControllerCreated: (controller) {
-                  _canvasController = controller;
-                  _danmakuBroadcasterService.register(controller);
-                  // 同步弹幕 broadcaster 到全屏状态
-                  WidgetsBinding.instance.addPostFrameCallback((_) {
-                    if (!mounted) return;
-                    _fullscreenNotifier.value = FullscreenVideoState(
-                      currentEpisode: _fullscreenNotifier.value.currentEpisode,
-                      episodes: _fullscreenNotifier.value.episodes,
-                      isLoadingEpisodes: _fullscreenNotifier.value.isLoadingEpisodes,
-                      isDescending: _fullscreenNotifier.value.isDescending,
-                      hasNextEpisode: _fullscreenNotifier.value.hasNextEpisode,
-                      hasPreviousEpisode: _fullscreenNotifier.value.hasPreviousEpisode,
-                      currentSmallTitle:
-                          _fullscreenNotifier.value.currentSmallTitle,
-                      isDanmakuEnabled: _fullscreenNotifier.value.isDanmakuEnabled,
-                      danmakuController: controller,
-                      danmakuBroadcasterService: _danmakuBroadcasterService,
-                    );
-                  });
+                  _videoDanmakuController.attachCanvasController(controller);
                 },
                 fontSize: _danmakuConfig.fontSize,
                 opacity: _danmakuConfig.opacity,
@@ -825,8 +757,8 @@ class FullscreenVideoState {
   final bool hasPreviousEpisode;
   final String? currentSmallTitle;
   final bool isDanmakuEnabled;
-  final DanmakuController? danmakuController;
-  final DanmakuBroadcaster? danmakuBroadcasterService;
+  final app_danmaku.DanmakuController? danmakuController;
+  final DanmakuBroadcaster? danmakuBroadcaster;
 
   const FullscreenVideoState({
     required this.currentEpisode,
@@ -838,7 +770,7 @@ class FullscreenVideoState {
     this.currentSmallTitle,
     this.isDanmakuEnabled = false,
     this.danmakuController,
-    this.danmakuBroadcasterService,
+    this.danmakuBroadcaster,
   });
 
   FullscreenVideoState copyWith({
@@ -850,8 +782,8 @@ class FullscreenVideoState {
     bool? hasPreviousEpisode,
     Object? currentSmallTitle = _sentinel,
     bool? isDanmakuEnabled,
-    DanmakuController? danmakuController,
-    DanmakuBroadcaster? danmakuBroadcasterService,
+    app_danmaku.DanmakuController? danmakuController,
+    DanmakuBroadcaster? danmakuBroadcaster,
   }) {
     return FullscreenVideoState(
       currentEpisode: currentEpisode ?? this.currentEpisode,
@@ -865,8 +797,7 @@ class FullscreenVideoState {
           : currentSmallTitle as String?,
       isDanmakuEnabled: isDanmakuEnabled ?? this.isDanmakuEnabled,
       danmakuController: danmakuController ?? this.danmakuController,
-      danmakuBroadcasterService:
-          danmakuBroadcasterService ?? this.danmakuBroadcasterService,
+      danmakuBroadcaster: danmakuBroadcaster ?? this.danmakuBroadcaster,
     );
   }
 
