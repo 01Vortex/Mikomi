@@ -145,7 +145,7 @@ class _PlayButtonState extends State<PlayButton> {
           currentEpisode: 1,
           episodes: const [],
           videoSources: widget.videoSources ?? const [],
-          pluginName: pluginName,
+          sourceName: pluginName,
           animeTitle: widget.animeTitle,
           animeName: widget.animeName,
           bangumiId: widget.bangumiId,

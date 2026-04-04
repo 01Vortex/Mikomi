@@ -1,9 +1,9 @@
 class Episode {
   final int number;
-  final String? title;
+  final String? smallTitle;
   final String? url;
 
-  Episode({required this.number, this.title, this.url});
+  Episode({required this.number, this.smallTitle, this.url});
 
   factory Episode.fromRoadData({
     required int index,
@@ -12,7 +12,7 @@ class Episode {
   }) {
     // 尝试从标题中提取集数编号，如"第1集"、"01"、"EP01"等
     final number = _extractEpisodeNumber(identifier) ?? (index + 1);
-    return Episode(number: number, title: identifier, url: url);
+    return Episode(number: number, smallTitle: identifier, url: url);
   }
 
   /// 从集数标题中提取数字，提取不到则返回 null

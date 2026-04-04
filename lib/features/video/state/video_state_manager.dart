@@ -27,7 +27,7 @@ class VideoPlaybackError extends VideoPlaybackPhase {
 class VideoPlayerViewState {
   final int currentEpisodeNumber;
   final int totalEpisodes;
-  final String? currentEpisodeTitle;
+  final String? currentSmallTitle;
   final List<Episode> episodes;
   final bool isEpisodeListLoading;
   final bool isEpisodeSortDescending;
@@ -40,7 +40,7 @@ class VideoPlayerViewState {
   const VideoPlayerViewState({
     required this.currentEpisodeNumber,
     required this.totalEpisodes,
-    required this.currentEpisodeTitle,
+    required this.currentSmallTitle,
     required this.episodes,
     required this.isEpisodeListLoading,
     required this.isEpisodeSortDescending,
@@ -136,7 +136,7 @@ class VideoStateManager {
     }
   }
 
-  String? get currentEpisodeTitle => currentEpisode?.title;
+  String? get currentSmallTitle => currentEpisode?.smallTitle;
 
   bool get hasNextEpisode => currentEpisodeNumber < totalEpisodes;
   bool get hasPreviousEpisode => currentEpisodeNumber > 1;
@@ -147,7 +147,7 @@ class VideoStateManager {
   VideoPlayerViewState get playerViewState => VideoPlayerViewState(
     currentEpisodeNumber: currentEpisodeNumber,
     totalEpisodes: totalEpisodes,
-    currentEpisodeTitle: currentEpisodeTitle,
+    currentSmallTitle: currentSmallTitle,
     episodes: episodes,
     isEpisodeListLoading: isEpisodeListLoading,
     isEpisodeSortDescending: isEpisodeSortDescending,

@@ -9,7 +9,7 @@ class VideoTab extends StatelessWidget {
   final VoidCallback onDanmakuToggle;
   final VoidCallback onDanmakuInputTap;
   final VoidCallback onVideoSourceTap;
-  final String? currentPluginName;
+  final String? currentSourceName;
 
   const VideoTab({
     super.key,
@@ -19,7 +19,7 @@ class VideoTab extends StatelessWidget {
     required this.onDanmakuToggle,
     required this.onDanmakuInputTap,
     required this.onVideoSourceTap,
-    required this.currentPluginName,
+    required this.currentSourceName,
   });
 
   @override
@@ -174,7 +174,7 @@ class VideoTab extends StatelessWidget {
         ),
         alignment: Alignment.center,
         child: Text(
-          currentPluginName ?? '视频源',
+          currentSourceName ?? '视频源',
           style: TextStyle(fontSize: 14, color: context.colors.textPrimary),
         ),
       ),

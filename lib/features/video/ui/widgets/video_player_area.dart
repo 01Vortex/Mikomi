@@ -9,8 +9,8 @@ class VideoPlayerArea extends StatelessWidget {
   final String title;
   final int currentEpisode;
   final int totalEpisodes;
-  final VideoPlaybackService playerController;
-  final String? episodeTitle;
+  final VideoPlaybackService playbackService;
+  final String? currentSmallTitle;
   final VoidCallback? onNextEpisode;
   final VoidCallback? onPreviousEpisode;
   final bool hasNextEpisode;
@@ -37,8 +37,8 @@ class VideoPlayerArea extends StatelessWidget {
     required this.title,
     required this.currentEpisode,
     required this.totalEpisodes,
-    required this.playerController,
-    this.episodeTitle,
+    required this.playbackService,
+    this.currentSmallTitle,
     this.onNextEpisode,
     this.onPreviousEpisode,
     required this.hasNextEpisode,
@@ -78,8 +78,8 @@ class VideoPlayerArea extends StatelessWidget {
                   title: title,
                   currentEpisode: currentEpisode,
                   totalEpisodes: totalEpisodes,
-                  playerController: playerController,
-                  episodeTitle: episodeTitle,
+                  playbackService: playbackService,
+                  currentSmallTitle: currentSmallTitle,
                   onNextEpisode: onNextEpisode,
                   onPreviousEpisode: onPreviousEpisode,
                   hasNextEpisode: hasNextEpisode,

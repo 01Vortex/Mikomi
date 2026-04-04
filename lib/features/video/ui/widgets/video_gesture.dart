@@ -7,13 +7,13 @@ import 'package:volume_controller/volume_controller.dart';
 
 class VideoGesture extends StatefulWidget {
   final Widget child;
-  final VideoPlaybackService? playerController;
+  final VideoPlaybackService playbackService;
   final bool enabled;
 
   const VideoGesture({
     super.key,
     required this.child,
-    this.playerController,
+    required this.playbackService,
     this.enabled = true,
   });
 
@@ -120,7 +120,7 @@ class _VideoGestureState extends State<VideoGesture>
     _startDragX = d.localPosition.dx;
     _isDragging = true;
     _gestureType = _GestureType.seek;
-    final player = widget.playerController?.player;
+    final player = widget.playbackService.player;
     if (player != null) {
       _totalDuration = player.state.duration.inSeconds.toDouble();
       _startPosition = player.state.position.inSeconds.toDouble();
@@ -142,7 +142,7 @@ class _VideoGestureState extends State<VideoGesture>
 
   void _onHorizontalDragEnd(DragEndDetails _) {
     if (_gestureType != _GestureType.seek) return;
-    final player = widget.playerController?.player;
+    final player = widget.playbackService.player;
     if (player != null && _totalDuration > 0) {
       player.seek(Duration(seconds: _seekPosition.round()));
     }
@@ -196,7 +196,7 @@ class _VideoGestureState extends State<VideoGesture>
   void _onLongPressStart(LongPressStartDetails _) {
     if (!widget.enabled) return;
     _isLongPressing = true;
-    final player = widget.playerController?.player;
+    final player = widget.playbackService.player;
     if (player != null) {
       _normalSpeed = player.state.rate;
       player.setRate(2.0);
@@ -209,7 +209,7 @@ class _VideoGestureState extends State<VideoGesture>
   void _onLongPressEnd(LongPressEndDetails _) {
     if (!_isLongPressing) return;
     _isLongPressing = false;
-    widget.playerController?.player?.setRate(_normalSpeed);
+    widget.playbackService.player?.setRate(_normalSpeed);
     _pulseController.stop();
     _pulseController.reset();
     setState(() => _showSpeedHud = false);
@@ -228,7 +228,7 @@ class _VideoGestureState extends State<VideoGesture>
         onHorizontalDragEnd: _onHorizontalDragEnd,
         onDoubleTap: () {
           if (!widget.enabled) return;
-          final player = widget.playerController?.player;
+          final player = widget.playbackService.player;
           if (player == null) return;
           if (player.state.playing) {
             player.pause();

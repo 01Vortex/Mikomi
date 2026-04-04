@@ -353,7 +353,7 @@ class VideoPageController {
       title: title,
       animeTitle: animeTitle,
       currentEpisodeNumber: _state.currentEpisodeNumber,
-      currentEpisodeTitle: _state.currentEpisodeTitle,
+      currentSmallTitle: _state.currentSmallTitle,
       currentSourceName: _state.currentSourceName,
       lastResolvedVideoUrl: _state.lastResolvedVideoUrl,
       playbackService: playbackService,

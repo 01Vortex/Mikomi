@@ -1,29 +1,29 @@
 import 'package:canvas_danmaku/canvas_danmaku.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:media_kit_video/media_kit_video.dart';
 import 'package:mikomi/config/app_theme.dart';
+import 'package:mikomi/features/video/models/episode_model.dart';
 import 'package:mikomi/features/video/services/video_playback_service.dart';
 import 'package:mikomi/features/video/ui/widgets/danmaku_overlay.dart';
-import 'package:mikomi/features/video/ui/widgets/fullscreen_video.dart';
 import 'package:mikomi/features/video/ui/widgets/smallscreen_video.dart';
+import 'package:mikomi/features/video/ui/widgets/fullscreen_video.dart';
 import 'package:mikomi/features/video/ui/widgets/video_fit.dart';
-import 'package:mikomi/features/video/models/episode_model.dart';
-import 'package:media_kit_video/media_kit_video.dart';
 import 'package:mikomi/features/settings/danmaku/danmaku_setting_service.dart';
 import 'package:mikomi/features/settings/video_play/service/play_setting_service.dart';
 
 class FullscreenVideoPage extends StatefulWidget {
-  final VideoPlaybackService playerController;
+  final VideoPlaybackService playbackService;
   final String title;
   final ValueNotifier<FullscreenVideoState> stateNotifier;
   final VoidCallback? onNextEpisode;
   final VoidCallback? onPreviousEpisode;
-  final Function(Episode)? onEpisodeSelected;
+  final ValueChanged<Episode>? onEpisodeSelected;
   final VoidCallback? onToggleSort;
 
   const FullscreenVideoPage({
     super.key,
-    required this.playerController,
+    required this.playbackService,
     required this.title,
     required this.stateNotifier,
     this.onNextEpisode,
@@ -67,14 +67,17 @@ class _FullscreenVideoPageState extends State<FullscreenVideoPage> {
 
   void _onStateChanged() {
     if (!mounted) return;
-    final newState = widget.stateNotifier.value;
-    // broadcaster 更新时重新注册
-    if (newState.danmakuBroadcasterService != _state.danmakuBroadcasterService &&
+    final nextState = widget.stateNotifier.value;
+    if (nextState.danmakuBroadcasterService != _state.danmakuBroadcasterService &&
         _fullscreenDanmakuController != null) {
-      _state.danmakuBroadcasterService?.unregister(_fullscreenDanmakuController!);
-      newState.danmakuBroadcasterService?.register(_fullscreenDanmakuController!);
+      _state.danmakuBroadcasterService?.unregister(
+        _fullscreenDanmakuController!,
+      );
+      nextState.danmakuBroadcasterService?.register(
+        _fullscreenDanmakuController!,
+      );
     }
-    setState(() => _state = newState);
+    setState(() => _state = nextState);
   }
 
   void _registerFullscreenController(DanmakuController controller) {
@@ -85,7 +88,9 @@ class _FullscreenVideoPageState extends State<FullscreenVideoPage> {
   @override
   void dispose() {
     if (_fullscreenDanmakuController != null) {
-      _state.danmakuBroadcasterService?.unregister(_fullscreenDanmakuController!);
+      _state.danmakuBroadcasterService?.unregister(
+        _fullscreenDanmakuController!,
+      );
     }
     widget.stateNotifier.removeListener(_onStateChanged);
     _exitFullscreen();
@@ -117,9 +122,9 @@ class _FullscreenVideoPageState extends State<FullscreenVideoPage> {
 
   @override
   Widget build(BuildContext context) {
-    final controller = widget.playerController.videoController;
+    final videoController = widget.playbackService.videoController;
 
-    if (controller == null) {
+    if (videoController == null) {
       return const Scaffold(
         backgroundColor: Colors.black,
         body: Center(child: CircularProgressIndicator(color: Colors.white)),
@@ -137,12 +142,11 @@ class _FullscreenVideoPageState extends State<FullscreenVideoPage> {
           children: [
             Positioned.fill(
               child: Video(
-                controller: controller,
+                controller: videoController,
                 controls: NoVideoControls,
                 fit: _fitMode.boxFit,
               ),
             ),
-            // 弹幕层：只要弹幕开启就渲染，broadcaster 有值时注册 controller
             if (_state.isDanmakuEnabled)
               Positioned.fill(
                 child: DanmakuLayer(
@@ -158,10 +162,10 @@ class _FullscreenVideoPageState extends State<FullscreenVideoPage> {
                 ),
               ),
             FullscreenVideoControls(
-              playerController: widget.playerController,
+              playbackService: widget.playbackService,
               title: widget.title,
               currentEpisode: _state.currentEpisode,
-              episodeTitle: _state.episodeTitle,
+              currentSmallTitle: _state.currentSmallTitle,
               isDanmakuEnabled: _state.isDanmakuEnabled,
               danmakuController: _state.danmakuController,
               fitMode: _fitMode,
@@ -181,14 +185,7 @@ class _FullscreenVideoPageState extends State<FullscreenVideoPage> {
               onToggleSort: widget.onToggleSort,
               onDanmakuToggle: (enabled) {
                 DanmakuSettingService().setShowDanmaku(enabled);
-                widget.stateNotifier.value = FullscreenVideoState(
-                  currentEpisode: _state.currentEpisode,
-                  episodes: _state.episodes,
-                  isLoadingEpisodes: _state.isLoadingEpisodes,
-                  isDescending: _state.isDescending,
-                  hasNextEpisode: _state.hasNextEpisode,
-                  hasPreviousEpisode: _state.hasPreviousEpisode,
-                  episodeTitle: _state.episodeTitle,
+                widget.stateNotifier.value = _state.copyWith(
                   isDanmakuEnabled: enabled,
                   danmakuController: _state.danmakuController,
                   danmakuBroadcasterService: _state.danmakuBroadcasterService,

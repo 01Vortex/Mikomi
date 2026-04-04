@@ -23,14 +23,14 @@ class VideoPage extends StatefulWidget {
   final int currentEpisode;
   final List<Episode> episodes;
   final List<VideoSource>? videoSources;
-  final String? pluginName;
+  final String? sourceName;
   final String? animeTitle;
   final String? animeName;
   final int? bangumiId;
   final String? coverUrl;
   final Duration? initialProgress;
   final VideoPageService? pageService;
-  final VideoPlaybackService? playerController;
+  final VideoPlaybackService? playbackService;
 
   const VideoPage({
     super.key,
@@ -39,14 +39,14 @@ class VideoPage extends StatefulWidget {
     this.currentEpisode = 1,
     required this.episodes,
     this.videoSources,
-    this.pluginName,
+    this.sourceName,
     this.animeTitle,
     this.animeName,
     this.bangumiId,
     this.coverUrl,
     this.initialProgress,
     this.pageService,
-    this.playerController,
+    this.playbackService,
   });
 
   @override
@@ -69,13 +69,13 @@ class _VideoPageState extends State<VideoPage>
       videoUrl: widget.videoUrl,
       currentEpisode: widget.currentEpisode,
       episodes: widget.episodes,
-      sourceName: widget.pluginName,
+      sourceName: widget.sourceName,
       initialProgress: widget.initialProgress,
       animeTitle: widget.animeTitle,
       animeName: widget.animeName,
       bangumiId: widget.bangumiId,
       pageService: widget.pageService,
-      playbackService: widget.playerController,
+      playbackService: widget.playbackService,
     );
     _tabController = TabController(length: 2, vsync: this);
 
@@ -216,8 +216,8 @@ class _VideoPageState extends State<VideoPage>
                               title: widget.title,
                               currentEpisode: playerState.currentEpisodeNumber,
                               totalEpisodes: playerState.totalEpisodes,
-                              playerController: _controller.playbackService,
-                              episodeTitle: playerState.currentEpisodeTitle,
+                              playbackService: _controller.playbackService,
+                              currentSmallTitle: playerState.currentSmallTitle,
                               onNextEpisode: playerState.hasNextEpisode
                                   ? _controller.playNextEpisode
                                   : null,
@@ -273,7 +273,7 @@ class _VideoPageState extends State<VideoPage>
                                       onDanmakuInputTap:
                                           _controller.expandDanmakuInput,
                                       onVideoSourceTap: _showVideoSourceSelector,
-                                      currentPluginName:
+                                      currentSourceName:
                                           sourceState.currentSourceName,
                                     );
                                   },
@@ -293,7 +293,7 @@ class _VideoPageState extends State<VideoPage>
                                             ? const NeverScrollableScrollPhysics()
                                             : null,
                                         children: [
-                                          EpiscodeTabContent(
+                                          EpisodeTabContent(
                                             isLoading: episodeState.isLoading,
                                             episodes: episodeState.episodes,
                                             isDescending: episodeState.isDescending,
@@ -331,7 +331,7 @@ class _VideoPageState extends State<VideoPage>
                                   },
                                   onClose: () {
                                     _controller.collapseDanmakuInput();
-                                    _danmakuController.clear();
+                                    _clearDanmakuInput();
                                   },
                                 );
                               },

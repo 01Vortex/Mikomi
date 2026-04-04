@@ -17,8 +17,8 @@ class SmallscreenVideo extends StatefulWidget {
   final String title;
   final int currentEpisode;
   final int totalEpisodes;
-  final VideoPlaybackService playerController;
-  final String? episodeTitle;
+  final VideoPlaybackService playbackService;
+  final String? currentSmallTitle;
   final VoidCallback? onBack;
   final VoidCallback? onOpenMenu;
   final VoidCallback? onNextEpisode;
@@ -42,8 +42,8 @@ class SmallscreenVideo extends StatefulWidget {
     required this.title,
     required this.currentEpisode,
     required this.totalEpisodes,
-    required this.playerController,
-    this.episodeTitle,
+    required this.playbackService,
+    this.currentSmallTitle,
     this.onBack,
     this.onOpenMenu,
     this.onNextEpisode,
@@ -116,7 +116,7 @@ class _SmallscreenVideoState extends State<SmallscreenVideo> {
       isDescending: widget.isDescending,
       hasNextEpisode: widget.hasNextEpisode,
       hasPreviousEpisode: widget.hasPreviousEpisode,
-      episodeTitle: widget.episodeTitle,
+      currentSmallTitle: widget.currentSmallTitle,
       isDanmakuEnabled: widget.isDanmakuEnabled,
       danmakuController: _canvasController,
       danmakuBroadcasterService: _danmakuBroadcasterService,
@@ -138,7 +138,7 @@ class _SmallscreenVideoState extends State<SmallscreenVideo> {
           isDescending: widget.isDescending,
           hasNextEpisode: widget.hasNextEpisode,
           hasPreviousEpisode: widget.hasPreviousEpisode,
-          episodeTitle: widget.episodeTitle,
+          currentSmallTitle: widget.currentSmallTitle,
           isDanmakuEnabled: widget.isDanmakuEnabled,
           danmakuController: _canvasController,
           danmakuBroadcasterService: _danmakuBroadcasterService,
@@ -300,12 +300,12 @@ class _SmallscreenVideoState extends State<SmallscreenVideo> {
     });
 
     try {
-      await widget.playerController.initialize(smallScreen: true);
+      await widget.playbackService.initialize(smallScreen: true);
 
       if (mounted && widget.videoUrl.isNotEmpty) {
-        await widget.playerController.play(widget.videoUrl);
+        await widget.playbackService.play(widget.videoUrl);
 
-        final player = widget.playerController.player;
+        final player = widget.playbackService.player;
         if (player != null) {
           _cancelPlayerSubscriptions();
           _bufferingSub = player.stream.buffering.listen((buffering) {
@@ -406,7 +406,7 @@ class _SmallscreenVideoState extends State<SmallscreenVideo> {
   }
 
   void _togglePlayPause() {
-    final player = widget.playerController.player;
+    final player = widget.playbackService.player;
     if (player == null) return;
 
     if (_isPlaying) {
@@ -417,7 +417,7 @@ class _SmallscreenVideoState extends State<SmallscreenVideo> {
   }
 
   void _seekTo(Duration position) {
-    final player = widget.playerController.player;
+    final player = widget.playbackService.player;
     if (player == null) return;
     player.seek(position);
   }
@@ -460,7 +460,7 @@ class _SmallscreenVideoState extends State<SmallscreenVideo> {
       PageRouteBuilder(
         pageBuilder: (context, animation, secondaryAnimation) =>
             FullscreenVideoPage(
-              playerController: widget.playerController,
+              playbackService: widget.playbackService,
               title: widget.title,
               stateNotifier: _fullscreenNotifier,
               onNextEpisode: widget.onNextEpisode,
@@ -490,19 +490,19 @@ class _SmallscreenVideoState extends State<SmallscreenVideo> {
 
   @override
   Widget build(BuildContext context) {
-    final controller = widget.playerController.videoController;
+    final controller = widget.playbackService.videoController;
     final bool showPlayer = _errorMessage == null &&
         !_isLoading &&
-        widget.playerController.isInitialized &&
+        widget.playbackService.isInitialized &&
         controller != null;
 
     return VideoGesture(
-      playerController: widget.playerController,
+      playbackService: widget.playbackService,
       enabled: showPlayer && !_lockPanel,
       child: GestureDetector(
         onTap: showPlayer ? _handleTap : null,
         onDoubleTap: showPlayer ? _handleDoubleTap : null,
-      child: Stack(
+        child: Stack(
         children: [
           // 背景
           Positioned.fill(child: Container(color: Colors.black)),
@@ -534,7 +534,8 @@ class _SmallscreenVideoState extends State<SmallscreenVideo> {
                       isDescending: _fullscreenNotifier.value.isDescending,
                       hasNextEpisode: _fullscreenNotifier.value.hasNextEpisode,
                       hasPreviousEpisode: _fullscreenNotifier.value.hasPreviousEpisode,
-                      episodeTitle: _fullscreenNotifier.value.episodeTitle,
+                      currentSmallTitle:
+                          _fullscreenNotifier.value.currentSmallTitle,
                       isDanmakuEnabled: _fullscreenNotifier.value.isDanmakuEnabled,
                       danmakuController: controller,
                       danmakuBroadcasterService: _danmakuBroadcasterService,
@@ -715,10 +716,10 @@ class _SmallscreenVideoState extends State<SmallscreenVideo> {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  if (widget.episodeTitle != null &&
-                      widget.episodeTitle!.isNotEmpty)
+                  if (widget.currentSmallTitle != null &&
+                      widget.currentSmallTitle!.isNotEmpty)
                     Text(
-                      '第${widget.currentEpisode}集 ${widget.episodeTitle}',
+                      '第${widget.currentEpisode}集 ${widget.currentSmallTitle}',
                       style: TextStyle(
                         color: Colors.white.withValues(alpha: 0.9),
                         fontSize: 13,
@@ -864,7 +865,7 @@ class FullscreenVideoState {
   final bool isDescending;
   final bool hasNextEpisode;
   final bool hasPreviousEpisode;
-  final String? episodeTitle;
+  final String? currentSmallTitle;
   final bool isDanmakuEnabled;
   final DanmakuController? danmakuController;
   final DanmakuBroadcasterService? danmakuBroadcasterService;
@@ -876,9 +877,40 @@ class FullscreenVideoState {
     required this.isDescending,
     required this.hasNextEpisode,
     required this.hasPreviousEpisode,
-    this.episodeTitle,
+    this.currentSmallTitle,
     this.isDanmakuEnabled = false,
     this.danmakuController,
     this.danmakuBroadcasterService,
   });
+
+  FullscreenVideoState copyWith({
+    int? currentEpisode,
+    List<Episode>? episodes,
+    bool? isLoadingEpisodes,
+    bool? isDescending,
+    bool? hasNextEpisode,
+    bool? hasPreviousEpisode,
+    Object? currentSmallTitle = _sentinel,
+    bool? isDanmakuEnabled,
+    DanmakuController? danmakuController,
+    DanmakuBroadcasterService? danmakuBroadcasterService,
+  }) {
+    return FullscreenVideoState(
+      currentEpisode: currentEpisode ?? this.currentEpisode,
+      episodes: episodes ?? this.episodes,
+      isLoadingEpisodes: isLoadingEpisodes ?? this.isLoadingEpisodes,
+      isDescending: isDescending ?? this.isDescending,
+      hasNextEpisode: hasNextEpisode ?? this.hasNextEpisode,
+      hasPreviousEpisode: hasPreviousEpisode ?? this.hasPreviousEpisode,
+      currentSmallTitle: currentSmallTitle == _sentinel
+          ? this.currentSmallTitle
+          : currentSmallTitle as String?,
+      isDanmakuEnabled: isDanmakuEnabled ?? this.isDanmakuEnabled,
+      danmakuController: danmakuController ?? this.danmakuController,
+      danmakuBroadcasterService:
+          danmakuBroadcasterService ?? this.danmakuBroadcasterService,
+    );
+  }
+
+  static const Object _sentinel = Object();
 }

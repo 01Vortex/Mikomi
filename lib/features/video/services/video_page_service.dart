@@ -99,7 +99,7 @@ class VideoPageService {
     required String title,
     required String? animeTitle,
     required int currentEpisodeNumber,
-    required String? currentEpisodeTitle,
+    required String? currentSmallTitle,
     required String? currentSourceName,
     required String lastResolvedVideoUrl,
     required VideoPlaybackService playbackService,
@@ -109,10 +109,10 @@ class VideoPageService {
       title: title,
       animeTitle: animeTitle,
       currentEpisode: currentEpisodeNumber,
-      currentEpisodeTitle: currentEpisodeTitle,
-      currentPluginName: currentSourceName,
+      currentSmallTitle: currentSmallTitle,
+      currentSourceName: currentSourceName,
       lastResolvedVideoUrl: lastResolvedVideoUrl,
-      playerController: playbackService,
+      playbackService: playbackService,
     );
   }
 }

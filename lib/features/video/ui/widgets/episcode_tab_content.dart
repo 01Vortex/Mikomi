@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:mikomi/shared/skeleton.dart';
 import 'package:mikomi/features/video/models/episode_model.dart';
-import 'package:mikomi/features/video/ui/widgets/smallscreen_episcode.dart';
+import 'package:mikomi/features/video/ui/widgets/episode_grid.dart';
 
-class EpiscodeTabContent extends StatelessWidget {
+class EpisodeTabContent extends StatelessWidget {
   final bool isLoading;
   final List<Episode> episodes;
   final bool isDescending;
@@ -13,7 +13,7 @@ class EpiscodeTabContent extends StatelessWidget {
   final VoidCallback onToggleExpand;
   final VoidCallback onToggleSort;
 
-  const EpiscodeTabContent({
+  const EpisodeTabContent({
     super.key,
     required this.isLoading,
     required this.episodes,
@@ -145,7 +145,7 @@ class EpiscodeTabContent extends StatelessWidget {
             itemCount: displayCount,
             itemBuilder: (context, index) {
               final episode = sortedEpisodes[index];
-              return SmallscreenEpisode(
+              return EpisodeGrid(
                 episode: episode,
                 isCurrent: episode.number == currentEpisode,
                 onTap: () => onEpisodeSelected(episode),

@@ -15,31 +15,36 @@ class SmallTitleService {
   }) async {
     if (episodes.isEmpty) return episodes;
 
-    final numberList = episodes.map((e) => e.number).where((n) => n > 0).toList();
+    final episodeNumbers = episodes
+        .map((episode) => episode.number)
+        .where((number) => number > 0)
+        .toList();
     final smallTitles = await _repository.loadEpisodeSmallTitles(
       bangumiId: bangumiId,
       animeTitle: animeTitle,
       animeName: animeName,
-      episodeNumbers: numberList,
+      episodeNumbers: episodeNumbers,
     );
 
     return episodes.map((episode) {
-      final candidateTitle = smallTitles[episode.number]?.trim();
-      if (candidateTitle == null || candidateTitle.isEmpty) return episode;
+      final candidateSmallTitle = smallTitles[episode.number]?.trim();
+      if (candidateSmallTitle == null || candidateSmallTitle.isEmpty) {
+        return episode;
+      }
 
-      if (_isGenericTitle(episode.title)) {
+      if (_isGenericTitle(episode.smallTitle)) {
         return Episode(
           number: episode.number,
-          title: candidateTitle,
+          smallTitle: candidateSmallTitle,
           url: episode.url,
         );
       }
 
       return Episode(
         number: episode.number,
-        title: episode.title?.trim().isNotEmpty == true
-            ? episode.title
-            : candidateTitle,
+        smallTitle: episode.smallTitle?.trim().isNotEmpty == true
+            ? episode.smallTitle
+            : candidateSmallTitle,
         url: episode.url,
       );
     }).toList();
@@ -47,7 +52,7 @@ class SmallTitleService {
 
   bool _isGenericTitle(String? title) {
     if (title == null || title.trim().isEmpty) return true;
-    final t = title.trim().toLowerCase();
-    return RegExp(r'^(第?\d+[集话]|ep\s*\d+|\d+)$').hasMatch(t);
+    final normalizedTitle = title.trim().toLowerCase();
+    return RegExp(r'^(第?\d+[集话]|ep\s*\d+|\d+)$').hasMatch(normalizedTitle);
   }
 }

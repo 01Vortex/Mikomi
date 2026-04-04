@@ -244,7 +244,7 @@ class _HistoryModelPageState extends State<HistoryModelPage> {
                                               currentEpisode:
                                                   history.lastWatchEpisode,
                                               episodes: const [],
-                                              pluginName:
+                                              sourceName:
                                                   history.pluginName.isNotEmpty
                                                   ? history.pluginName
                                                   : null,

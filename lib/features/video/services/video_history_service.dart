@@ -10,19 +10,19 @@ class VideoHistoryService {
     required String title,
     required String? animeTitle,
     required int currentEpisode,
-    required String? currentEpisodeTitle,
-    required String? currentPluginName,
+    required String? currentSmallTitle,
+    required String? currentSourceName,
     required String lastResolvedVideoUrl,
-    required VideoPlaybackService playerController,
+    required VideoPlaybackService playbackService,
   }) {
     if (bangumiId == null || title.isEmpty) return;
-    if (playerController.player == null || !playerController.isInitialized) {
+    if (playbackService.player == null || !playbackService.isInitialized) {
       return;
     }
 
     try {
-      final progress = playerController.player!.state.position;
-      final duration = playerController.player!.state.duration;
+      final progress = playbackService.player!.state.position;
+      final duration = playbackService.player!.state.duration;
       if (progress.inSeconds == 0 || duration.inSeconds == 0) return;
 
       _historyService.addHistory(
@@ -31,9 +31,9 @@ class VideoHistoryService {
           bangumiName: title,
           bangumiNameCn: animeTitle ?? title,
           lastWatchEpisode: currentEpisode,
-          lastWatchEpisodeName: currentEpisodeTitle ?? '',
+          lastWatchEpisodeName: currentSmallTitle ?? '',
           lastWatchTime: DateTime.now(),
-          pluginName: currentPluginName ?? '',
+          pluginName: currentSourceName ?? '',
           progress: progress,
           duration: duration,
           cachedPlayUrl: lastResolvedVideoUrl,

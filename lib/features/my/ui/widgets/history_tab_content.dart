@@ -130,7 +130,7 @@ class _HistoryItemState extends State<_HistoryItem> {
               videoUrl: '',
               currentEpisode: widget.history.lastWatchEpisode,
               episodes: const [],
-              pluginName: widget.history.pluginName.isNotEmpty
+              sourceName: widget.history.pluginName.isNotEmpty
                   ? widget.history.pluginName
                   : null,
               animeTitle: widget.history.bangumiNameCn,

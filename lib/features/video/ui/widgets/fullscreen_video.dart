@@ -15,10 +15,10 @@ import 'package:mikomi/features/settings/video_play/service/play_setting_service
 const double _kSideMargin = 16.0;
 
 class FullscreenVideoControls extends StatefulWidget {
-  final VideoPlaybackService playerController;
+  final VideoPlaybackService playbackService;
   final String title;
   final int currentEpisode;
-  final String? episodeTitle;
+  final String? currentSmallTitle;
   final VoidCallback onExitFullscreen;
   final VoidCallback? onNextEpisode;
   final VoidCallback? onPreviousEpisode;
@@ -37,10 +37,10 @@ class FullscreenVideoControls extends StatefulWidget {
 
   const FullscreenVideoControls({
     super.key,
-    required this.playerController,
+    required this.playbackService,
     required this.title,
     required this.currentEpisode,
-    this.episodeTitle,
+    this.currentSmallTitle,
     required this.onExitFullscreen,
     this.onNextEpisode,
     this.onPreviousEpisode,
@@ -92,7 +92,7 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
   }
 
   void _initializePlayerState() {
-    final player = widget.playerController.player;
+    final player = widget.playbackService.player;
     if (player != null) {
       // 获取播放器当前状态
       _isPlaying = player.state.playing;
@@ -125,7 +125,7 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
   }
 
   void _setupListeners() {
-    final player = widget.playerController.player;
+    final player = widget.playbackService.player;
     if (player == null) return;
 
     _cancelPlayerSubscriptions();
@@ -193,7 +193,7 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
   }
 
   void _togglePlayPause() {
-    widget.playerController.player?.playOrPause();
+    widget.playbackService.player?.playOrPause();
     _startHideTimer();
   }
 
@@ -271,7 +271,7 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
     ).then((value) {
       if (value != null) {
         setState(() => _playbackSpeed = value);
-        widget.playerController.player?.setRate(value);
+        widget.playbackService.player?.setRate(value);
       }
     });
   }
@@ -341,7 +341,7 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
     const double rightPad = _kSideMargin;
 
     return VideoGesture(
-      playerController: widget.playerController,
+      playbackService: widget.playbackService,
       enabled: !_showControls && !_isLocked,
       child: Stack(
         children: [
@@ -478,11 +478,11 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  if (widget.episodeTitle != null &&
-                      widget.episodeTitle!.isNotEmpty) ...[  
+                  if (widget.currentSmallTitle != null &&
+                      widget.currentSmallTitle!.isNotEmpty) ...[  
                     const SizedBox(height: 2),
                     Text(
-                      '第${widget.currentEpisode}集 ${widget.episodeTitle}',
+                      '第${widget.currentEpisode}集 ${widget.currentSmallTitle}',
                       style: TextStyle(
                         color: Colors.white.withValues(alpha: 0.8),
                         fontSize: 15,
@@ -587,7 +587,7 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
                       },
                       onChangeEnd: (value) {
                         setState(() => _isDragging = false);
-                        widget.playerController.player?.seek(_position);
+                        widget.playbackService.player?.seek(_position);
                         _startHideTimer();
                       },
                     ),
