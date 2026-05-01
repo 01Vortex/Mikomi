@@ -1,12 +1,13 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:media_kit_video/media_kit_video.dart';
-import 'package:mikomi/features/video/controller/danmaku_broadcaster.dart';
-import 'package:mikomi/features/video/controller/danmaku_controller.dart' as app_danmaku;
+import 'package:mikomi/features/video/facade/danmaku_facade.dart';
+import 'package:mikomi/features/video/controller/danmaku_controller.dart'
+    as app_danmaku;
 import 'package:mikomi/features/video/models/episode_model.dart';
 import 'package:mikomi/features/video/services/video_playback_service.dart';
 import 'package:mikomi/features/video/state/video_player_listener.dart';
-import 'package:mikomi/features/video/ui/pages/fullscreen_video_page.dart';
+import 'package:mikomi/features/video/ui/pages/fullscreen_page.dart';
 import 'package:mikomi/features/video/ui/widgets/danmaku_overlay.dart';
 import 'package:mikomi/features/video/ui/widgets/video_gesture.dart';
 import 'package:mikomi/features/settings/danmaku/danmaku_setting_service.dart';
@@ -143,18 +144,20 @@ class _SmallscreenVideoState extends State<SmallscreenVideo> {
       onAutoPlayNext: widget.onNextEpisode,
     );
     _loadDanmakuConfig();
-    _fullscreenNotifier = ValueNotifier(FullscreenVideoState(
-      currentEpisode: widget.currentEpisode,
-      episodes: widget.episodes,
-      isLoadingEpisodes: widget.isLoadingEpisodes,
-      isDescending: widget.isDescending,
-      hasNextEpisode: widget.hasNextEpisode,
-      hasPreviousEpisode: widget.hasPreviousEpisode,
-      currentSmallTitle: widget.currentSmallTitle,
-      isDanmakuEnabled: widget.isDanmakuEnabled,
-      danmakuController: _videoDanmakuController,
-      danmakuBroadcaster: _videoDanmakuController.danmakuBroadcaster,
-    ));
+    _fullscreenNotifier = ValueNotifier(
+      FullscreenVideoState(
+        currentEpisode: widget.currentEpisode,
+        episodes: widget.episodes,
+        isLoadingEpisodes: widget.isLoadingEpisodes,
+        isDescending: widget.isDescending,
+        hasNextEpisode: widget.hasNextEpisode,
+        hasPreviousEpisode: widget.hasPreviousEpisode,
+        currentSmallTitle: widget.currentSmallTitle,
+        isDanmakuEnabled: widget.isDanmakuEnabled,
+        danmakuController: _videoDanmakuController,
+        danmakuFacade: _videoDanmakuController.danmakuFacade,
+      ),
+    );
     _initPlayer();
     _startControlsTimer();
     _loadDanmaku();
@@ -175,7 +178,7 @@ class _SmallscreenVideoState extends State<SmallscreenVideo> {
           currentSmallTitle: widget.currentSmallTitle,
           isDanmakuEnabled: widget.isDanmakuEnabled,
           danmakuController: _videoDanmakuController,
-          danmakuBroadcaster: _videoDanmakuController.danmakuBroadcaster,
+          danmakuFacade: _videoDanmakuController.danmakuFacade,
         );
       }
     });
@@ -269,7 +272,9 @@ class _SmallscreenVideoState extends State<SmallscreenVideo> {
         ? widget.episodes.first.number - 1
         : 0;
     final resolvedEpisodeNumber = widget.currentEpisode + seasonEpisodeOffset;
-    return resolvedEpisodeNumber > 0 ? resolvedEpisodeNumber : widget.currentEpisode;
+    return resolvedEpisodeNumber > 0
+        ? resolvedEpisodeNumber
+        : widget.currentEpisode;
   }
 
   void _handlePlaybackPositionChanged(Duration position) {
@@ -382,42 +387,46 @@ class _SmallscreenVideoState extends State<SmallscreenVideo> {
   void _enterFullscreen() {
     // 记录进入全屏时的弹幕开关状态
     final danmakuEnabledBeforeFullscreen = widget.isDanmakuEnabled;
-    Navigator.of(context).push(
-      PageRouteBuilder(
-        pageBuilder: (context, animation, secondaryAnimation) =>
-            FullscreenVideoPage(
-              playbackService: widget.playbackService,
-              title: widget.title,
-              stateNotifier: _fullscreenNotifier,
-              onNextEpisode: widget.onNextEpisode,
-              onPreviousEpisode: widget.onPreviousEpisode,
-              onEpisodeSelected: widget.onEpisodeSelected,
-              onToggleSort: widget.onToggleSort,
-            ),
-        transitionDuration: const Duration(milliseconds: 200),
-        reverseTransitionDuration: const Duration(milliseconds: 200),
-        transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          final curvedAnimation = CurvedAnimation(
-            parent: animation,
-            curve: Curves.easeInOut,
-          );
-          return FadeTransition(opacity: curvedAnimation, child: child);
-        },
-      ),
-    ).then((_) {
-      // 退出全屏后同步弹幕开关状态到父组件
-      final danmakuEnabledAfterFullscreen =
-          _fullscreenNotifier.value.isDanmakuEnabled;
-      if (danmakuEnabledAfterFullscreen != danmakuEnabledBeforeFullscreen) {
-        widget.onDanmakuToggle?.call(danmakuEnabledAfterFullscreen);
-      }
-    });
+    Navigator.of(context)
+        .push(
+          PageRouteBuilder(
+            pageBuilder: (context, animation, secondaryAnimation) =>
+                FullscreenPage(
+                  playbackService: widget.playbackService,
+                  title: widget.title,
+                  stateNotifier: _fullscreenNotifier,
+                  onNextEpisode: widget.onNextEpisode,
+                  onPreviousEpisode: widget.onPreviousEpisode,
+                  onEpisodeSelected: widget.onEpisodeSelected,
+                  onToggleSort: widget.onToggleSort,
+                ),
+            transitionDuration: const Duration(milliseconds: 200),
+            reverseTransitionDuration: const Duration(milliseconds: 200),
+            transitionsBuilder:
+                (context, animation, secondaryAnimation, child) {
+                  final curvedAnimation = CurvedAnimation(
+                    parent: animation,
+                    curve: Curves.easeInOut,
+                  );
+                  return FadeTransition(opacity: curvedAnimation, child: child);
+                },
+          ),
+        )
+        .then((_) {
+          // 退出全屏后同步弹幕开关状态到父组件
+          final danmakuEnabledAfterFullscreen =
+              _fullscreenNotifier.value.isDanmakuEnabled;
+          if (danmakuEnabledAfterFullscreen != danmakuEnabledBeforeFullscreen) {
+            widget.onDanmakuToggle?.call(danmakuEnabledAfterFullscreen);
+          }
+        });
   }
 
   @override
   Widget build(BuildContext context) {
     final controller = widget.playbackService.videoController;
-    final bool showPlayer = _errorMessage == null &&
+    final bool showPlayer =
+        _errorMessage == null &&
         !_isLoading &&
         widget.playbackService.isInitialized &&
         controller != null;
@@ -429,100 +438,102 @@ class _SmallscreenVideoState extends State<SmallscreenVideo> {
         onTap: showPlayer ? _handleTap : null,
         onDoubleTap: showPlayer ? _handleDoubleTap : null,
         child: Stack(
-        children: [
-          // 背景
-          Positioned.fill(child: Container(color: Colors.black)),
+          children: [
+            // 背景
+            Positioned.fill(child: Container(color: Colors.black)),
 
-          // 视频播放器（仅在就绪时显示）
-          if (showPlayer)
-            Positioned.fill(
-              child: Video(
-                controller: controller,
-                controls: NoVideoControls,
-                fit: BoxFit.contain,
-              ),
-            ),
-
-          // 弹幕层
-          if (showPlayer && widget.isDanmakuEnabled)
-            Positioned.fill(
-              child: DanmakuLayer(
-                onControllerCreated: (controller) {
-                  _videoDanmakuController.attachCanvasController(controller);
-                },
-                fontSize: _danmakuConfig.fontSize,
-                opacity: _danmakuConfig.opacity,
-                speed: _danmakuConfig.duration,
-                area: _danmakuConfig.area,
-                strokeWidth: _danmakuConfig.strokeWidth,
-                hideTop: !_danmakuConfig.showTop,
-                hideBottom: !_danmakuConfig.showBottom,
-                hideScroll: !_danmakuConfig.showScroll,
-              ),
-            ),
-
-          // 加载中
-          if (_isLoading)
-            const Positioned.fill(
-              child: Center(
-                child: CircularProgressIndicator(
-                  color: Colors.white,
-                  strokeWidth: 3,
+            // 视频播放器（仅在就绪时显示）
+            if (showPlayer)
+              Positioned.fill(
+                child: Video(
+                  controller: controller,
+                  controls: NoVideoControls,
+                  fit: BoxFit.contain,
                 ),
               ),
-            ),
 
-          // 错误信息
-          if (_errorMessage != null)
-            Positioned.fill(
-              child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(
-                      Icons.error_outline,
-                      color: Colors.white70,
-                      size: 48,
-                    ),
-                    const SizedBox(height: 16),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 32),
-                      child: Text(
-                        _errorMessage!,
-                        style: const TextStyle(color: Colors.white70),
-                        textAlign: TextAlign.center,
+            // 弹幕层
+            if (showPlayer && widget.isDanmakuEnabled)
+              Positioned.fill(
+                child: DanmakuLayer(
+                  onControllerCreated: (controller) {
+                    _videoDanmakuController.attachCanvasController(controller);
+                  },
+                  fontSize: _danmakuConfig.fontSize,
+                  opacity: _danmakuConfig.opacity,
+                  speed: _danmakuConfig.duration,
+                  area: _danmakuConfig.area,
+                  strokeWidth: _danmakuConfig.strokeWidth,
+                  hideTop: !_danmakuConfig.showTop,
+                  hideBottom: !_danmakuConfig.showBottom,
+                  hideScroll: !_danmakuConfig.showScroll,
+                ),
+              ),
+
+            // 加载中
+            if (_isLoading)
+              const Positioned.fill(
+                child: Center(
+                  child: CircularProgressIndicator(
+                    color: Colors.white,
+                    strokeWidth: 3,
+                  ),
+                ),
+              ),
+
+            // 错误信息
+            if (_errorMessage != null)
+              Positioned.fill(
+                child: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(
+                        Icons.error_outline,
+                        color: Colors.white70,
+                        size: 48,
                       ),
-                    ),
-                    const SizedBox(height: 16),
-                    TextButton(
-                      onPressed: _initPlayer,
-                      child: const Text('重试'),
-                    ),
-                  ],
+                      const SizedBox(height: 16),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 32),
+                        child: Text(
+                          _errorMessage!,
+                          style: const TextStyle(color: Colors.white70),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      TextButton(
+                        onPressed: _initPlayer,
+                        child: const Text('重试'),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
 
-          // 缓冲指示器
-          if (showPlayer && _isBuffering) _buildBufferingIndicator(),
+            // 缓冲指示器
+            if (showPlayer && _isBuffering) _buildBufferingIndicator(),
 
-          // 顶部渐变遮罩（播放中且显示控制栏时）
-          if (showPlayer && _showControls && !_lockPanel) _buildTopGradient(),
+            // 顶部渐变遮罩（播放中且显示控制栏时）
+            if (showPlayer && _showControls && !_lockPanel) _buildTopGradient(),
 
-          // 底部渐变遮罩
-          if (showPlayer && _showControls && !_lockPanel) _buildBottomGradient(),
+            // 底部渐变遮罩
+            if (showPlayer && _showControls && !_lockPanel)
+              _buildBottomGradient(),
 
-          // 顶部控制栏：播放中跟随控制栏显隐；加载/错误时始终显示
-          if (!showPlayer || (_showControls && !_lockPanel))
-            _buildTopControls(),
+            // 顶部控制栏：播放中跟随控制栏显隐；加载/错误时始终显示
+            if (!showPlayer || (_showControls && !_lockPanel))
+              _buildTopControls(),
 
-          // 底部控制栏（仅播放中显示）
-          if (showPlayer && _showControls && !_lockPanel) _buildBottomControls(),
+            // 底部控制栏（仅播放中显示）
+            if (showPlayer && _showControls && !_lockPanel)
+              _buildBottomControls(),
 
-          // 锁定按钮
-          if (showPlayer) _buildLockButton(),
-        ],
-      ),
+            // 锁定按钮
+            if (showPlayer) _buildLockButton(),
+          ],
+        ),
       ),
     );
   }
@@ -776,7 +787,7 @@ class FullscreenVideoState {
   final String? currentSmallTitle;
   final bool isDanmakuEnabled;
   final app_danmaku.DanmakuController? danmakuController;
-  final DanmakuBroadcaster? danmakuBroadcaster;
+  final DanmakuFacade? danmakuFacade;
 
   const FullscreenVideoState({
     required this.currentEpisode,
@@ -788,7 +799,7 @@ class FullscreenVideoState {
     this.currentSmallTitle,
     this.isDanmakuEnabled = false,
     this.danmakuController,
-    this.danmakuBroadcaster,
+    this.danmakuFacade,
   });
 
   FullscreenVideoState copyWith({
@@ -801,7 +812,7 @@ class FullscreenVideoState {
     Object? currentSmallTitle = _sentinel,
     bool? isDanmakuEnabled,
     app_danmaku.DanmakuController? danmakuController,
-    DanmakuBroadcaster? danmakuBroadcaster,
+    DanmakuFacade? danmakuFacade,
   }) {
     return FullscreenVideoState(
       currentEpisode: currentEpisode ?? this.currentEpisode,
@@ -815,7 +826,7 @@ class FullscreenVideoState {
           : currentSmallTitle as String?,
       isDanmakuEnabled: isDanmakuEnabled ?? this.isDanmakuEnabled,
       danmakuController: danmakuController ?? this.danmakuController,
-      danmakuBroadcaster: danmakuBroadcaster ?? this.danmakuBroadcaster,
+      danmakuFacade: danmakuFacade ?? this.danmakuFacade,
     );
   }
 

@@ -24,7 +24,7 @@ class VideoPlaybackError extends VideoPlaybackPhase {
   const VideoPlaybackError([this.error]);
 }
 
-class VideoPlayerViewState {
+class VideoPlayerState {
   final int currentEpisodeNumber;
   final int totalEpisodes;
   final String? currentSmallTitle;
@@ -37,7 +37,7 @@ class VideoPlayerViewState {
   final VideoPlaybackPhase playbackPhase;
   final bool showTimeoutNotice;
 
-  const VideoPlayerViewState({
+  const VideoPlayerState({
     required this.currentEpisodeNumber,
     required this.totalEpisodes,
     required this.currentSmallTitle,
@@ -59,14 +59,14 @@ class VideoPlayerViewState {
   };
 }
 
-class VideoEpisodeViewState {
+class VideoEpisodeState {
   final bool isLoading;
   final List<Episode> episodes;
   final bool isDescending;
   final bool isExpanded;
   final int currentEpisodeNumber;
 
-  const VideoEpisodeViewState({
+  const VideoEpisodeState({
     required this.isLoading,
     required this.episodes,
     required this.isDescending,
@@ -75,23 +75,23 @@ class VideoEpisodeViewState {
   });
 }
 
-class VideoDanmakuViewState {
+class VideoDanmakuState {
   final bool isDanmakuEnabled;
   final bool isInputExpanded;
 
-  const VideoDanmakuViewState({
+  const VideoDanmakuState({
     required this.isDanmakuEnabled,
     required this.isInputExpanded,
   });
 }
 
-class VideoSourceViewState {
+class VideoSourceState {
   final String? currentSourceName;
 
-  const VideoSourceViewState({required this.currentSourceName});
+  const VideoSourceState({required this.currentSourceName});
 }
 
-class VideoStateManager {
+class VideoState {
   final int currentEpisodeNumber;
   final List<Episode> episodes;
   final String currentVideoPageUrl;
@@ -107,7 +107,7 @@ class VideoStateManager {
   final bool shouldResolveAfterEpisodesLoaded;
   final VideoPlaybackPhase playbackPhase;
 
-  const VideoStateManager({
+  const VideoState({
     this.currentEpisodeNumber = 1,
     this.episodes = const [],
     this.currentVideoPageUrl = '',
@@ -144,7 +144,7 @@ class VideoStateManager {
   List<Episode> get sortedEpisodes =>
       isEpisodeSortDescending ? episodes.reversed.toList() : episodes;
 
-  VideoPlayerViewState get playerViewState => VideoPlayerViewState(
+  VideoPlayerState get playerState => VideoPlayerState(
     currentEpisodeNumber: currentEpisodeNumber,
     totalEpisodes: totalEpisodes,
     currentSmallTitle: currentSmallTitle,
@@ -158,7 +158,7 @@ class VideoStateManager {
     showTimeoutNotice: showTimeoutNotice,
   );
 
-  VideoEpisodeViewState get episodeViewState => VideoEpisodeViewState(
+  VideoEpisodeState get episodeState => VideoEpisodeState(
     isLoading: isEpisodeListLoading,
     episodes: episodes,
     isDescending: isEpisodeSortDescending,
@@ -166,15 +166,15 @@ class VideoStateManager {
     currentEpisodeNumber: currentEpisodeNumber,
   );
 
-  VideoDanmakuViewState get danmakuViewState => VideoDanmakuViewState(
+  VideoDanmakuState get danmakuState => VideoDanmakuState(
     isDanmakuEnabled: isDanmakuEnabled,
     isInputExpanded: isDanmakuInputExpanded,
   );
 
-  VideoSourceViewState get sourceViewState =>
-      VideoSourceViewState(currentSourceName: currentSourceName);
+  VideoSourceState get sourceState =>
+      VideoSourceState(currentSourceName: currentSourceName);
 
-  VideoStateManager copyWith({
+  VideoState copyWith({
     int? currentEpisodeNumber,
     List<Episode>? episodes,
     String? currentVideoPageUrl,
@@ -190,7 +190,7 @@ class VideoStateManager {
     bool? shouldResolveAfterEpisodesLoaded,
     VideoPlaybackPhase? playbackPhase,
   }) {
-    return VideoStateManager(
+    return VideoState(
       currentEpisodeNumber: currentEpisodeNumber ?? this.currentEpisodeNumber,
       episodes: episodes ?? this.episodes,
       currentVideoPageUrl: currentVideoPageUrl ?? this.currentVideoPageUrl,
@@ -216,49 +216,49 @@ class VideoStateManager {
     );
   }
 
-  VideoStateManager setDanmakuEnabled(bool enabled) {
+  VideoState setDanmakuEnabled(bool enabled) {
     return copyWith(
       isDanmakuEnabled: enabled,
       isDanmakuInputExpanded: enabled ? isDanmakuInputExpanded : false,
     );
   }
 
-  VideoStateManager expandDanmakuInput() {
+  VideoState expandDanmakuInput() {
     return copyWith(isDanmakuInputExpanded: true);
   }
 
-  VideoStateManager collapseDanmakuInput() {
+  VideoState collapseDanmakuInput() {
     return copyWith(isDanmakuInputExpanded: false);
   }
 
-  VideoStateManager toggleEpisodeSort() {
+  VideoState toggleEpisodeSort() {
     return copyWith(isEpisodeSortDescending: !isEpisodeSortDescending);
   }
 
-  VideoStateManager toggleEpisodeListExpanded() {
+  VideoState toggleEpisodeListExpanded() {
     return copyWith(isEpisodeListExpanded: !isEpisodeListExpanded);
   }
 
-  VideoStateManager startEpisodeLoading() {
+  VideoState startEpisodeLoading() {
     return copyWith(isEpisodeListLoading: true);
   }
 
-  VideoStateManager finishEpisodeLoading() {
+  VideoState finishEpisodeLoading() {
     return copyWith(isEpisodeListLoading: false);
   }
 
-  VideoStateManager startVideoResolving() {
+  VideoState startVideoResolving() {
     return copyWith(
       showTimeoutNotice: false,
       playbackPhase: const VideoPlaybackLoading(),
     );
   }
 
-  VideoStateManager showTimeout() {
+  VideoState showTimeout() {
     return copyWith(showTimeoutNotice: true);
   }
 
-  VideoStateManager applyResolvedVideoUrl(String resolvedUrl) {
+  VideoState applyResolvedVideoUrl(String resolvedUrl) {
     return copyWith(
       lastResolvedVideoUrl: resolvedUrl,
       playbackPhase: resolvedUrl.isEmpty
@@ -267,11 +267,11 @@ class VideoStateManager {
     );
   }
 
-  VideoStateManager applyResolveError(Object error) {
+  VideoState applyResolveError(Object error) {
     return copyWith(playbackPhase: VideoPlaybackError(error));
   }
 
-  VideoStateManager markUseCachedResolvedUrl() {
+  VideoState markUseCachedResolvedUrl() {
     return copyWith(
       isUsingCachedResolvedUrl: true,
       shouldResolveAfterEpisodesLoaded: true,
@@ -280,18 +280,18 @@ class VideoStateManager {
     );
   }
 
-  VideoStateManager markWaitForEpisodeResolve() {
+  VideoState markWaitForEpisodeResolve() {
     return copyWith(
       shouldResolveAfterEpisodesLoaded: true,
       playbackPhase: const VideoPlaybackIdle(),
     );
   }
 
-  VideoStateManager setInitialResolving() {
+  VideoState setInitialResolving() {
     return copyWith(playbackPhase: const VideoPlaybackLoading());
   }
 
-  VideoStateManager withEpisodes(List<Episode> nextEpisodes) {
+  VideoState withEpisodes(List<Episode> nextEpisodes) {
     final nextEpisodeNumber =
         currentEpisodeNumber > nextEpisodes.length ? 1 : currentEpisodeNumber;
     return copyWith(
@@ -300,14 +300,14 @@ class VideoStateManager {
     );
   }
 
-  VideoStateManager clearEpisodeResolveFlag() {
+  VideoState clearEpisodeResolveFlag() {
     return copyWith(
       shouldResolveAfterEpisodesLoaded: false,
       isUsingCachedResolvedUrl: false,
     );
   }
 
-  VideoStateManager selectEpisode(Episode episode) {
+  VideoState selectEpisode(Episode episode) {
     if (episode.number == currentEpisodeNumber) {
       return this;
     }
@@ -319,7 +319,7 @@ class VideoStateManager {
     );
   }
 
-  VideoStateManager switchSource({
+  VideoState switchSource({
     required String sourceName,
     required List<Episode> nextEpisodes,
   }) {

@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import 'message_dialog.dart';
-
 class DoubleBackExitScope extends StatefulWidget {
   const DoubleBackExitScope({
     super.key,
@@ -31,7 +29,15 @@ class _DoubleBackExitScopeState extends State<DoubleBackExitScope> {
     }
 
     _lastBackPressedAt = now;
-    MessageDialog.info(context, '再按一次返回键退出应用');
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        const SnackBar(
+          content: Text('再按一次返回键退出应用'),
+          duration: Duration(seconds: 2),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
   }
 
   @override

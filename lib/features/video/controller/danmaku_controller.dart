@@ -1,13 +1,13 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
-import 'package:mikomi/features/video/controller/danmaku_broadcaster.dart';
+import 'package:mikomi/features/video/facade/danmaku_facade.dart';
 import 'package:mikomi/features/video/models/danmaku_model.dart';
 import 'package:mikomi/features/video/services/danmaku_service.dart';
 
 class DanmakuController extends ChangeNotifier {
   final DanmakuService _danmakuService;
-  final DanmakuBroadcaster _danmakuBroadcaster = DanmakuBroadcaster();
+  final DanmakuFacade _danmakuFacade = DanmakuFacade();
 
   int _lastSyncedSecond = -1;
   int _lastLoadedEpisode = -1;
@@ -23,7 +23,7 @@ class DanmakuController extends ChangeNotifier {
   bool get isLoadingDanmaku => _isLoadingDanmaku;
   int? get danmakuBangumiId => _danmakuService.danmakuBangumiId;
   String? get lastError => _danmakuService.lastError;
-  DanmakuBroadcaster get danmakuBroadcaster => _danmakuBroadcaster;
+  DanmakuFacade get danmakuFacade => _danmakuFacade;
 
   Future<bool> loadDanmaku({
     required bool isDanmakuEnabled,
@@ -87,13 +87,13 @@ class DanmakuController extends ChangeNotifier {
   }
 
   void attachCanvasController(dynamic canvasController) {
-    _danmakuBroadcaster.register(canvasController);
+    _danmakuFacade.register(canvasController);
     _shouldResendCurrentWindow = true;
     scheduleMicrotask(_flushCurrentWindowIfNeeded);
   }
 
   void detachCanvasController(dynamic canvasController) {
-    _danmakuBroadcaster.unregister(canvasController);
+    _danmakuFacade.unregister(canvasController);
   }
 
   void syncPlaybackPosition({
@@ -142,13 +142,13 @@ class DanmakuController extends ChangeNotifier {
 
   @override
   void dispose() {
-    _danmakuBroadcaster.clear();
+    _danmakuFacade.clear();
     _danmakuService.dispose();
     super.dispose();
   }
 
   void _flushCurrentWindowIfNeeded() {
-    if (!isLoaded || _danmakuBroadcaster.isEmpty) {
+    if (!isLoaded || _danmakuFacade.isEmpty) {
       return;
     }
 
@@ -160,7 +160,7 @@ class DanmakuController extends ChangeNotifier {
 
   void _sendDanmakuAtSecond(int second) {
     final danmakus = _danmakuService.getDanmakuAtTime(second);
-    _danmakuBroadcaster.send(danmakus);
+    _danmakuFacade.send(danmakus);
   }
 
   void _sendDanmakuWindow(int centerSecond) {

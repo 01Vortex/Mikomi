@@ -2,8 +2,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:mikomi/features/settings/danmaku/danmaku_setting_service.dart';
-import 'package:mikomi/features/video/controller/danmaku_broadcaster.dart';
-import 'package:mikomi/features/video/controller/danmaku_controller.dart' as app_danmaku;
+import 'package:mikomi/features/video/facade/danmaku_facade.dart';
+import 'package:mikomi/features/video/controller/danmaku_controller.dart'
+    as app_danmaku;
 import 'package:mikomi/features/video/models/episode_model.dart';
 import 'package:mikomi/features/video/services/video_playback_service.dart';
 import 'package:mikomi/features/video/state/video_player_listener.dart';
@@ -33,7 +34,7 @@ class FullscreenVideoControls extends StatefulWidget {
   final VoidCallback? onToggleSort;
   final bool isDanmakuEnabled;
   final app_danmaku.DanmakuController? danmakuController;
-  final DanmakuBroadcaster? danmakuBroadcaster;
+  final DanmakuFacade? danmakuFacade;
   final void Function(bool)? onDanmakuToggle;
   final VideoFitMode fitMode;
   final ValueChanged<VideoFitMode>? onFitModeChanged;
@@ -56,7 +57,7 @@ class FullscreenVideoControls extends StatefulWidget {
     this.onToggleSort,
     this.isDanmakuEnabled = false,
     this.danmakuController,
-    this.danmakuBroadcaster,
+    this.danmakuFacade,
     this.onDanmakuToggle,
     this.fitMode = VideoFitMode.contain,
     this.onFitModeChanged,
@@ -317,7 +318,9 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
           // 顶部渐变遮罩
           if (_showControls && !_isLocked)
             Positioned(
-              top: 0, left: 0, right: 0,
+              top: 0,
+              left: 0,
+              right: 0,
               child: Container(
                 height: 130,
                 decoration: BoxDecoration(
@@ -336,7 +339,9 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
           // 底部渐变遮罩
           if (_showControls && !_isLocked)
             Positioned(
-              bottom: 0, left: 0, right: 0,
+              bottom: 0,
+              left: 0,
+              right: 0,
               child: Container(
                 height: 150,
                 decoration: BoxDecoration(
@@ -354,14 +359,22 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
 
           // 顶部控制栏
           if (_showControls && !_isLocked)
-            _buildTopBar(safePadding: safePadding, leftPad: leftPad, rightPad: rightPad),
+            _buildTopBar(
+              safePadding: safePadding,
+              leftPad: leftPad,
+              rightPad: rightPad,
+            ),
 
           // 中间播放/暂停
           if (_showControls && !_isLocked) _buildCenterControls(),
 
           // 底部控制栏
           if (_showControls && !_isLocked)
-            _buildBottomControls(safePadding: safePadding, leftPad: leftPad, rightPad: rightPad),
+            _buildBottomControls(
+              safePadding: safePadding,
+              leftPad: leftPad,
+              rightPad: rightPad,
+            ),
 
           // 锁屏按钮
           _buildLockButton(),
@@ -436,7 +449,7 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
                     overflow: TextOverflow.ellipsis,
                   ),
                   if (widget.currentSmallTitle != null &&
-                      widget.currentSmallTitle!.isNotEmpty) ...[  
+                      widget.currentSmallTitle!.isNotEmpty) ...[
                     const SizedBox(height: 2),
                     Text(
                       '第${widget.currentEpisode}集 ${widget.currentSmallTitle}',
@@ -523,22 +536,29 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
                     data: SliderThemeData(
                       trackHeight: 3,
                       trackShape: const RectangularSliderTrackShape(),
-                      thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
-                      overlayShape: const RoundSliderOverlayShape(overlayRadius: 12),
+                      thumbShape: const RoundSliderThumbShape(
+                        enabledThumbRadius: 6,
+                      ),
+                      overlayShape: const RoundSliderOverlayShape(
+                        overlayRadius: 12,
+                      ),
                       activeTrackColor: Theme.of(context).colorScheme.primary,
                       inactiveTrackColor: Colors.white.withValues(alpha: 0.3),
                       thumbColor: Theme.of(context).colorScheme.primary,
                     ),
                     child: Slider(
                       value: _duration.inMilliseconds > 0
-                          ? (_position.inMilliseconds / _duration.inMilliseconds).clamp(0.0, 1.0)
+                          ? (_position.inMilliseconds /
+                                    _duration.inMilliseconds)
+                                .clamp(0.0, 1.0)
                           : 0.0,
                       onChangeStart: (_) => _hideTimer?.cancel(),
                       onChanged: (value) {
                         setState(() {
                           _isDragging = true;
                           _position = Duration(
-                            milliseconds: (value * _duration.inMilliseconds).toInt(),
+                            milliseconds: (value * _duration.inMilliseconds)
+                                .toInt(),
                           );
                         });
                       },
@@ -567,7 +587,10 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
                     scrollDirection: Axis.horizontal,
                     child: Row(
                       children: [
-                        _buildIconBtn(Icons.skip_previous, _playPreviousEpisode),
+                        _buildIconBtn(
+                          Icons.skip_previous,
+                          _playPreviousEpisode,
+                        ),
                         const SizedBox(width: 10),
                         _buildIconBtn(
                           _isPlaying ? Icons.pause : Icons.play_arrow,
@@ -579,7 +602,7 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
                         _buildDanmakuButton(),
                         const SizedBox(width: 10),
                         _buildDanmakuSettingButton(),
-                        if (_showDanmakuInput) ...[  
+                        if (_showDanmakuInput) ...[
                           const SizedBox(width: 10),
                           _buildDanmakuInputInline(),
                         ],
@@ -593,7 +616,10 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
                   children: [
                     KeyedSubtree(
                       key: _speedButtonKey,
-                      child: _buildTextBtn('${_playbackSpeed}x', _showSpeedSelector),
+                      child: _buildTextBtn(
+                        '${_playbackSpeed}x',
+                        _showSpeedSelector,
+                      ),
                     ),
                     const SizedBox(width: 16),
                     VideoFitButton(
@@ -604,11 +630,18 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
                       },
                     ),
                     const SizedBox(width: 16),
-                    _buildIconBtn(Icons.video_library_outlined, _showEpisodeSelector),
+                    _buildIconBtn(
+                      Icons.video_library_outlined,
+                      _showEpisodeSelector,
+                    ),
                     const SizedBox(width: 16),
                     GestureDetector(
                       onTap: widget.onExitFullscreen,
-                      child: const Icon(Icons.fullscreen_exit, color: Colors.white, size: 22),
+                      child: const Icon(
+                        Icons.fullscreen_exit,
+                        color: Colors.white,
+                        size: 22,
+                      ),
                     ),
                   ],
                 ),
@@ -697,13 +730,13 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
         return Align(
           alignment: Alignment.centerRight,
           child: SlideTransition(
-            position: Tween<Offset>(
-              begin: const Offset(1, 0),
-              end: Offset.zero,
-            ).animate(CurvedAnimation(
-              parent: animation,
-              curve: Curves.easeOutCubic,
-            )),
+            position: Tween<Offset>(begin: const Offset(1, 0), end: Offset.zero)
+                .animate(
+                  CurvedAnimation(
+                    parent: animation,
+                    curve: Curves.easeOutCubic,
+                  ),
+                ),
             child: DanmakuSettingsSidePanel(
               initialConfig: _danmakuConfig,
               onConfigChanged: (config) {
@@ -750,7 +783,10 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
 
     _danmakuController.clear();
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('已发送（本地回显）'), duration: Duration(seconds: 1)),
+      const SnackBar(
+        content: Text('已发送（本地回显）'),
+        duration: Duration(seconds: 1),
+      ),
     );
   }
 

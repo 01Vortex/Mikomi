@@ -1,7 +1,7 @@
 import 'package:canvas_danmaku/canvas_danmaku.dart';
 import 'package:mikomi/features/video/models/danmaku_model.dart';
 
-class DanmakuBroadcaster {
+class DanmakuFacade {
   final List<dynamic> _controllers = [];
 
   bool get isEmpty => _controllers.isEmpty;
@@ -25,8 +25,8 @@ class DanmakuBroadcaster {
         type: danmaku.type == 5
             ? DanmakuItemType.top
             : danmaku.type == 4
-                ? DanmakuItemType.bottom
-                : DanmakuItemType.scroll,
+            ? DanmakuItemType.bottom
+            : DanmakuItemType.scroll,
       );
       for (final controller in _controllers) {
         (controller as DanmakuController).addDanmaku(item);
