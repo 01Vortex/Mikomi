@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:mikomi/features/settings/danmaku/danmaku_setting_service.dart';
+import 'package:mikomi/features/settings/video_play/service/play_setting_service.dart';
 import 'package:flutter/foundation.dart';
 import 'package:mikomi/features/anime/selector/video_source_selector.dart';
 import 'package:mikomi/features/video/controller/video_episode_controller.dart';
@@ -18,6 +19,7 @@ import 'package:mikomi/features/video/state/fullscreen_video_state.dart';
 import 'package:mikomi/features/video/state/video_page_state.dart';
 import 'package:mikomi/features/video/state/video_player_listener.dart';
 import 'package:mikomi/features/video/state/video_state.dart';
+import 'package:mikomi/features/video/ui/widgets/video_fit.dart';
 
 class VideoFlowController {
   final VideoEpisodeController _episodeController;
@@ -28,6 +30,7 @@ class VideoFlowController {
   final app_danmaku.DanmakuController _danmakuController;
   final VideoPlayerListenerController _playerListenerController;
   final ValueNotifier<VideoPlayerSnapshot> _playerSnapshotNotifier;
+  final PlaySettingsService _playSettingsService;
   final String title;
   final String? animeTitle;
   final int? bangumiId;
@@ -37,6 +40,7 @@ class VideoFlowController {
   SmallscreenPlaybackState _smallscreenState =
       const SmallscreenPlaybackState.initial();
   DanmakuConfig _danmakuConfig = const DanmakuConfig();
+  VideoFitMode _fullscreenFitMode = VideoFitMode.contain;
   Duration? _initialProgress;
   Timer? _timeoutTimer;
   bool _isDisposed = false;
@@ -57,11 +61,14 @@ class VideoFlowController {
     VideoParsingService? parsingService,
     VideoHistoryService? historyService,
     VideoPlaybackService? playbackService,
+    PlaySettingsService? playSettingsService,
   }) {
     final resolvedEpisodeService = episodeService ?? VideoEpisodeService();
     final resolvedParsingService = parsingService ?? VideoParsingService();
     final resolvedHistoryService = historyService ?? VideoHistoryService();
     final resolvedPlaybackService = playbackService ?? VideoPlaybackService();
+    final resolvedPlaySettingsService =
+        playSettingsService ?? PlaySettingsService();
 
     final episodeController = VideoEpisodeController(
       episodeService: resolvedEpisodeService,
@@ -106,6 +113,7 @@ class VideoFlowController {
         bangumiId: bangumiId,
       ),
       playbackService: resolvedPlaybackService,
+      playSettingsService: resolvedPlaySettingsService,
       danmakuController: danmakuController,
       playerListenerController: playerListenerController,
       playerSnapshotNotifier: playerSnapshotNotifier,
@@ -128,6 +136,7 @@ class VideoFlowController {
     required VideoResolveController resolveController,
     required VideoHistoryController historyController,
     required VideoPlaybackService playbackService,
+    required PlaySettingsService playSettingsService,
     required app_danmaku.DanmakuController danmakuController,
     required VideoPlayerListenerController playerListenerController,
     required ValueNotifier<VideoPlayerSnapshot> playerSnapshotNotifier,
@@ -145,6 +154,7 @@ class VideoFlowController {
        _resolveController = resolveController,
        _historyController = historyController,
        _playbackService = playbackService,
+       _playSettingsService = playSettingsService,
        _danmakuController = danmakuController,
        _playerListenerController = playerListenerController,
        _playerSnapshotNotifier = playerSnapshotNotifier,
@@ -173,6 +183,7 @@ class VideoFlowController {
     danmakuConfig: _danmakuConfig,
     fullscreenState: _buildFullscreenState(),
     playerSnapshotListenable: _playerSnapshotNotifier,
+    fullscreenFitMode: _fullscreenFitMode,
   );
 
   Future<void> initialize() async {
@@ -180,6 +191,7 @@ class VideoFlowController {
     _initializeVideoState();
     _startTimers();
     await _loadDanmakuConfig();
+    await _loadFullscreenFitMode();
   }
 
   Future<void> initializePlayer(String videoUrl) async {
@@ -289,6 +301,20 @@ class VideoFlowController {
 
   void seekTo(Duration position) {
     _playbackService.player?.seek(position);
+  }
+
+  void setPlaybackSpeed(double speed) {
+    _playbackService.player?.setRate(speed);
+  }
+
+  Future<void> updateFullscreenFitMode(VideoFitMode mode) async {
+    _fullscreenFitMode = mode;
+    _sync();
+    await _playSettingsService.setVideoFitMode(mode);
+  }
+
+  void attachFullscreenDanmakuController(dynamic controller) {
+    _danmakuController.attachCanvasController(controller);
   }
 
   Future<void> setDanmakuConfig(DanmakuConfig config) async {
@@ -503,6 +529,11 @@ class VideoFlowController {
   Future<void> _loadDanmakuConfig() async {
     _danmakuConfig = await DanmakuSettingService.loadAll();
     _danmakuController.requestCurrentWindowRefresh();
+    _sync();
+  }
+
+  Future<void> _loadFullscreenFitMode() async {
+    _fullscreenFitMode = await _playSettingsService.getVideoFitMode();
     _sync();
   }
 

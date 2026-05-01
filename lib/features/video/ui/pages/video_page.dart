@@ -216,6 +216,7 @@ class _VideoPlayerSection extends StatelessWidget {
       playerSnapshotListenable: pageState.playerSnapshotListenable,
       danmakuConfig: pageState.danmakuConfig,
       fullscreenState: pageState.fullscreenState,
+      fullscreenFitMode: pageState.fullscreenFitMode,
       currentSmallTitle: player.currentSmallTitle,
       onNextEpisode: player.hasNextEpisode ? facade.playNextEpisode : null,
       onPreviousEpisode: player.hasPreviousEpisode
@@ -241,6 +242,13 @@ class _VideoPlayerSection extends StatelessWidget {
       onTogglePlayPause: facade.toggleSmallScreenPlayPause,
       onSeek: facade.seekSmallScreenTo,
       onDanmakuLayerCreated: facade.attachSmallScreenDanmakuController,
+      onFullscreenFitModeChanged: (mode) {
+        unawaited(facade.updateFullscreenFitMode(mode));
+      },
+      onPlaybackSpeedChanged: facade.setPlaybackSpeed,
+      onDanmakuConfigChanged: (config) {
+        unawaited(facade.updateDanmakuConfig(config));
+      },
     );
   }
 }

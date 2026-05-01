@@ -7,6 +7,7 @@ import 'package:mikomi/features/video/services/video_playback_service.dart';
 import 'package:mikomi/features/video/state/fullscreen_video_state.dart';
 import 'package:mikomi/features/video/state/video_player_listener.dart';
 import 'package:mikomi/features/video/state/video_state.dart';
+import 'package:mikomi/features/video/ui/widgets/video_fit.dart';
 
 class VideoPageState {
   final String title;
@@ -23,6 +24,7 @@ class VideoPageState {
   final DanmakuConfig danmakuConfig;
   final FullscreenVideoState fullscreenState;
   final ValueListenable<VideoPlayerSnapshot> playerSnapshotListenable;
+  final VideoFitMode fullscreenFitMode;
 
   const VideoPageState({
     required this.title,
@@ -39,6 +41,7 @@ class VideoPageState {
     required this.danmakuConfig,
     required this.fullscreenState,
     required this.playerSnapshotListenable,
+    required this.fullscreenFitMode,
   });
 }
 

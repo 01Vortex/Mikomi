@@ -7,6 +7,7 @@ import 'package:mikomi/features/video/state/fullscreen_video_state.dart';
 import 'package:mikomi/features/video/state/video_page_state.dart';
 import 'package:mikomi/features/video/state/video_player_listener.dart';
 import 'package:mikomi/features/video/ui/widgets/smallscreen/smallscreen_video.dart';
+import 'package:mikomi/features/video/ui/widgets/video_fit.dart';
 
 class VideoPlayerArea extends StatelessWidget {
   final double? videoHeight;
@@ -19,6 +20,7 @@ class VideoPlayerArea extends StatelessWidget {
   final ValueListenable<VideoPlayerSnapshot> playerSnapshotListenable;
   final DanmakuConfig danmakuConfig;
   final FullscreenVideoState fullscreenState;
+  final VideoFitMode fullscreenFitMode;
   final String? currentSmallTitle;
   final VoidCallback? onNextEpisode;
   final VoidCallback? onPreviousEpisode;
@@ -40,6 +42,9 @@ class VideoPlayerArea extends StatelessWidget {
   final VoidCallback onTogglePlayPause;
   final ValueChanged<Duration> onSeek;
   final ValueChanged<dynamic> onDanmakuLayerCreated;
+  final ValueChanged<VideoFitMode> onFullscreenFitModeChanged;
+  final ValueChanged<double> onPlaybackSpeedChanged;
+  final ValueChanged<DanmakuConfig> onDanmakuConfigChanged;
 
   const VideoPlayerArea({
     super.key,
@@ -53,6 +58,7 @@ class VideoPlayerArea extends StatelessWidget {
     required this.playerSnapshotListenable,
     required this.danmakuConfig,
     required this.fullscreenState,
+    required this.fullscreenFitMode,
     this.currentSmallTitle,
     this.onNextEpisode,
     this.onPreviousEpisode,
@@ -74,6 +80,9 @@ class VideoPlayerArea extends StatelessWidget {
     required this.onTogglePlayPause,
     required this.onSeek,
     required this.onDanmakuLayerCreated,
+    required this.onFullscreenFitModeChanged,
+    required this.onPlaybackSpeedChanged,
+    required this.onDanmakuConfigChanged,
   });
 
   @override
@@ -101,6 +110,7 @@ class VideoPlayerArea extends StatelessWidget {
                   playerSnapshotListenable: playerSnapshotListenable,
                   danmakuConfig: danmakuConfig,
                   fullscreenState: fullscreenState,
+                  fullscreenFitMode: fullscreenFitMode,
                   currentSmallTitle: currentSmallTitle,
                   onNextEpisode: onNextEpisode,
                   onPreviousEpisode: onPreviousEpisode,
@@ -118,6 +128,9 @@ class VideoPlayerArea extends StatelessWidget {
                   onTogglePlayPause: onTogglePlayPause,
                   onSeek: onSeek,
                   onDanmakuLayerCreated: onDanmakuLayerCreated,
+                  onFullscreenFitModeChanged: onFullscreenFitModeChanged,
+                  onPlaybackSpeedChanged: onPlaybackSpeedChanged,
+                  onDanmakuConfigChanged: onDanmakuConfigChanged,
                 ),
               ),
             if (hasError && !isLoading)

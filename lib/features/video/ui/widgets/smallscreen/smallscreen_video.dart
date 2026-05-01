@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter/material.dart';
 import 'package:mikomi/features/settings/danmaku/danmaku_setting_service.dart';
 import 'package:media_kit_video/media_kit_video.dart';
@@ -11,6 +12,7 @@ import 'package:mikomi/features/video/state/video_page_state.dart';
 import 'package:mikomi/features/video/state/video_player_listener.dart';
 import 'package:mikomi/features/video/ui/pages/fullscreen_page.dart';
 import 'package:mikomi/features/video/ui/widgets/danmaku_overlay.dart';
+import 'package:mikomi/features/video/ui/widgets/video_fit.dart';
 import 'package:mikomi/features/video/ui/widgets/video_gesture.dart';
 
 class SmallscreenVideo extends StatefulWidget {
@@ -23,6 +25,7 @@ class SmallscreenVideo extends StatefulWidget {
   final ValueListenable<VideoPlayerSnapshot> playerSnapshotListenable;
   final DanmakuConfig danmakuConfig;
   final FullscreenVideoState fullscreenState;
+  final VideoFitMode fullscreenFitMode;
   final String? currentSmallTitle;
   final VoidCallback? onBack;
   final VoidCallback? onOpenMenu;
@@ -42,6 +45,9 @@ class SmallscreenVideo extends StatefulWidget {
   final VoidCallback onTogglePlayPause;
   final ValueChanged<Duration> onSeek;
   final ValueChanged<dynamic> onDanmakuLayerCreated;
+  final ValueChanged<VideoFitMode> onFullscreenFitModeChanged;
+  final ValueChanged<double> onPlaybackSpeedChanged;
+  final ValueChanged<DanmakuConfig> onDanmakuConfigChanged;
 
   const SmallscreenVideo({
     super.key,
@@ -54,6 +60,7 @@ class SmallscreenVideo extends StatefulWidget {
     required this.playerSnapshotListenable,
     required this.danmakuConfig,
     required this.fullscreenState,
+    required this.fullscreenFitMode,
     this.currentSmallTitle,
     this.onBack,
     this.onOpenMenu,
@@ -73,6 +80,9 @@ class SmallscreenVideo extends StatefulWidget {
     required this.onTogglePlayPause,
     required this.onSeek,
     required this.onDanmakuLayerCreated,
+    required this.onFullscreenFitModeChanged,
+    required this.onPlaybackSpeedChanged,
+    required this.onDanmakuConfigChanged,
   });
 
   @override
@@ -81,6 +91,7 @@ class SmallscreenVideo extends StatefulWidget {
 
 class _SmallscreenVideoState extends State<SmallscreenVideo> {
   late final ValueNotifier<FullscreenVideoState> _fullscreenNotifier;
+  FullscreenVideoState? _pendingFullscreenState;
   bool _showControls = true;
   bool _isDragging = false;
   bool _lockPanel = false;
@@ -102,12 +113,36 @@ class _SmallscreenVideoState extends State<SmallscreenVideo> {
   @override
   void didUpdateWidget(covariant SmallscreenVideo oldWidget) {
     super.didUpdateWidget(oldWidget);
-    _fullscreenNotifier.value = widget.fullscreenState;
+    _syncFullscreenState(widget.fullscreenState);
     if (oldWidget.videoUrl != widget.videoUrl && widget.videoUrl.isNotEmpty) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) widget.onInitializePlayer();
       });
     }
+  }
+
+  void _syncFullscreenState(FullscreenVideoState state) {
+    if (!mounted) return;
+    final phase = SchedulerBinding.instance.schedulerPhase;
+    final shouldDefer =
+        phase == SchedulerPhase.persistentCallbacks ||
+        phase == SchedulerPhase.transientCallbacks ||
+        phase == SchedulerPhase.midFrameMicrotasks;
+
+    if (!shouldDefer) {
+      _fullscreenNotifier.value = state;
+      return;
+    }
+
+    _pendingFullscreenState = state;
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final pending = _pendingFullscreenState;
+      _pendingFullscreenState = null;
+      if (pending != null) {
+        _fullscreenNotifier.value = pending;
+      }
+    });
   }
 
   @override
@@ -160,6 +195,18 @@ class _SmallscreenVideoState extends State<SmallscreenVideo> {
               onPreviousEpisode: widget.onPreviousEpisode,
               onEpisodeSelected: widget.onEpisodeSelected,
               onToggleSort: widget.onToggleSort,
+              playerSnapshotListenable: widget.playerSnapshotListenable,
+              danmakuConfig: widget.danmakuConfig,
+              isDanmakuInputVisible: widget.isDanmakuEnabled,
+              fitMode: widget.fullscreenFitMode,
+              onFitModeChanged: widget.onFullscreenFitModeChanged,
+              onPlayPause: widget.onTogglePlayPause,
+              onSeek: widget.onSeek,
+              onPlaybackSpeedChanged: widget.onPlaybackSpeedChanged,
+              onDanmakuConfigChanged: widget.onDanmakuConfigChanged,
+              onDanmakuToggle: widget.onDanmakuToggle,
+              onDanmakuInputVisibleChanged: (_) {},
+              onFullscreenDanmakuLayerCreated: widget.onDanmakuLayerCreated,
             ),
             transitionDuration: const Duration(milliseconds: 200),
             reverseTransitionDuration: const Duration(milliseconds: 200),

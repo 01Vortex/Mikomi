@@ -6,6 +6,7 @@ import 'package:mikomi/features/video/controller/video_flow_controller.dart';
 import 'package:mikomi/features/video/controller/video_system_ui_controller.dart';
 import 'package:mikomi/features/video/models/episode_model.dart';
 import 'package:mikomi/features/video/state/video_page_state.dart';
+import 'package:mikomi/features/video/ui/widgets/video_fit.dart';
 
 class VideoPageFacade {
   final VideoPluginManager _pluginManager;
@@ -96,6 +97,18 @@ class VideoPageFacade {
 
   void seekSmallScreenTo(Duration position) {
     _flowController.seekTo(position);
+  }
+
+  void setPlaybackSpeed(double speed) {
+    _flowController.setPlaybackSpeed(speed);
+  }
+
+  Future<void> updateFullscreenFitMode(VideoFitMode mode) {
+    return _flowController.updateFullscreenFitMode(mode);
+  }
+
+  void attachFullscreenDanmakuController(dynamic controller) {
+    _flowController.attachFullscreenDanmakuController(controller);
   }
 
   Future<void> switchVideoSource(VideoSource source) {
