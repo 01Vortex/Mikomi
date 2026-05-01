@@ -13,9 +13,9 @@ import 'package:mikomi/features/video/services/video_history_service.dart';
 import 'package:mikomi/features/video/services/video_parsing_service.dart';
 import 'package:mikomi/features/video/services/video_playback_service.dart';
 import 'package:mikomi/features/video/state/video_state_manager.dart';
-import 'package:mikomi/features/video/ui/widgets/comment_tab_content.dart';
 import 'package:mikomi/features/video/ui/widgets/danmaku_overlay.dart';
 import 'package:mikomi/features/video/ui/widgets/episcode_tab_content.dart';
+import 'package:mikomi/features/video/ui/widgets/fullscreen/fullscreen_danmaku_settings.dart';
 import 'package:mikomi/features/video/ui/widgets/smallscreen/smallscreen_area.dart';
 import 'package:mikomi/features/video/ui/widgets/video_tab.dart';
 
@@ -113,6 +113,19 @@ class _VideoPageState extends State<VideoPage>
       _clearDanmakuInput();
     }
     await DanmakuSettingService().setShowDanmaku(enabled);
+  }
+
+  Future<void> _handleDanmakuConfigChanged(DanmakuConfig config) async {
+    await DanmakuSettingService.setFontSize(config.fontSize);
+    await DanmakuSettingService.setOpacity(config.opacity);
+    await DanmakuSettingService.setArea(config.area);
+    await DanmakuSettingService.setDuration(config.duration);
+    await DanmakuSettingService.setStrokeWidth(config.strokeWidth);
+    await DanmakuSettingService.setShowTop(config.showTop);
+    await DanmakuSettingService.setShowBottom(config.showBottom);
+    await DanmakuSettingService.setShowScroll(config.showScroll);
+    if (!mounted) return;
+    setState(() {});
   }
 
   void _showVideoSourceSelector() {
@@ -316,7 +329,10 @@ class _VideoPageState extends State<VideoPage>
                                             onToggleSort:
                                                 _controller.toggleEpisodeSort,
                                           ),
-                                          const CommentTabContent.VideoComment(),
+                                          FullscreenDanmakuSettings(
+                                            onConfigChanged:
+                                                _handleDanmakuConfigChanged,
+                                          ),
                                         ],
                                       );
                                     },

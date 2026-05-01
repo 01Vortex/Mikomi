@@ -12,6 +12,7 @@ import 'package:mikomi/features/video/ui/widgets/video_gesture.dart';
 import 'package:mikomi/features/settings/danmaku/danmaku_setting_service.dart';
 
 class SmallscreenVideo extends StatefulWidget {
+  final DanmakuConfig? danmakuConfigOverride;
   final String videoUrl;
   final String title;
   final int currentEpisode;
@@ -37,6 +38,7 @@ class SmallscreenVideo extends StatefulWidget {
 
   const SmallscreenVideo({
     super.key,
+    this.danmakuConfigOverride,
     required this.videoUrl,
     required this.title,
     required this.currentEpisode,
@@ -178,6 +180,15 @@ class _SmallscreenVideoState extends State<SmallscreenVideo> {
       }
     });
 
+    if (oldWidget.danmakuConfigOverride != widget.danmakuConfigOverride &&
+        widget.danmakuConfigOverride != null) {
+      _danmakuConfig = widget.danmakuConfigOverride!;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        _videoDanmakuController.requestCurrentWindowRefresh();
+      });
+    }
+
     // 监听弹幕开关变化
     if (oldWidget.isDanmakuEnabled != widget.isDanmakuEnabled) {
       debugPrint(
@@ -223,6 +234,12 @@ class _SmallscreenVideoState extends State<SmallscreenVideo> {
   }
 
   Future<void> _loadDanmakuConfig() async {
+    if (widget.danmakuConfigOverride != null) {
+      setState(() => _danmakuConfig = widget.danmakuConfigOverride!);
+      _videoDanmakuController.requestCurrentWindowRefresh();
+      return;
+    }
+
     final config = await DanmakuSettingService.loadAll();
     if (!mounted) return;
     setState(() => _danmakuConfig = config);

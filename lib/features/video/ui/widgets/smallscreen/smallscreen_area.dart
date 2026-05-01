@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:mikomi/features/video/ui/widgets/smallscreen/smallscreen_video.dart';
-import 'package:mikomi/features/video/services/video_playback_service.dart';
+import 'package:mikomi/features/settings/danmaku/danmaku_setting_service.dart';
 import 'package:mikomi/features/video/models/episode_model.dart';
+import 'package:mikomi/features/video/services/video_playback_service.dart';
+import 'package:mikomi/features/video/ui/widgets/smallscreen/smallscreen_video.dart';
 
-class VideoPlayerArea extends StatelessWidget {
+class VideoPlayerArea extends StatefulWidget {
   final double? videoHeight;
   final String videoUrl;
   final String title;
@@ -60,9 +61,36 @@ class VideoPlayerArea extends StatelessWidget {
   });
 
   @override
+  State<VideoPlayerArea> createState() => _VideoPlayerAreaState();
+}
+
+class _VideoPlayerAreaState extends State<VideoPlayerArea> {
+  DanmakuConfig _danmakuConfig = const DanmakuConfig();
+
+  @override
+  void initState() {
+    super.initState();
+    _loadDanmakuConfig();
+  }
+
+  @override
+  void didUpdateWidget(covariant VideoPlayerArea oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.isDanmakuEnabled != widget.isDanmakuEnabled) {
+      _loadDanmakuConfig();
+    }
+  }
+
+  Future<void> _loadDanmakuConfig() async {
+    final config = await DanmakuSettingService.loadAll();
+    if (!mounted) return;
+    setState(() => _danmakuConfig = config);
+  }
+
+  @override
   Widget build(BuildContext context) {
     final width = MediaQuery.of(context).size.width;
-    final height = videoHeight ?? (width / (16 / 9));
+    final height = widget.videoHeight ?? (width / (16 / 9));
 
     return SizedBox(
       width: width,
@@ -71,32 +99,45 @@ class VideoPlayerArea extends StatelessWidget {
         color: Colors.black,
         child: Stack(
           children: [
-            if (videoUrl.isNotEmpty)
+            if (widget.videoUrl.isNotEmpty)
               Positioned.fill(
                 child: SmallscreenVideo(
-                  videoUrl: videoUrl,
-                  title: title,
-                  currentEpisode: currentEpisode,
-                  totalEpisodes: totalEpisodes,
-                  playbackService: playbackService,
-                  currentSmallTitle: currentSmallTitle,
-                  onNextEpisode: onNextEpisode,
-                  onPreviousEpisode: onPreviousEpisode,
-                  hasNextEpisode: hasNextEpisode,
-                  hasPreviousEpisode: hasPreviousEpisode,
-                  initialProgress: initialProgress,
-                  episodes: episodes,
-                  onEpisodeSelected: onEpisodeSelected,
-                  isLoadingEpisodes: isLoadingEpisodes,
-                  isDescending: isDescending,
-                  onToggleSort: onToggleSort,
-                  isDanmakuEnabled: isDanmakuEnabled,
-                  animeTitle: animeTitle,
-                  bangumiId: bangumiId,
-                  onDanmakuToggle: onDanmakuToggle,
+                  key: ValueKey(
+                    '${_danmakuConfig.fontSize}-'
+                    '${_danmakuConfig.opacity}-'
+                    '${_danmakuConfig.area}-'
+                    '${_danmakuConfig.duration}-'
+                    '${_danmakuConfig.strokeWidth}-'
+                    '${_danmakuConfig.showTop}-'
+                    '${_danmakuConfig.showBottom}-'
+                    '${_danmakuConfig.showScroll}-'
+                    '${widget.currentEpisode}-'
+                    '${widget.isDanmakuEnabled}',
+                  ),
+                  danmakuConfigOverride: _danmakuConfig,
+                  videoUrl: widget.videoUrl,
+                  title: widget.title,
+                  currentEpisode: widget.currentEpisode,
+                  totalEpisodes: widget.totalEpisodes,
+                  playbackService: widget.playbackService,
+                  currentSmallTitle: widget.currentSmallTitle,
+                  onNextEpisode: widget.onNextEpisode,
+                  onPreviousEpisode: widget.onPreviousEpisode,
+                  hasNextEpisode: widget.hasNextEpisode,
+                  hasPreviousEpisode: widget.hasPreviousEpisode,
+                  initialProgress: widget.initialProgress,
+                  episodes: widget.episodes,
+                  onEpisodeSelected: widget.onEpisodeSelected,
+                  isLoadingEpisodes: widget.isLoadingEpisodes,
+                  isDescending: widget.isDescending,
+                  onToggleSort: widget.onToggleSort,
+                  isDanmakuEnabled: widget.isDanmakuEnabled,
+                  animeTitle: widget.animeTitle,
+                  bangumiId: widget.bangumiId,
+                  onDanmakuToggle: widget.onDanmakuToggle,
                 ),
               ),
-            if (hasError && !isLoading)
+            if (widget.hasError && !widget.isLoading)
               Positioned.fill(
                 child: Center(
                   child: Column(
@@ -112,14 +153,14 @@ class VideoPlayerArea extends StatelessWidget {
                   ),
                 ),
               ),
-            if (isLoading)
+            if (widget.isLoading)
               Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     const CircularProgressIndicator(
                         color: Colors.white, strokeWidth: 3),
-                    if (showTimeoutHint) ...[
+                    if (widget.showTimeoutHint) ...[
                       const SizedBox(height: 12),
                       Text('视频加载慢，可点右下角换源',
                           style: TextStyle(
@@ -129,7 +170,7 @@ class VideoPlayerArea extends StatelessWidget {
                   ],
                 ),
               ),
-            if ((isLoading || hasError) && videoUrl.isEmpty)
+            if ((widget.isLoading || widget.hasError) && widget.videoUrl.isEmpty)
               Positioned(
                 top: 0,
                 left: 0,
@@ -142,7 +183,7 @@ class VideoPlayerArea extends StatelessWidget {
                       end: Alignment.bottomCenter,
                       colors: [
                         Colors.black.withValues(alpha: 0.6),
-                        Colors.transparent
+                        Colors.transparent,
                       ],
                     ),
                   ),
@@ -166,7 +207,7 @@ class VideoPlayerArea extends StatelessWidget {
                         const SizedBox(width: 2),
                         Expanded(
                           child: Text(
-                            title,
+                            widget.title,
                             style: const TextStyle(
                               color: Colors.white,
                               fontSize: 15,

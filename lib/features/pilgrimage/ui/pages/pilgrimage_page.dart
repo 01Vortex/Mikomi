@@ -15,94 +15,45 @@ class _PilgrimagePageState extends State<PilgrimagePage> {
 
   static final InAppWebViewSettings _settings = InAppWebViewSettings(
     javaScriptEnabled: true,
+    javaScriptCanOpenWindowsAutomatically: false,
     domStorageEnabled: true,
+    databaseEnabled: true,
     cacheEnabled: true,
     supportZoom: true,
+    builtInZoomControls: false,
+    displayZoomControls: false,
     disableContextMenu: true,
     useOnLoadResource: false,
     useOnDownloadStart: false,
-    disableDefaultErrorPage: true,
+    disableDefaultErrorPage: false,
+    transparentBackground: false,
+    mediaPlaybackRequiresUserGesture: true,
+    allowsInlineMediaPlayback: true,
+    allowsBackForwardNavigationGestures: false,
     preferredContentMode: UserPreferredContentMode.MOBILE,
   );
 
-  InAppWebViewController? _controller;
-  bool _isLoading = true;
-  bool _hasError = false;
+  bool _showWebView = false;
 
-  Future<void> _retry() async {
-    setState(() {
-      _isLoading = true;
-      _hasError = false;
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      setState(() => _showWebView = true);
     });
-    await _controller?.reload();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
-        child: Stack(
-          children: [
-            InAppWebView(
-              initialUrlRequest: _initialRequest,
-              initialSettings: _settings,
-              onWebViewCreated: (controller) {
-                _controller = controller;
-              },
-              onLoadStart: (_, _) {
-                if (!mounted) return;
-                setState(() {
-                  _isLoading = true;
-                  _hasError = false;
-                });
-              },
-              onLoadStop: (_, _) {
-                if (!mounted) return;
-                setState(() {
-                  _isLoading = false;
-                  _hasError = false;
-                });
-              },
-              onReceivedError: (_, _, _) {
-                if (!mounted) return;
-                setState(() {
-                  _isLoading = false;
-                  _hasError = true;
-                });
-              },
-              onReceivedHttpError: (_, _, _) {
-                if (!mounted) return;
-                setState(() {
-                  _isLoading = false;
-                  _hasError = true;
-                });
-              },
-            ),
-            if (_isLoading)
-              const Center(
-                child: CircularProgressIndicator(),
-              ),
-            if (_hasError)
-              ColoredBox(
-                color: Theme.of(context).scaffoldBackgroundColor,
-                child: Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.cloud_off_rounded, size: 44),
-                      const SizedBox(height: 10),
-                      const Text('巡礼地图加载失败'),
-                      const SizedBox(height: 12),
-                      FilledButton(
-                        onPressed: _retry,
-                        child: const Text('重试'),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-          ],
-        ),
+        child: _showWebView
+            ? InAppWebView(
+                initialUrlRequest: _initialRequest,
+                initialSettings: _settings,
+              )
+            : const SizedBox.expand(),
       ),
     );
   }

@@ -4,6 +4,7 @@ import 'package:mikomi/features/home/ui/pages/home_page.dart';
 import 'package:mikomi/features/pilgrimage/ui/pages/pilgrimage_page.dart';
 import 'package:mikomi/features/my/ui/pages/my_page.dart';
 import 'package:mikomi/shared/bottom_navigation.dart';
+import 'package:mikomi/shared/gestures.dart';
 import 'package:mikomi/core/services/navigation_service.dart';
 
 class MainPage extends StatefulWidget {
@@ -23,13 +24,15 @@ class _MainPageState extends State<MainPage> {
     final navigationService = context.watch<NavigationService>();
     final currentIndex = navigationService.selectedTab;
 
-    return Scaffold(
-      body: IndexedStack(index: currentIndex, children: _buildPages(context)),
-      bottomNavigationBar: AppBottomNavigation(
-        currentIndex: currentIndex,
-        onTap: (index) {
-          navigationService.switchToTab(index);
-        },
+    return DoubleBackExitScope(
+      child: Scaffold(
+        body: IndexedStack(index: currentIndex, children: _buildPages(context)),
+        bottomNavigationBar: AppBottomNavigation(
+          currentIndex: currentIndex,
+          onTap: (index) {
+            navigationService.switchToTab(index);
+          },
+        ),
       ),
     );
   }
