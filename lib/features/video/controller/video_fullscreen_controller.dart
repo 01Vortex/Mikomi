@@ -6,7 +6,7 @@ import 'package:mikomi/features/video/controller/danmaku_controller.dart'
     as app_danmaku;
 import 'package:mikomi/features/video/services/video_playback_service.dart';
 import 'package:mikomi/features/video/state/fullscreen_page_state.dart';
-import 'package:mikomi/features/video/ui/widgets/smallscreen/smallscreen_video.dart';
+import 'package:mikomi/features/video/state/fullscreen_video_state.dart';
 import 'package:mikomi/features/video/ui/widgets/video_fit.dart';
 
 class VideoFullscreenController {
@@ -80,7 +80,44 @@ class VideoFullscreenController {
       isDanmakuEnabled: enabled,
     );
     _sourceStateNotifier.value = nextVideoState;
-    _setState(_state.copyWith(videoState: nextVideoState));
+    _setState(
+      _state.copyWith(
+        videoState: nextVideoState,
+        isDanmakuInputVisible: enabled,
+      ),
+    );
+    _state.danmakuController.requestCurrentWindowRefresh();
+  }
+
+  void setDanmakuInputVisible(bool visible) {
+    _setState(_state.copyWith(isDanmakuInputVisible: visible));
+  }
+
+  Future<void> updateDanmakuConfig(DanmakuConfig config) async {
+    await Future.wait([
+      DanmakuSettingService.setFontSize(config.fontSize),
+      DanmakuSettingService.setOpacity(config.opacity),
+      DanmakuSettingService.setArea(config.area),
+      DanmakuSettingService.setDuration(config.duration),
+      DanmakuSettingService.setStrokeWidth(config.strokeWidth),
+      DanmakuSettingService.setShowTop(config.showTop),
+      DanmakuSettingService.setShowBottom(config.showBottom),
+      DanmakuSettingService.setShowScroll(config.showScroll),
+    ]);
+    _setState(_state.copyWith(danmakuConfig: config));
+    _state.danmakuController.requestCurrentWindowRefresh();
+  }
+
+  void togglePlayPause() {
+    _playbackService.player?.playOrPause();
+  }
+
+  void seekTo(Duration position) {
+    _playbackService.player?.seek(position);
+  }
+
+  void setPlaybackSpeed(double speed) {
+    _playbackService.player?.setRate(speed);
   }
 
   void dispose() {

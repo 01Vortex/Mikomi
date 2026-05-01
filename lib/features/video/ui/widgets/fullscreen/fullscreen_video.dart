@@ -1,10 +1,8 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:mikomi/features/settings/danmaku/danmaku_setting_service.dart';
-import 'package:mikomi/features/video/facade/danmaku_facade.dart';
-import 'package:mikomi/features/video/controller/danmaku_controller.dart'
-    as app_danmaku;
 import 'package:mikomi/features/video/models/episode_model.dart';
 import 'package:mikomi/features/video/services/video_playback_service.dart';
 import 'package:mikomi/features/video/state/video_player_listener.dart';
@@ -19,6 +17,14 @@ const double _kSideMargin = 16.0;
 
 class FullscreenVideoControls extends StatefulWidget {
   final VideoPlaybackService playbackService;
+  final ValueListenable<VideoPlayerSnapshot> playerSnapshotListenable;
+  final DanmakuConfig danmakuConfig;
+  final bool isDanmakuInputVisible;
+  final ValueChanged<bool>? onDanmakuInputVisibleChanged;
+  final ValueChanged<double>? onPlaybackSpeedChanged;
+  final ValueChanged<Duration>? onSeek;
+  final VoidCallback? onPlayPause;
+  final ValueChanged<DanmakuConfig>? onDanmakuConfigChanged;
   final String title;
   final int currentEpisode;
   final String? currentSmallTitle;
@@ -33,8 +39,6 @@ class FullscreenVideoControls extends StatefulWidget {
   final bool isDescending;
   final VoidCallback? onToggleSort;
   final bool isDanmakuEnabled;
-  final app_danmaku.DanmakuController? danmakuController;
-  final DanmakuFacade? danmakuFacade;
   final void Function(bool)? onDanmakuToggle;
   final VideoFitMode fitMode;
   final ValueChanged<VideoFitMode>? onFitModeChanged;
@@ -42,6 +46,14 @@ class FullscreenVideoControls extends StatefulWidget {
   const FullscreenVideoControls({
     super.key,
     required this.playbackService,
+    required this.playerSnapshotListenable,
+    required this.danmakuConfig,
+    this.isDanmakuInputVisible = false,
+    this.onDanmakuInputVisibleChanged,
+    this.onPlaybackSpeedChanged,
+    this.onSeek,
+    this.onPlayPause,
+    this.onDanmakuConfigChanged,
     required this.title,
     required this.currentEpisode,
     this.currentSmallTitle,
@@ -56,8 +68,6 @@ class FullscreenVideoControls extends StatefulWidget {
     this.isDescending = false,
     this.onToggleSort,
     this.isDanmakuEnabled = false,
-    this.danmakuController,
-    this.danmakuFacade,
     this.onDanmakuToggle,
     this.fitMode = VideoFitMode.contain,
     this.onFitModeChanged,
@@ -70,78 +80,29 @@ class FullscreenVideoControls extends StatefulWidget {
 
 class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
   bool _showControls = true;
-  bool _isPlaying = false;
-  bool _isBuffering = false;
-  Duration _position = Duration.zero;
-  Duration _duration = Duration.zero;
+  Duration _dragPosition = Duration.zero;
   bool _isDragging = false;
   bool _isLocked = false;
   Timer? _hideTimer;
-  double _playbackSpeed = 1.0;
-  bool _showDanmakuInput = false;
-  final TextEditingController _danmakuController = TextEditingController();
-  DanmakuConfig _danmakuConfig = const DanmakuConfig();
-  late final VideoPlayerListenerController _playerListenerController;
+  final TextEditingController _danmakuInputController = TextEditingController();
   final GlobalKey _speedButtonKey = GlobalKey();
 
   @override
   void initState() {
     super.initState();
-    _playerListenerController = VideoPlayerListenerController(
-      onSnapshotChanged: (snapshot) {
-        if (!mounted) return;
-        setState(() {
-          _isPlaying = snapshot.isPlaying;
-          _position = snapshot.position;
-          _duration = snapshot.duration;
-          _isBuffering = snapshot.isBuffering;
-          _playbackSpeed = snapshot.playbackSpeed;
-        });
-      },
-      onPositionChanged: (position) {
-        if (!mounted || _isDragging) return;
-        setState(() => _position = position);
-      },
-      onAutoPlayNext: widget.onNextEpisode,
-    );
-    _loadDanmakuConfig();
-    _bindPlayerState();
     _startHideTimer();
-  }
-
-  Future<void> _loadDanmakuConfig() async {
-    final config = await DanmakuSettingService.loadAll();
-    if (!mounted) return;
-    setState(() => _danmakuConfig = config);
-    widget.danmakuController?.requestCurrentWindowRefresh();
-  }
-
-  @override
-  void didUpdateWidget(covariant FullscreenVideoControls oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.isDanmakuEnabled != widget.isDanmakuEnabled) {
-      widget.danmakuController?.requestCurrentWindowRefresh();
-    }
-  }
-
-  void _bindPlayerState() {
-    _playerListenerController.bind(
-      widget.playbackService.player,
-      hasNextEpisode: widget.hasNextEpisode,
-    );
   }
 
   @override
   void dispose() {
-    _playerListenerController.dispose();
     _hideTimer?.cancel();
-    _danmakuController.dispose();
+    _danmakuInputController.dispose();
     super.dispose();
   }
 
   void _startHideTimer() {
     _hideTimer?.cancel();
-    if (_isPlaying && !_isLocked) {
+    if (widget.playerSnapshotListenable.value.isPlaying && !_isLocked) {
       _hideTimer = Timer(const Duration(seconds: 4), () {
         if (mounted && _showControls) {
           setState(() => _showControls = false);
@@ -159,36 +120,16 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
   }
 
   void _togglePlayPause() {
-    widget.playbackService.player?.playOrPause();
+    widget.onPlayPause?.call();
     _startHideTimer();
   }
 
   void _playPreviousEpisode() {
-    if (widget.episodes.isEmpty) {
-      widget.onPreviousEpisode?.call();
-      return;
-    }
-    if (widget.hasPreviousEpisode) {
-      widget.onPreviousEpisode?.call();
-    } else {
-      // 第一集 → 跳到最后一集
-      final last = widget.episodes.last;
-      widget.onEpisodeSelected?.call(last);
-    }
+    widget.onPreviousEpisode?.call();
   }
 
   void _playNextEpisode() {
-    if (widget.episodes.isEmpty) {
-      widget.onNextEpisode?.call();
-      return;
-    }
-    if (widget.hasNextEpisode) {
-      widget.onNextEpisode?.call();
-    } else {
-      // 最后一集 → 跳到第一集
-      final first = widget.episodes.first;
-      widget.onEpisodeSelected?.call(first);
-    }
+    widget.onNextEpisode?.call();
   }
 
   void _showSpeedSelector() {
@@ -222,11 +163,13 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
             child: Text(
               '${speed}x',
               style: TextStyle(
-                color: _playbackSpeed == speed
+                color:
+                    widget.playerSnapshotListenable.value.playbackSpeed == speed
                     ? Theme.of(context).colorScheme.primary
                     : Colors.black87,
                 fontSize: 15,
-                fontWeight: _playbackSpeed == speed
+                fontWeight:
+                    widget.playerSnapshotListenable.value.playbackSpeed == speed
                     ? FontWeight.w600
                     : FontWeight.normal,
               ),
@@ -236,8 +179,7 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
       }).toList(),
     ).then((value) {
       if (value != null) {
-        setState(() => _playbackSpeed = value);
-        widget.playbackService.player?.setRate(value);
+        widget.onPlaybackSpeedChanged?.call(value);
       }
     });
   }
@@ -298,88 +240,84 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
     const double leftPad = _kSideMargin;
     const double rightPad = _kSideMargin;
 
-    return VideoGesture(
-      playbackService: widget.playbackService,
-      enabled: !_showControls && !_isLocked,
-      child: Stack(
-        children: [
-          // 点击区域切换控制栏
-          Positioned.fill(
-            child: GestureDetector(
-              onTap: _toggleControls,
-              behavior: HitTestBehavior.opaque,
-              child: const ColoredBox(color: Colors.transparent),
-            ),
+    return ValueListenableBuilder<VideoPlayerSnapshot>(
+      valueListenable: widget.playerSnapshotListenable,
+      builder: (context, snapshot, _) {
+        final currentPosition = _isDragging ? _dragPosition : snapshot.position;
+        return VideoGesture(
+          playbackService: widget.playbackService,
+          enabled: !_showControls && !_isLocked,
+          child: Stack(
+            children: [
+              Positioned.fill(
+                child: GestureDetector(
+                  onTap: _toggleControls,
+                  behavior: HitTestBehavior.opaque,
+                  child: const ColoredBox(color: Colors.transparent),
+                ),
+              ),
+              if (snapshot.isBuffering) _buildBufferingIndicator(),
+              if (_showControls && !_isLocked)
+                Positioned(
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  child: Container(
+                    height: 130,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.black.withValues(alpha: 0.72),
+                          Colors.transparent,
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              if (_showControls && !_isLocked)
+                Positioned(
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  child: Container(
+                    height: 150,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.bottomCenter,
+                        end: Alignment.topCenter,
+                        colors: [
+                          Colors.black.withValues(alpha: 0.72),
+                          Colors.transparent,
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              if (_showControls && !_isLocked)
+                _buildTopBar(
+                  safePadding: safePadding,
+                  leftPad: leftPad,
+                  rightPad: rightPad,
+                ),
+              if (_showControls && !_isLocked)
+                _buildCenterControls(isPlaying: snapshot.isPlaying),
+              if (_showControls && !_isLocked)
+                _buildBottomControls(
+                  safePadding: safePadding,
+                  leftPad: leftPad,
+                  rightPad: rightPad,
+                  isPlaying: snapshot.isPlaying,
+                  position: currentPosition,
+                  duration: snapshot.duration,
+                  playbackSpeed: snapshot.playbackSpeed,
+                ),
+              _buildLockButton(),
+            ],
           ),
-
-          // 缓冲指示器
-          if (_isBuffering) _buildBufferingIndicator(),
-
-          // 顶部渐变遮罩
-          if (_showControls && !_isLocked)
-            Positioned(
-              top: 0,
-              left: 0,
-              right: 0,
-              child: Container(
-                height: 130,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      Colors.black.withValues(alpha: 0.72),
-                      Colors.transparent,
-                    ],
-                  ),
-                ),
-              ),
-            ),
-
-          // 底部渐变遮罩
-          if (_showControls && !_isLocked)
-            Positioned(
-              bottom: 0,
-              left: 0,
-              right: 0,
-              child: Container(
-                height: 150,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.bottomCenter,
-                    end: Alignment.topCenter,
-                    colors: [
-                      Colors.black.withValues(alpha: 0.72),
-                      Colors.transparent,
-                    ],
-                  ),
-                ),
-              ),
-            ),
-
-          // 顶部控制栏
-          if (_showControls && !_isLocked)
-            _buildTopBar(
-              safePadding: safePadding,
-              leftPad: leftPad,
-              rightPad: rightPad,
-            ),
-
-          // 中间播放/暂停
-          if (_showControls && !_isLocked) _buildCenterControls(),
-
-          // 底部控制栏
-          if (_showControls && !_isLocked)
-            _buildBottomControls(
-              safePadding: safePadding,
-              leftPad: leftPad,
-              rightPad: rightPad,
-            ),
-
-          // 锁屏按钮
-          _buildLockButton(),
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -481,7 +419,7 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
     );
   }
 
-  Widget _buildCenterControls() {
+  Widget _buildCenterControls({required bool isPlaying}) {
     return Center(
       child: GestureDetector(
         onTap: _togglePlayPause,
@@ -493,7 +431,7 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
             shape: BoxShape.circle,
           ),
           child: Icon(
-            _isPlaying ? Icons.pause : Icons.play_arrow,
+            isPlaying ? Icons.pause : Icons.play_arrow,
             color: Colors.white,
             size: 38,
           ),
@@ -507,6 +445,10 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
     required EdgeInsets safePadding,
     required double leftPad,
     required double rightPad,
+    required bool isPlaying,
+    required Duration position,
+    required Duration duration,
+    required double playbackSpeed,
   }) {
     return Positioned(
       bottom: 0,
@@ -527,7 +469,7 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
             Row(
               children: [
                 Text(
-                  _formatDuration(_position),
+                  _formatDuration(position),
                   style: const TextStyle(color: Colors.white, fontSize: 12),
                 ),
                 const SizedBox(width: 6),
@@ -547,24 +489,23 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
                       thumbColor: Theme.of(context).colorScheme.primary,
                     ),
                     child: Slider(
-                      value: _duration.inMilliseconds > 0
-                          ? (_position.inMilliseconds /
-                                    _duration.inMilliseconds)
+                      value: duration.inMilliseconds > 0
+                          ? (position.inMilliseconds / duration.inMilliseconds)
                                 .clamp(0.0, 1.0)
                           : 0.0,
                       onChangeStart: (_) => _hideTimer?.cancel(),
                       onChanged: (value) {
                         setState(() {
                           _isDragging = true;
-                          _position = Duration(
-                            milliseconds: (value * _duration.inMilliseconds)
+                          _dragPosition = Duration(
+                            milliseconds: (value * duration.inMilliseconds)
                                 .toInt(),
                           );
                         });
                       },
                       onChangeEnd: (value) {
                         setState(() => _isDragging = false);
-                        widget.playbackService.player?.seek(_position);
+                        widget.onSeek?.call(_dragPosition);
                         _startHideTimer();
                       },
                     ),
@@ -572,7 +513,7 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
                 ),
                 const SizedBox(width: 6),
                 Text(
-                  _formatDuration(_duration),
+                  _formatDuration(duration),
                   style: const TextStyle(color: Colors.white, fontSize: 12),
                 ),
               ],
@@ -593,7 +534,7 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
                         ),
                         const SizedBox(width: 10),
                         _buildIconBtn(
-                          _isPlaying ? Icons.pause : Icons.play_arrow,
+                          isPlaying ? Icons.pause : Icons.play_arrow,
                           _togglePlayPause,
                         ),
                         const SizedBox(width: 10),
@@ -602,7 +543,7 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
                         _buildDanmakuButton(),
                         const SizedBox(width: 10),
                         _buildDanmakuSettingButton(),
-                        if (_showDanmakuInput) ...[
+                        if (widget.isDanmakuInputVisible) ...[
                           const SizedBox(width: 10),
                           _buildDanmakuInputInline(),
                         ],
@@ -617,7 +558,7 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
                     KeyedSubtree(
                       key: _speedButtonKey,
                       child: _buildTextBtn(
-                        '${_playbackSpeed}x',
+                        '${playbackSpeed}x',
                         _showSpeedSelector,
                       ),
                     ),
@@ -689,15 +630,12 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
   Widget _buildDanmakuButton() {
     return GestureDetector(
       onTap: () {
-        final newEnabled = !widget.isDanmakuEnabled;
-        setState(() {
-          _showDanmakuInput = newEnabled;
-          if (!newEnabled) {
-            _danmakuController.clear();
-          }
-        });
-        widget.onDanmakuToggle?.call(newEnabled);
-        widget.danmakuController?.requestCurrentWindowRefresh();
+        final nextEnabled = !widget.isDanmakuEnabled;
+        widget.onDanmakuToggle?.call(nextEnabled);
+        widget.onDanmakuInputVisibleChanged?.call(nextEnabled);
+        if (!nextEnabled) {
+          _danmakuInputController.clear();
+        }
       },
       child: Container(
         padding: const EdgeInsets.all(8),
@@ -738,11 +676,8 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
                   ),
                 ),
             child: DanmakuSettingsSidePanel(
-              initialConfig: _danmakuConfig,
-              onConfigChanged: (config) {
-                setState(() => _danmakuConfig = config);
-                widget.danmakuController?.requestCurrentWindowRefresh();
-              },
+              initialConfig: widget.danmakuConfig,
+              onConfigChanged: widget.onDanmakuConfigChanged,
               onClose: () => Navigator.of(dialogContext).pop(),
             ),
           ),
@@ -772,16 +707,16 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
 
   Widget _buildDanmakuInputInline() {
     return DanmakuInlineInput(
-      controller: _danmakuController,
+      controller: _danmakuInputController,
       onSend: _submitLocalDanmaku,
     );
   }
 
   void _submitLocalDanmaku() {
-    final text = _danmakuController.text.trim();
+    final text = _danmakuInputController.text.trim();
     if (text.isEmpty) return;
 
-    _danmakuController.clear();
+    _danmakuInputController.clear();
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text('已发送（本地回显）'),

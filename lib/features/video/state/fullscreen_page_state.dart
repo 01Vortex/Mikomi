@@ -2,7 +2,7 @@ import 'package:media_kit_video/media_kit_video.dart';
 import 'package:mikomi/features/settings/danmaku/danmaku_setting_service.dart';
 import 'package:mikomi/features/video/controller/danmaku_controller.dart'
     as app_danmaku;
-import 'package:mikomi/features/video/ui/widgets/smallscreen/smallscreen_video.dart';
+import 'package:mikomi/features/video/state/fullscreen_video_state.dart';
 import 'package:mikomi/features/video/ui/widgets/video_fit.dart';
 
 class FullscreenPageState {
@@ -12,6 +12,7 @@ class FullscreenPageState {
   final DanmakuConfig danmakuConfig;
   final VideoFitMode fitMode;
   final bool isVideoReady;
+  final bool isDanmakuInputVisible;
 
   const FullscreenPageState({
     required this.videoState,
@@ -20,6 +21,7 @@ class FullscreenPageState {
     required this.danmakuConfig,
     required this.fitMode,
     required this.isVideoReady,
+    this.isDanmakuInputVisible = false,
   });
 
   FullscreenPageState copyWith({
@@ -29,6 +31,7 @@ class FullscreenPageState {
     DanmakuConfig? danmakuConfig,
     VideoFitMode? fitMode,
     bool? isVideoReady,
+    bool? isDanmakuInputVisible,
   }) {
     return FullscreenPageState(
       videoState: videoState ?? this.videoState,
@@ -37,6 +40,8 @@ class FullscreenPageState {
       danmakuConfig: danmakuConfig ?? this.danmakuConfig,
       fitMode: fitMode ?? this.fitMode,
       isVideoReady: isVideoReady ?? this.isVideoReady,
+      isDanmakuInputVisible:
+          isDanmakuInputVisible ?? this.isDanmakuInputVisible,
     );
   }
 }

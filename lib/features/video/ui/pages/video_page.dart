@@ -212,6 +212,10 @@ class _VideoPlayerSection extends StatelessWidget {
       currentEpisode: player.currentEpisodeNumber,
       totalEpisodes: player.totalEpisodes,
       playbackService: pageState.playbackService,
+      smallscreenState: pageState.smallscreen,
+      playerSnapshotListenable: pageState.playerSnapshotListenable,
+      danmakuConfig: pageState.danmakuConfig,
+      fullscreenState: pageState.fullscreenState,
       currentSmallTitle: player.currentSmallTitle,
       onNextEpisode: player.hasNextEpisode ? facade.playNextEpisode : null,
       onPreviousEpisode: player.hasPreviousEpisode
@@ -219,20 +223,24 @@ class _VideoPlayerSection extends StatelessWidget {
           : null,
       hasNextEpisode: player.hasNextEpisode,
       hasPreviousEpisode: player.hasPreviousEpisode,
-      initialProgress: pageState.initialProgress,
       episodes: player.episodes,
       onEpisodeSelected: facade.playEpisode,
       isLoadingEpisodes: player.isEpisodeListLoading,
       isDescending: player.isEpisodeSortDescending,
       onToggleSort: facade.toggleEpisodeSort,
       isDanmakuEnabled: player.isDanmakuEnabled,
-      animeTitle: pageState.animeTitle,
-      bangumiId: pageState.bangumiId,
       onDanmakuToggle: onDanmakuToggle,
       isLoading: player.isResolvingVideo,
       hasError: player.hasPlaybackError,
       showTimeoutHint: player.showTimeoutNotice,
       onRetry: facade.retryResolveVideoUrl,
+      onInitializePlayer: () {
+        facade.initializeSmallScreenPlayback(player.resolvedVideoUrl);
+      },
+      onRetryPlayer: facade.retrySmallScreenPlayback,
+      onTogglePlayPause: facade.toggleSmallScreenPlayPause,
+      onSeek: facade.seekSmallScreenTo,
+      onDanmakuLayerCreated: facade.attachSmallScreenDanmakuController,
     );
   }
 }
@@ -294,6 +302,7 @@ class _VideoTabsSection extends StatelessWidget {
                   onToggleSort: facade.toggleEpisodeSort,
                 ),
                 FullscreenDanmakuSettings(
+                  initialConfig: pageState.danmakuConfig,
                   onConfigChanged: onDanmakuConfigChanged,
                 ),
               ],

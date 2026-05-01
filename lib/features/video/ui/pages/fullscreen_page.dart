@@ -5,11 +5,11 @@ import 'package:media_kit_video/media_kit_video.dart';
 import 'package:mikomi/features/video/facade/fullscreen_page_facade.dart';
 import 'package:mikomi/features/video/models/episode_model.dart';
 import 'package:mikomi/features/video/services/video_playback_service.dart';
+import 'package:mikomi/features/video/state/fullscreen_video_state.dart';
 import 'package:mikomi/features/video/state/fullscreen_page_state.dart';
 import 'package:mikomi/features/video/ui/widgets/danmaku_overlay.dart';
 import 'package:mikomi/features/video/ui/widgets/fullscreen/fullscreen_video.dart';
 import 'package:mikomi/features/video/ui/widgets/video_fit.dart';
-import 'package:mikomi/features/video/ui/widgets/smallscreen/smallscreen_video.dart';
 
 class FullscreenPage extends StatefulWidget {
   final VideoPlaybackService playbackService;
@@ -103,12 +103,21 @@ class _FullscreenPageState extends State<FullscreenPage> {
                   ),
                 FullscreenVideoControls(
                   playbackService: widget.playbackService,
+                  playerSnapshotListenable:
+                      state.videoState.playerSnapshotListenable!,
+                  danmakuConfig: state.danmakuConfig,
+                  isDanmakuInputVisible: state.isDanmakuInputVisible,
+                  onDanmakuInputVisibleChanged: _facade.setDanmakuInputVisible,
+                  onPlaybackSpeedChanged: _facade.setPlaybackSpeed,
+                  onSeek: _facade.seekTo,
+                  onPlayPause: _facade.togglePlayPause,
+                  onDanmakuConfigChanged: (config) {
+                    unawaited(_facade.updateDanmakuConfig(config));
+                  },
                   title: widget.title,
                   currentEpisode: state.videoState.currentEpisode,
                   currentSmallTitle: state.videoState.currentSmallTitle,
                   isDanmakuEnabled: state.videoState.isDanmakuEnabled,
-                  danmakuController: state.danmakuController,
-                  danmakuFacade: state.danmakuController.danmakuFacade,
                   fitMode: state.fitMode,
                   onFitModeChanged: _facade.updateFitMode,
                   onExitFullscreen: () => Navigator.of(context).pop(),

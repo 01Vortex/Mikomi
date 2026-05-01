@@ -75,6 +75,27 @@ class VideoPageFacade {
     await DanmakuSettingService.setShowTop(config.showTop);
     await DanmakuSettingService.setShowBottom(config.showBottom);
     await DanmakuSettingService.setShowScroll(config.showScroll);
+    await _flowController.setDanmakuConfig(config);
+  }
+
+  Future<void> initializeSmallScreenPlayback(String videoUrl) {
+    return _flowController.initializePlayer(videoUrl);
+  }
+
+  Future<void> retrySmallScreenPlayback() {
+    return _flowController.retrySmallScreenPlayback();
+  }
+
+  void attachSmallScreenDanmakuController(dynamic controller) {
+    _flowController.attachSmallScreenDanmakuController(controller);
+  }
+
+  void toggleSmallScreenPlayPause() {
+    _flowController.togglePlayPause();
+  }
+
+  void seekSmallScreenTo(Duration position) {
+    _flowController.seekTo(position);
   }
 
   Future<void> switchVideoSource(VideoSource source) {

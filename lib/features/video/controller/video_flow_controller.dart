@@ -1,16 +1,22 @@
 import 'dart:async';
 
+import 'package:mikomi/features/settings/danmaku/danmaku_setting_service.dart';
+import 'package:flutter/foundation.dart';
 import 'package:mikomi/features/anime/selector/video_source_selector.dart';
 import 'package:mikomi/features/video/controller/video_episode_controller.dart';
 import 'package:mikomi/features/video/controller/video_history_controller.dart';
 import 'package:mikomi/features/video/controller/video_resolve_controller.dart';
 import 'package:mikomi/features/video/controller/video_source_controller.dart';
+import 'package:mikomi/features/video/controller/danmaku_controller.dart'
+    as app_danmaku;
 import 'package:mikomi/features/video/models/episode_model.dart';
 import 'package:mikomi/features/video/services/video_episode_service.dart';
 import 'package:mikomi/features/video/services/video_history_service.dart';
 import 'package:mikomi/features/video/services/video_parsing_service.dart';
 import 'package:mikomi/features/video/services/video_playback_service.dart';
+import 'package:mikomi/features/video/state/fullscreen_video_state.dart';
 import 'package:mikomi/features/video/state/video_page_state.dart';
+import 'package:mikomi/features/video/state/video_player_listener.dart';
 import 'package:mikomi/features/video/state/video_state.dart';
 
 class VideoFlowController {
@@ -19,12 +25,18 @@ class VideoFlowController {
   final VideoResolveController _resolveController;
   final VideoHistoryController _historyController;
   final VideoPlaybackService _playbackService;
+  final app_danmaku.DanmakuController _danmakuController;
+  final VideoPlayerListenerController _playerListenerController;
+  final ValueNotifier<VideoPlayerSnapshot> _playerSnapshotNotifier;
   final String title;
   final String? animeTitle;
   final int? bangumiId;
   final void Function(VideoPageState state)? onStateChanged;
 
   VideoState _state;
+  SmallscreenPlaybackState _smallscreenState =
+      const SmallscreenPlaybackState.initial();
+  DanmakuConfig _danmakuConfig = const DanmakuConfig();
   Duration? _initialProgress;
   Timer? _timeoutTimer;
   bool _isDisposed = false;
@@ -60,8 +72,25 @@ class VideoFlowController {
     final resolveController = VideoResolveController(
       parsingService: resolvedParsingService,
     );
+    final danmakuController = app_danmaku.DanmakuController();
+    late final VideoFlowController flowController;
+    final playerSnapshotNotifier = ValueNotifier(VideoPlayerSnapshot.initial());
+    final playerListenerController = VideoPlayerListenerController(
+      onSnapshotChanged: (snapshot) {
+        flowController.updateSmallScreenSnapshot(snapshot);
+      },
+      onPositionChanged: (position) {
+        flowController.syncDanmakuPlaybackPosition(position);
+      },
+      onDurationChanged: (duration) {
+        flowController.restoreInitialProgressIfNeeded(duration);
+      },
+      onAutoPlayNext: () {
+        unawaited(flowController.playNextEpisode());
+      },
+    );
 
-    return VideoFlowController._(
+    flowController = VideoFlowController._(
       episodeController: episodeController,
       sourceController: VideoSourceController(
         episodeController: episodeController,
@@ -77,6 +106,9 @@ class VideoFlowController {
         bangumiId: bangumiId,
       ),
       playbackService: resolvedPlaybackService,
+      danmakuController: danmakuController,
+      playerListenerController: playerListenerController,
+      playerSnapshotNotifier: playerSnapshotNotifier,
       title: title,
       videoUrl: videoUrl,
       currentEpisode: currentEpisode,
@@ -87,6 +119,7 @@ class VideoFlowController {
       bangumiId: bangumiId,
       onStateChanged: onStateChanged,
     );
+    return flowController;
   }
 
   VideoFlowController._({
@@ -95,6 +128,9 @@ class VideoFlowController {
     required VideoResolveController resolveController,
     required VideoHistoryController historyController,
     required VideoPlaybackService playbackService,
+    required app_danmaku.DanmakuController danmakuController,
+    required VideoPlayerListenerController playerListenerController,
+    required ValueNotifier<VideoPlayerSnapshot> playerSnapshotNotifier,
     required this.title,
     required String videoUrl,
     required int currentEpisode,
@@ -109,6 +145,9 @@ class VideoFlowController {
        _resolveController = resolveController,
        _historyController = historyController,
        _playbackService = playbackService,
+       _danmakuController = danmakuController,
+       _playerListenerController = playerListenerController,
+       _playerSnapshotNotifier = playerSnapshotNotifier,
        _initialProgress = initialProgress,
        _state = VideoState(
          currentEpisodeNumber: currentEpisode,
@@ -129,16 +168,140 @@ class VideoFlowController {
     danmaku: _state.danmakuState,
     source: _state.sourceState,
     initialProgress: _initialProgress,
+    smallscreen: _smallscreenState,
+    danmakuController: _danmakuController,
+    danmakuConfig: _danmakuConfig,
+    fullscreenState: _buildFullscreenState(),
+    playerSnapshotListenable: _playerSnapshotNotifier,
   );
 
   Future<void> initialize() async {
     _sync();
     _initializeVideoState();
     _startTimers();
+    await _loadDanmakuConfig();
+  }
+
+  Future<void> initializePlayer(String videoUrl) async {
+    if (videoUrl.isEmpty) return;
+    _setSmallScreenState(
+      _smallscreenState.copyWith(isLoading: true, errorMessage: null),
+    );
+
+    try {
+      await _playbackService.initialize(smallScreen: true);
+      await _playbackService.play(videoUrl);
+      _playerListenerController.bind(
+        _playbackService.player,
+        hasNextEpisode: _state.hasNextEpisode,
+      );
+      _setSmallScreenState(
+        _smallscreenState.copyWith(
+          videoController: _playbackService.videoController,
+          isInitialized: _playbackService.isInitialized,
+          isLoading: false,
+          errorMessage: null,
+        ),
+      );
+      await loadDanmakuIfNeeded();
+    } catch (error) {
+      _setSmallScreenState(
+        _smallscreenState.copyWith(
+          isLoading: false,
+          errorMessage: '视频加载失败: $error',
+        ),
+      );
+    }
+  }
+
+  Future<void> retrySmallScreenPlayback() {
+    return initializePlayer(_state.playerState.resolvedVideoUrl);
+  }
+
+  void updateSmallScreenSnapshot(VideoPlayerSnapshot snapshot) {
+    _playerSnapshotNotifier.value = snapshot;
+    _setSmallScreenState(
+      _smallscreenState.copyWith(
+        isBuffering: snapshot.isBuffering,
+        isPlaying: snapshot.isPlaying,
+        position: snapshot.position,
+        duration: snapshot.duration,
+      ),
+    );
+  }
+
+  void syncDanmakuPlaybackPosition(Duration position) {
+    _danmakuController.syncPlaybackPosition(
+      isDanmakuEnabled: _state.isDanmakuEnabled,
+      isPlaying: _smallscreenState.isPlaying,
+      position: position,
+    );
+  }
+
+  void restoreInitialProgressIfNeeded(Duration duration) {
+    final progress = _initialProgress;
+    final player = _playbackService.player;
+    if (progress == null ||
+        progress.inSeconds <= 0 ||
+        duration.inSeconds <= 0 ||
+        player == null ||
+        progress.inSeconds >= duration.inSeconds) {
+      return;
+    }
+
+    _initialProgress = null;
+    Future.delayed(const Duration(milliseconds: 500), () {
+      final currentPlayer = _playbackService.player;
+      if (_isDisposed ||
+          currentPlayer == null ||
+          currentPlayer.state.duration.inSeconds <= 0 ||
+          progress.inSeconds >= currentPlayer.state.duration.inSeconds) {
+        return;
+      }
+      currentPlayer.seek(progress);
+    });
+  }
+
+  Future<void> loadDanmakuIfNeeded() async {
+    final int episode = _resolveDanmakuEpisodeNumber();
+    await _danmakuController.loadDanmaku(
+      isDanmakuEnabled: _state.isDanmakuEnabled,
+      episode: episode,
+      displayedEpisode: _state.currentEpisodeNumber,
+      bangumiId: bangumiId,
+      animeTitle: animeTitle,
+    );
+  }
+
+  void attachSmallScreenDanmakuController(dynamic controller) {
+    _danmakuController.attachCanvasController(controller);
+  }
+
+  void togglePlayPause() {
+    final player = _playbackService.player;
+    if (player == null) return;
+    if (_smallscreenState.isPlaying) {
+      player.pause();
+    } else {
+      player.play();
+    }
+  }
+
+  void seekTo(Duration position) {
+    _playbackService.player?.seek(position);
+  }
+
+  Future<void> setDanmakuConfig(DanmakuConfig config) async {
+    _danmakuConfig = config;
+    _danmakuController.requestCurrentWindowRefresh();
+    _sync();
   }
 
   void setDanmakuEnabled(bool enabled) {
     _setState(_state.setDanmakuEnabled(enabled));
+    if (enabled) {
+      unawaited(loadDanmakuIfNeeded());
+    }
   }
 
   Future<void> switchVideoSource(VideoSource source) async {
@@ -202,6 +365,9 @@ class VideoFlowController {
       isDisposed: () => _isDisposed,
     );
     _setState(nextState);
+    if (nextState.playerState.resolvedVideoUrl.isNotEmpty) {
+      await initializePlayer(nextState.playerState.resolvedVideoUrl);
+    }
   }
 
   void toggleEpisodeSort() {
@@ -243,6 +409,9 @@ class VideoFlowController {
     _historyController.stop();
     saveHistory();
     await disposePlaybackService();
+    _playerListenerController.dispose();
+    _playerSnapshotNotifier.dispose();
+    _danmakuController.dispose();
     _historyController.dispose();
   }
 
@@ -328,6 +497,45 @@ class VideoFlowController {
 
   void _clearInitialProgress() {
     _initialProgress = null;
+    _sync();
+  }
+
+  Future<void> _loadDanmakuConfig() async {
+    _danmakuConfig = await DanmakuSettingService.loadAll();
+    _danmakuController.requestCurrentWindowRefresh();
+    _sync();
+  }
+
+  int _resolveDanmakuEpisodeNumber() {
+    final seasonEpisodeOffset = _state.episodes.isNotEmpty
+        ? _state.episodes.first.number - 1
+        : 0;
+    final resolvedEpisodeNumber =
+        _state.currentEpisodeNumber + seasonEpisodeOffset;
+    return resolvedEpisodeNumber > 0
+        ? resolvedEpisodeNumber
+        : _state.currentEpisodeNumber;
+  }
+
+  FullscreenVideoState _buildFullscreenState() {
+    return FullscreenVideoState(
+      currentEpisode: _state.currentEpisodeNumber,
+      episodes: _state.episodes,
+      isLoadingEpisodes: _state.isEpisodeListLoading,
+      isDescending: _state.isEpisodeSortDescending,
+      hasNextEpisode: _state.hasNextEpisode,
+      hasPreviousEpisode: _state.hasPreviousEpisode,
+      currentSmallTitle: _state.currentEpisode?.smallTitle,
+      isDanmakuEnabled: _state.isDanmakuEnabled,
+      danmakuController: _danmakuController,
+      danmakuFacade: _danmakuController.danmakuFacade,
+      playerSnapshotListenable: _playerSnapshotNotifier,
+    );
+  }
+
+  void _setSmallScreenState(SmallscreenPlaybackState state) {
+    if (_isDisposed) return;
+    _smallscreenState = state;
     _sync();
   }
 
