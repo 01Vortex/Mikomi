@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:mikomi/config/app_routes.dart';
 import 'package:mikomi/features/home/models/home_anime_model.dart';
 import 'package:mikomi/features/home/service/rank_service.dart';
+import 'package:mikomi/shared/anime_detil_converter.dart';
 import 'package:mikomi/shared/cached_image.dart';
 import 'package:mikomi/shared/skeleton.dart';
 import 'package:mikomi/shared/theme_extensions.dart';
@@ -209,9 +209,7 @@ class _RankPageState extends State<RankPage> {
         borderRadius: BorderRadius.circular(14),
         child: InkWell(
           borderRadius: BorderRadius.circular(14),
-          onTap: () {
-            Navigator.pushNamed(context, AppRoutes.animeDetail, arguments: item);
-          },
+          onTap: () => AnimeDetilConverter.openBangumiDetail(context, item),
           child: Padding(
             padding: const EdgeInsets.all(10),
             child: Row(

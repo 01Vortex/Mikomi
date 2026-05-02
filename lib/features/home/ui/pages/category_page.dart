@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:mikomi/config/app_routes.dart';
 import 'package:mikomi/features/home/models/home_anime_model.dart';
 import 'package:mikomi/features/home/service/category_service.dart';
+import 'package:mikomi/shared/anime_detil_converter.dart';
 import 'package:mikomi/shared/anime_grid_card.dart';
 import 'package:mikomi/shared/skeleton.dart';
 import 'package:mikomi/shared/theme_extensions.dart';
@@ -122,13 +122,10 @@ class _CategoryPageState extends State<CategoryPage> {
                                   title: item.displayName,
                                   imageUrl: item.coverUrl,
                                   heroTag: 'anime_${item.id}',
-                                  onTap: () {
-                                    Navigator.pushNamed(
-                                      context,
-                                      AppRoutes.animeDetail,
-                                      arguments: item,
-                                    );
-                                  },
+                                  onTap: () => AnimeDetilConverter.openBangumiDetail(
+                                    context,
+                                    item,
+                                  ),
                                 );
                               },
                             ),

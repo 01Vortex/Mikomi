@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:mikomi/config/app_routes.dart';
 import 'package:mikomi/core/providers/app_theme_provider.dart';
 import 'package:mikomi/features/home/models/home_anime_model.dart';
 import 'package:mikomi/features/home/service/schedule_service.dart';
+import 'package:mikomi/shared/anime_detil_converter.dart';
 import 'package:mikomi/shared/cached_image.dart';
 import 'package:mikomi/shared/scrolling_text.dart';
 import 'package:mikomi/shared/theme_extensions.dart';
@@ -251,9 +251,7 @@ class _SchedulePageState extends State<SchedulePage>
         borderRadius: BorderRadius.circular(16),
         child: InkWell(
           borderRadius: BorderRadius.circular(16),
-          onTap: () {
-            Navigator.pushNamed(context, AppRoutes.animeDetail, arguments: anime);
-          },
+          onTap: () => AnimeDetilConverter.openBangumiDetail(context, anime),
           child: Padding(
             padding: const EdgeInsets.all(10),
             child: Row(
