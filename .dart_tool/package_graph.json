@@ -5,7 +5,7 @@
   "packages": [
     {
       "name": "mikomi",
-      "version": "1.0.0+1",
+      "version": "2.0.9",
       "dependencies": [
         "app_links",
         "cached_network_image",

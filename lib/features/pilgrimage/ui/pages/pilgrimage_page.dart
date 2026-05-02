@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 
@@ -19,7 +21,7 @@ class _PilgrimagePageState extends State<PilgrimagePage> {
     domStorageEnabled: true,
     databaseEnabled: true,
     cacheEnabled: true,
-    supportZoom: true,
+    supportZoom: false,
     builtInZoomControls: false,
     displayZoomControls: false,
     disableContextMenu: true,
@@ -31,17 +33,30 @@ class _PilgrimagePageState extends State<PilgrimagePage> {
     allowsInlineMediaPlayback: true,
     allowsBackForwardNavigationGestures: false,
     preferredContentMode: UserPreferredContentMode.MOBILE,
+    useHybridComposition: true,
+    useShouldOverrideUrlLoading: false,
+    useOnRenderProcessGone: false,
+    iframeAllowFullscreen: false,
   );
 
+  Timer? _showWebViewTimer;
   bool _showWebView = false;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      setState(() => _showWebView = true);
+      _showWebViewTimer = Timer(const Duration(milliseconds: 300), () {
+        if (!mounted) return;
+        setState(() => _showWebView = true);
+      });
     });
+  }
+
+  @override
+  void dispose() {
+    _showWebViewTimer?.cancel();
+    super.dispose();
   }
 
   @override
