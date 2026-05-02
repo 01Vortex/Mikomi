@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:mikomi/config/app_theme.dart';
 import 'package:mikomi/features/search/repository/search_repository.dart';
@@ -29,6 +31,8 @@ class _SearchPageState extends State<SearchPage> {
   bool _showHistory = true;
   bool _isLoadingSuggestions = false;
   bool _isLoadingRankings = true;
+  Timer? _suggestionDebounce;
+  int _suggestionRequestId = 0;
 
   @override
   void initState() {
@@ -40,6 +44,7 @@ class _SearchPageState extends State<SearchPage> {
 
   @override
   void dispose() {
+    _suggestionDebounce?.cancel();
     _searchController.dispose();
     _focusNode.dispose();
     super.dispose();
@@ -88,27 +93,41 @@ class _SearchPageState extends State<SearchPage> {
   }
 
   Future<void> _loadSuggestions(String keyword) async {
-    if (keyword.trim().isEmpty) {
+    _suggestionDebounce?.cancel();
+    final normalizedKeyword = keyword.trim();
+    final requestId = ++_suggestionRequestId;
+
+    if (normalizedKeyword.isEmpty) {
       setState(() {
         _suggestions = [];
         _showHistory = true;
+        _isLoadingSuggestions = false;
       });
       return;
     }
 
     setState(() {
-      _isLoadingSuggestions = true;
       _showHistory = false;
     });
 
-    final results = await _searchRepository.search(keyword.trim());
+    _suggestionDebounce = Timer(const Duration(milliseconds: 280), () async {
+      if (!mounted || requestId != _suggestionRequestId) return;
 
-    if (mounted) {
       setState(() {
-        _suggestions = results.take(10).toList();
-        _isLoadingSuggestions = false;
+        _isLoadingSuggestions = true;
       });
-    }
+
+      final results = await _searchRepository.searchSuggestions(
+        normalizedKeyword,
+      );
+
+      if (mounted && requestId == _suggestionRequestId) {
+        setState(() {
+          _suggestions = results;
+          _isLoadingSuggestions = false;
+        });
+      }
+    });
   }
 
   Future<void> _clearHistory() async {

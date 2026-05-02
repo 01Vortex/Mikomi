@@ -24,12 +24,13 @@ class BangumiSource {
     required String keyword,
     int limit = 48,
     int offset = 0,
+    String sort = 'rank',
   }) async {
     final response = await _dioClient.post(
       ApiConstants.bangumiApiDomain + ApiConstants.bangumiSearch,
       data: {
         'keyword': keyword,
-        'sort': 'rank',
+        'sort': sort,
         'filter': {'type': [2]},
       },
       queryParameters: {
