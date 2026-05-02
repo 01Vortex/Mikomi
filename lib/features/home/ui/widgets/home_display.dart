@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:mikomi/config/app_routes.dart';
 import 'package:mikomi/features/home/models/home_anime_model.dart';
-import 'package:mikomi/shared/anime_detil_converter.dart';
 import 'package:mikomi/shared/anime_grid_card.dart';
 
 class HomeDisplay extends StatelessWidget {
@@ -43,11 +43,17 @@ class HomeDisplay extends StatelessWidget {
                 return AnimeGridCard(
                   title: item.displayName,
                   imageUrl: item.coverUrl,
-                  heroTag: 'anime_${item.id}',
-                  onTap: () => AnimeDetilConverter.openBangumiDetail(
-                    context,
-                    item,
-                  ),
+                  heroTag: 'bangumi_${item.id}',
+                  onTap: () {
+                    Navigator.pushNamed(
+                      context,
+                      AppRoutes.animeDetail,
+                      arguments: AnimeDetailRouteArgument(
+                        anime: item,
+                        heroTag: 'bangumi_${item.id}',
+                      ),
+                    );
+                  },
                 );
               },
             ),

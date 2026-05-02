@@ -17,10 +17,7 @@ class HomeRepository {
   }) async {
     final fetchLimit = offset + limit + 24;
 
-    final primaryItems = await _fetchBangumiHomeItems(fetchLimit);
-    final source = primaryItems.isNotEmpty
-        ? primaryItems
-        : await _fetchAniListHomeItems(fetchLimit);
+    final source = await _fetchBangumiHomeItems(fetchLimit);
 
     return DisplayService.buildRecommendPage(
       source: source,
@@ -30,10 +27,7 @@ class HomeRepository {
   }
 
   Future<List<HomeAnimeModel>> getBannerList({int count = 5}) async {
-    final primaryItems = await _fetchBangumiHomeItems(60);
-    final source = primaryItems.isNotEmpty
-        ? primaryItems
-        : await _fetchAniListHomeItems(60);
+    final source = await _fetchBangumiHomeItems(60);
 
     return SliderImageService.selectTopBanners(source, count: count);
   }
@@ -169,23 +163,6 @@ class HomeRepository {
       return data
           .whereType<Map>()
           .map((item) => HomeAnimeModel.fromJson(Map<String, dynamic>.from(item)))
-          .toList();
-    } catch (_) {
-      return [];
-    }
-  }
-
-  Future<List<HomeAnimeModel>> _fetchAniListHomeItems(int limit) async {
-    try {
-      final mediaList = await _aniListSource.fetchMedia(
-        page: 1,
-        perPage: limit,
-        sort: 'POPULARITY_DESC',
-      );
-
-      return mediaList
-          .whereType<Map>()
-          .map((item) => _mapAniListItem(Map<String, dynamic>.from(item)))
           .toList();
     } catch (_) {
       return [];

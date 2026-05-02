@@ -6,8 +6,9 @@ import 'package:mikomi/core/providers/app_theme_provider.dart';
 
 class AnimeHeader extends StatelessWidget {
   final Anime anime;
+  final String? heroTag;
 
-  const AnimeHeader({super.key, required this.anime});
+  const AnimeHeader({super.key, required this.anime, this.heroTag});
 
   @override
   Widget build(BuildContext context) {
@@ -67,7 +68,7 @@ class AnimeHeader extends StatelessWidget {
                       // 左侧封面
                       Expanded(
                         child: Hero(
-                          tag: 'bangumi_${anime.id}',
+                          tag: heroTag ?? 'bangumi_${anime.id}',
                           transitionOnUserGestures: true,
                           flightShuttleBuilder:
                               AnimationProvider.buildHeroFlightShuttle,

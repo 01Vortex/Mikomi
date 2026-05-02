@@ -17,9 +17,16 @@ import '../core/models/anime.dart';
 import '../features/home/models/home_anime_model.dart';
 import '../features/video/models/video_plugin.dart';
 
+class AnimeDetailRouteArgument {
+  final Object anime;
+  final String? heroTag;
+
+  const AnimeDetailRouteArgument({required this.anime, this.heroTag});
+}
+
 class AppRoutes {
   static const String main = '/';
-static const String animeDetail = '/anime_detail';
+  static const String animeDetail = '/anime_detail';
   static const String bangumiDetail = animeDetail;
   static const String schedule = '/schedule';
   static const String ranking = '/ranking';
@@ -54,7 +61,10 @@ static const String animeDetail = '/anime_detail';
     switch (settings.name) {
       case animeDetail:
         final argument = settings.arguments;
-        final anime = switch (argument) {
+        final routeArgument = argument is AnimeDetailRouteArgument
+            ? argument
+            : AnimeDetailRouteArgument(anime: argument as Object);
+        final anime = switch (routeArgument.anime) {
           Anime value => value,
           HomeAnimeModel value => Anime(
             id: value.id,
@@ -71,10 +81,13 @@ static const String animeDetail = '/anime_detail';
                 .toList(),
             info: value.info,
           ),
-          _ => throw ArgumentError('Invalid anime route argument: $argument'),
+          _ => throw ArgumentError('Invalid anime route argument: ${routeArgument.anime}'),
         };
         return MaterialPageRoute(
-          builder: (context) => AnimePage(anime: anime),
+          builder: (context) => AnimePage(
+            anime: anime,
+            heroTag: routeArgument.heroTag,
+          ),
         );
       case pluginEditor:
         final plugin = settings.arguments as VideoPlugin?;

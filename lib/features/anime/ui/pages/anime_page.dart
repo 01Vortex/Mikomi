@@ -15,8 +15,9 @@ import 'package:mikomi/shared/theme_extensions.dart';
 
 class AnimePage extends StatefulWidget {
   final Anime anime;
+  final String? heroTag;
 
-  const AnimePage({super.key, required this.anime});
+  const AnimePage({super.key, required this.anime, this.heroTag});
 
   @override
   State<AnimePage> createState() => _AnimePageState();
@@ -161,7 +162,10 @@ class _AnimePageState extends State<AnimePage>
                 ),
               ),
               flexibleSpace: FlexibleSpaceBar(
-                background: AnimeHeader(anime: _anime),
+                background: AnimeHeader(
+                  anime: _anime,
+                  heroTag: widget.heroTag,
+                ),
               ),
             ),
             SliverPersistentHeader(

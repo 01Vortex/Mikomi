@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:card_swiper/card_swiper.dart';
+import 'package:mikomi/config/app_routes.dart';
 import 'package:mikomi/config/app_theme.dart';
 import 'package:mikomi/features/home/models/home_anime_model.dart';
-import 'package:mikomi/shared/anime_detil_converter.dart';
 import 'package:mikomi/shared/cached_image.dart';
 import 'package:mikomi/shared/skeleton.dart';
 
@@ -44,10 +44,16 @@ class _BannerSectionState extends State<BannerSection> {
           itemBuilder: (context, index) {
             final item = widget.bannerList[index];
             return GestureDetector(
-              onTap: () => AnimeDetilConverter.openBangumiDetail(
-                context,
-                item,
-              ),
+              onTap: () {
+                Navigator.pushNamed(
+                  context,
+                  AppRoutes.animeDetail,
+                  arguments: AnimeDetailRouteArgument(
+                    anime: item,
+                    heroTag: 'bangumi_banner_${item.id}',
+                  ),
+                );
+              },
               child: Container(
                 margin: const EdgeInsets.symmetric(horizontal: 4),
                 decoration: BoxDecoration(
@@ -65,9 +71,12 @@ class _BannerSectionState extends State<BannerSection> {
                   children: [
                     ClipRRect(
                       borderRadius: BorderRadius.circular(12),
-                      child: CachedImage(
-                        imageUrl: item.coverUrl,
-                        fit: BoxFit.cover,
+                      child: Hero(
+                        tag: 'bangumi_banner_${item.id}',
+                        child: CachedImage(
+                          imageUrl: item.coverUrl,
+                          fit: BoxFit.cover,
+                        ),
                       ),
                     ),
                     Container(

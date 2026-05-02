@@ -12,13 +12,21 @@ class AnimeDetilConverter {
 
   static Future<void> openBangumiDetail(
     BuildContext context,
-    HomeAnimeModel source,
-  ) async {
+    HomeAnimeModel source, {
+    String? heroTag,
+  }) async {
     final fallback = toAnime(source);
     final converted = await convertToBangumiAnime(source) ?? fallback;
 
     if (!context.mounted) return;
-    Navigator.pushNamed(context, AppRoutes.animeDetail, arguments: converted);
+    Navigator.pushNamed(
+      context,
+      AppRoutes.animeDetail,
+      arguments: AnimeDetailRouteArgument(
+        anime: converted,
+        heroTag: heroTag ?? 'anime_${source.id}',
+      ),
+    );
   }
 
   static Anime toAnime(HomeAnimeModel source) {
