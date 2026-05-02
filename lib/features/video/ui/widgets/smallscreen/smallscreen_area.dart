@@ -42,6 +42,7 @@ class VideoPlayerArea extends StatelessWidget {
   final VoidCallback onTogglePlayPause;
   final ValueChanged<Duration> onSeek;
   final ValueChanged<dynamic> onDanmakuLayerCreated;
+  final ValueChanged<dynamic> onDanmakuLayerDisposed;
   final ValueChanged<VideoFitMode> onFullscreenFitModeChanged;
   final ValueChanged<double> onPlaybackSpeedChanged;
   final ValueChanged<DanmakuConfig> onDanmakuConfigChanged;
@@ -80,6 +81,7 @@ class VideoPlayerArea extends StatelessWidget {
     required this.onTogglePlayPause,
     required this.onSeek,
     required this.onDanmakuLayerCreated,
+    required this.onDanmakuLayerDisposed,
     required this.onFullscreenFitModeChanged,
     required this.onPlaybackSpeedChanged,
     required this.onDanmakuConfigChanged,
@@ -100,7 +102,7 @@ class VideoPlayerArea extends StatelessWidget {
             if (videoUrl.isNotEmpty)
               Positioned.fill(
                 child: SmallscreenVideo(
-                  key: ValueKey('$videoUrl-$currentEpisode-$isDanmakuEnabled'),
+                  key: ValueKey('$videoUrl-$currentEpisode'),
                   videoUrl: videoUrl,
                   title: title,
                   currentEpisode: currentEpisode,
@@ -128,6 +130,7 @@ class VideoPlayerArea extends StatelessWidget {
                   onTogglePlayPause: onTogglePlayPause,
                   onSeek: onSeek,
                   onDanmakuLayerCreated: onDanmakuLayerCreated,
+                  onDanmakuLayerDisposed: onDanmakuLayerDisposed,
                   onFullscreenFitModeChanged: onFullscreenFitModeChanged,
                   onPlaybackSpeedChanged: onPlaybackSpeedChanged,
                   onDanmakuConfigChanged: onDanmakuConfigChanged,

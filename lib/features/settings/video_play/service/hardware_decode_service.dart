@@ -9,42 +9,53 @@ enum HwDecoder {
   none;
 
   String get hwdecValue => switch (this) {
-        HwDecoder.auto => 'auto-safe',
-        HwDecoder.mediacodec => 'mediacodec',
-        HwDecoder.mediacodecCopy => 'mediacodec-copy',
-        HwDecoder.videotoolbox => 'videotoolbox',
-        HwDecoder.none => 'no',
-      };
+    HwDecoder.auto => 'auto-safe',
+    HwDecoder.mediacodec => 'mediacodec',
+    HwDecoder.mediacodecCopy => 'mediacodec-copy',
+    HwDecoder.videotoolbox => 'videotoolbox',
+    HwDecoder.none => 'no',
+  };
 
   String get label => switch (this) {
-        HwDecoder.auto => '自动',
-        HwDecoder.mediacodec => 'MediaCodec',
-        HwDecoder.mediacodecCopy => 'MediaCodec (Copy)',
-        HwDecoder.videotoolbox => 'VideoToolbox',
-        HwDecoder.none => '关闭',
-      };
+    HwDecoder.auto => '自动',
+    HwDecoder.mediacodec => 'MediaCodec',
+    HwDecoder.mediacodecCopy => 'MediaCodec (Copy)',
+    HwDecoder.videotoolbox => 'VideoToolbox',
+    HwDecoder.none => '关闭',
+  };
 
   String get description => switch (this) {
-        HwDecoder.auto => '自动选择最佳解码器，兼容性最好',
-        HwDecoder.mediacodec => '使用 Android 硬件解码，直接渲染，性能最优',
-        HwDecoder.mediacodecCopy => '使用 Android 硬件解码，复制帧，兼容性较好',
-        HwDecoder.videotoolbox => '使用 Apple VideoToolbox 硬件解码',
-        HwDecoder.none => '纯软件解码，性能较低但兼容性最佳',
-      };
+    HwDecoder.auto => '自动选择最佳解码器，兼容性最好',
+    HwDecoder.mediacodec => '使用 Android 硬件解码，直接渲染，性能最优',
+    HwDecoder.mediacodecCopy => '使用 Android 硬件解码，复制帧，兼容性较好',
+    HwDecoder.videotoolbox => '使用 Apple VideoToolbox 硬件解码',
+    HwDecoder.none => '纯软件解码，性能较低但兼容性最佳',
+  };
 
   static List<HwDecoder> get platformDecoders {
     if (Platform.isAndroid) {
-      return [HwDecoder.auto, HwDecoder.mediacodecCopy, HwDecoder.mediacodec, HwDecoder.none];
+      return [
+        HwDecoder.mediacodec,
+        HwDecoder.auto,
+        HwDecoder.mediacodecCopy,
+        HwDecoder.none,
+      ];
     } else if (Platform.isIOS) {
       return [HwDecoder.auto, HwDecoder.videotoolbox, HwDecoder.none];
     }
     return [HwDecoder.auto, HwDecoder.none];
   }
 
+  static HwDecoder get platformDefault {
+    if (Platform.isAndroid) return HwDecoder.mediacodec;
+    if (Platform.isIOS) return HwDecoder.videotoolbox;
+    return HwDecoder.auto;
+  }
+
   static HwDecoder fromValue(String value) {
     return HwDecoder.values.firstWhere(
       (e) => e.hwdecValue == value,
-      orElse: () => HwDecoder.auto,
+      orElse: () => platformDefault,
     );
   }
 }
@@ -65,7 +76,8 @@ class HardwareDecodeService {
 
   Future<HwDecoder> getDecoder() async {
     final prefs = await SharedPreferences.getInstance();
-    final value = prefs.getString(_keyDecoder) ?? HwDecoder.auto.hwdecValue;
+    final value = prefs.getString(_keyDecoder);
+    if (value == null) return HwDecoder.platformDefault;
     return HwDecoder.fromValue(value);
   }
 

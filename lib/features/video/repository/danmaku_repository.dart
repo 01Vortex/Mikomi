@@ -14,6 +14,18 @@ class DanmakuRepository {
     return _danDanPlaySource.resolveEpisodeIdByBangumiId(bangumiId, episode);
   }
 
+  Future<int?> resolveEpisodeId({
+    required int? bgmBangumiId,
+    required String? animeTitle,
+    required int episode,
+  }) {
+    return _danDanPlaySource.resolveEpisodeId(
+      bgmBangumiId: bgmBangumiId,
+      animeTitle: animeTitle,
+      episode: episode,
+    );
+  }
+
   Future<List<dynamic>> fetchCommentsByEpisodeId(int episodeId) {
     return _danDanPlaySource.fetchCommentsByEpisodeId(episodeId);
   }

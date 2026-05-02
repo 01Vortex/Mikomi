@@ -45,6 +45,7 @@ class SmallscreenVideo extends StatefulWidget {
   final VoidCallback onTogglePlayPause;
   final ValueChanged<Duration> onSeek;
   final ValueChanged<dynamic> onDanmakuLayerCreated;
+  final ValueChanged<dynamic> onDanmakuLayerDisposed;
   final ValueChanged<VideoFitMode> onFullscreenFitModeChanged;
   final ValueChanged<double> onPlaybackSpeedChanged;
   final ValueChanged<DanmakuConfig> onDanmakuConfigChanged;
@@ -80,6 +81,7 @@ class SmallscreenVideo extends StatefulWidget {
     required this.onTogglePlayPause,
     required this.onSeek,
     required this.onDanmakuLayerCreated,
+    required this.onDanmakuLayerDisposed,
     required this.onFullscreenFitModeChanged,
     required this.onPlaybackSpeedChanged,
     required this.onDanmakuConfigChanged,
@@ -207,6 +209,7 @@ class _SmallscreenVideoState extends State<SmallscreenVideo> {
               onDanmakuToggle: widget.onDanmakuToggle,
               onDanmakuInputVisibleChanged: (_) {},
               onFullscreenDanmakuLayerCreated: widget.onDanmakuLayerCreated,
+              onFullscreenDanmakuLayerDisposed: widget.onDanmakuLayerDisposed,
             ),
             transitionDuration: const Duration(milliseconds: 200),
             reverseTransitionDuration: const Duration(milliseconds: 200),
@@ -278,6 +281,7 @@ class _SmallscreenVideoState extends State<SmallscreenVideo> {
   Widget _danmakuLayer() => Positioned.fill(
     child: DanmakuLayer(
       onControllerCreated: widget.onDanmakuLayerCreated,
+      onControllerDisposed: widget.onDanmakuLayerDisposed,
       fontSize: widget.danmakuConfig.fontSize,
       opacity: widget.danmakuConfig.opacity,
       speed: widget.danmakuConfig.duration,

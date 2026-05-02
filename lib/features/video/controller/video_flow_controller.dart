@@ -232,14 +232,22 @@ class VideoFlowController {
 
   void updateSmallScreenSnapshot(VideoPlayerSnapshot snapshot) {
     _playerSnapshotNotifier.value = snapshot;
-    _setSmallScreenState(
-      _smallscreenState.copyWith(
-        isBuffering: snapshot.isBuffering,
-        isPlaying: snapshot.isPlaying,
-        position: snapshot.position,
-        duration: snapshot.duration,
-      ),
+
+    final shouldSyncPageState =
+        _smallscreenState.isBuffering != snapshot.isBuffering ||
+        _smallscreenState.isPlaying != snapshot.isPlaying ||
+        _smallscreenState.duration != snapshot.duration;
+
+    _smallscreenState = _smallscreenState.copyWith(
+      isBuffering: snapshot.isBuffering,
+      isPlaying: snapshot.isPlaying,
+      position: snapshot.position,
+      duration: snapshot.duration,
     );
+
+    if (shouldSyncPageState) {
+      _sync();
+    }
   }
 
   void syncDanmakuPlaybackPosition(Duration position) {
@@ -289,6 +297,10 @@ class VideoFlowController {
     _danmakuController.attachCanvasController(controller);
   }
 
+  void detachDanmakuController(dynamic controller) {
+    _danmakuController.detachCanvasController(controller);
+  }
+
   void togglePlayPause() {
     final player = _playbackService.player;
     if (player == null) return;
@@ -319,14 +331,19 @@ class VideoFlowController {
 
   Future<void> setDanmakuConfig(DanmakuConfig config) async {
     _danmakuConfig = config;
-    _danmakuController.requestCurrentWindowRefresh();
+    _danmakuController.applyConfig(config);
     _sync();
   }
 
   void setDanmakuEnabled(bool enabled) {
+    if (_state.isDanmakuEnabled == enabled) return;
     _setState(_state.setDanmakuEnabled(enabled));
     if (enabled) {
+      _danmakuController.applyConfig(_danmakuConfig);
       unawaited(loadDanmakuIfNeeded());
+      _danmakuController.requestCurrentWindowRefresh();
+    } else {
+      _danmakuController.clearScreen();
     }
   }
 
@@ -528,7 +545,7 @@ class VideoFlowController {
 
   Future<void> _loadDanmakuConfig() async {
     _danmakuConfig = await DanmakuSettingService.loadAll();
-    _danmakuController.requestCurrentWindowRefresh();
+    _danmakuController.applyConfig(_danmakuConfig);
     _sync();
   }
 

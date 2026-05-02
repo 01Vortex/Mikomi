@@ -6,6 +6,7 @@ import 'package:media_kit_video/media_kit_video.dart';
 import 'package:mikomi/features/settings/video_play/service/hardware_decode_service.dart';
 import 'package:mikomi/features/settings/video_play/service/play_setting_service.dart';
 import 'package:mikomi/features/settings/video_play/service/video_renderer_service.dart';
+import 'package:path_provider/path_provider.dart';
 
 class VideoPlaybackService {
   Player? _player;
@@ -22,33 +23,53 @@ class VideoPlaybackService {
 
   String? _resolveVo(VideoRenderer renderer) {
     return switch (renderer) {
-      VideoRenderer.auto => null,
+      VideoRenderer.auto => Platform.isAndroid ? 'gpu' : null,
       VideoRenderer.textureView => 'gpu',
       VideoRenderer.surfaceView => 'mediacodec_embed',
     };
   }
 
-  bool? _resolveAttachSurfaceAfterVideoParameters(VideoRenderer renderer) {
-    return switch (renderer) {
-      VideoRenderer.auto => null,
-      VideoRenderer.textureView => true,
-      VideoRenderer.surfaceView => false,
-    };
+  HwDecoder _resolveDecoder({
+    required bool hardwareAccelerationEnabled,
+    required VideoRenderer renderer,
+    required HwDecoder decoder,
+  }) {
+    if (!hardwareAccelerationEnabled) return HwDecoder.none;
+    if (Platform.isAndroid && renderer == VideoRenderer.surfaceView) {
+      return HwDecoder.mediacodec;
+    }
+    return decoder;
   }
 
-  Future<String> _applyLowLatencyAudio(bool lowLatencyAudio) async {
-    if (!lowLatencyAudio || _player == null) return 'default';
-    if (!Platform.isAndroid || _player!.platform is! NativePlayer) {
-      return 'default';
-    }
+  Future<void> _applyNativePlayerOptions({
+    required bool lowLatencyAudio,
+    required VideoRenderer renderer,
+  }) async {
+    final player = _player;
+    if (player == null || player.platform is! NativePlayer) return;
 
     try {
-      final dynamic nativePlayer = _player!.platform;
-      await nativePlayer.setProperty('ao', 'opensles');
-      final dynamic ao = await nativePlayer.getProperty('ao');
-      return ao?.toString() ?? 'opensles';
-    } catch (_) {
-      return 'default';
+      final nativePlayer = player.platform as NativePlayer;
+      final tempDir = await getTemporaryDirectory();
+      await nativePlayer.setProperty('demuxer-cache-dir', tempDir.path);
+      await nativePlayer.setProperty('af', 'scaletempo2=max-speed=8');
+      await nativePlayer.setProperty('vd-lavc-dr', 'yes');
+
+      if (renderer != VideoRenderer.surfaceView) {
+        await nativePlayer.setProperty('video-sync', 'display-resample');
+        await nativePlayer.setProperty('interpolation', 'yes');
+        await nativePlayer.setProperty('tscale', 'oversample');
+      }
+
+      if (Platform.isAndroid) {
+        await nativePlayer.setProperty('volume-max', '100');
+        await nativePlayer.setProperty(
+          'ao',
+          lowLatencyAudio ? 'opensles' : 'audiotrack',
+        );
+      }
+    } catch (error) {
+      debugPrint('VideoPlaybackService: 原生播放器参数设置失败 - $error');
     }
   }
 
@@ -60,45 +81,46 @@ class VideoPlaybackService {
       final renderer = await _rendererService.getRenderer();
       final lowLatencyAudio = await _basisService.getLowLatencyAudio();
       final playSpeed = await _basisService.getPlaySpeed();
+      final resolvedVo = _resolveVo(renderer);
+      final resolvedDecoder = _resolveDecoder(
+        hardwareAccelerationEnabled: enabled,
+        renderer: renderer,
+        decoder: decoder,
+      );
 
       _player = Player(
         configuration: const PlayerConfiguration(
-          bufferSize: 32 * 1024 * 1024,
+          bufferSize: 1500 * 1024 * 1024,
+          osc: false,
           logLevel: MPVLogLevel.error,
         ),
       );
 
-      final resolvedVo = _resolveVo(renderer);
-      final resolvedAttachSurfaceAfterVideoParameters =
-          _resolveAttachSurfaceAfterVideoParameters(renderer);
-
-      final videoControllerConfig = VideoControllerConfiguration(
-        enableHardwareAcceleration: enabled,
-        hwdec: enabled ? decoder.hwdecValue : 'no',
-        vo: resolvedVo,
-        androidAttachSurfaceAfterVideoParameters:
-            resolvedAttachSurfaceAfterVideoParameters,
-        scale: smallScreen ? 0.75 : 1.0,
+      await _applyNativePlayerOptions(
+        lowLatencyAudio: lowLatencyAudio,
+        renderer: renderer,
       );
 
       _videoController = VideoController(
         _player!,
-        configuration: videoControllerConfig,
+        configuration: VideoControllerConfiguration(
+          enableHardwareAcceleration: enabled,
+          hwdec: resolvedDecoder.hwdecValue,
+          vo: resolvedVo,
+          androidAttachSurfaceAfterVideoParameters: false,
+        ),
       );
-
-      final resolvedAo = await _applyLowLatencyAudio(lowLatencyAudio);
 
       final platformController = await _videoController!.platform.future;
       debugPrint(
-        '✅ VideoPlaybackService: renderer=${renderer.name}, '
+        'VideoPlaybackService: renderer=${renderer.name}, '
         'vo=${platformController.configuration.vo ?? 'default'}, '
         'hwdec=${platformController.configuration.hwdec ?? 'default'}, '
-        'lowLatencyAudio=$lowLatencyAudio, ao=$resolvedAo',
+        'lowLatencyAudio=$lowLatencyAudio, '
+        'smoothOutput=${renderer != VideoRenderer.surfaceView}',
       );
 
-      // 设置默认播放速度
       await _player!.setRate(playSpeed);
-
       _isInitialized = true;
     } catch (e) {
       debugPrint('VideoPlaybackService: 初始化失败 - $e');
@@ -142,4 +164,3 @@ class VideoPlaybackService {
     }
   }
 }
-

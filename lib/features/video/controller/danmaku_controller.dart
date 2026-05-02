@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
+import 'package:mikomi/features/settings/danmaku/danmaku_setting_service.dart';
 import 'package:mikomi/features/video/facade/danmaku_facade.dart';
 import 'package:mikomi/features/video/models/danmaku_model.dart';
 import 'package:mikomi/features/video/services/danmaku_service.dart';
@@ -90,6 +91,18 @@ class DanmakuController extends ChangeNotifier {
     _danmakuFacade.register(canvasController);
     _shouldResendCurrentWindow = true;
     scheduleMicrotask(_flushCurrentWindowIfNeeded);
+  }
+
+  void applyConfig(DanmakuConfig config) {
+    _danmakuFacade.applyConfig(config);
+    _shouldResendCurrentWindow = true;
+    scheduleMicrotask(_flushCurrentWindowIfNeeded);
+  }
+
+  void clearScreen() {
+    _lastSyncedSecond = -1;
+    _shouldResendCurrentWindow = false;
+    _danmakuFacade.clearScreen();
   }
 
   void detachCanvasController(dynamic canvasController) {

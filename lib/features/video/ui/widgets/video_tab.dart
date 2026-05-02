@@ -8,6 +8,7 @@ class VideoTab extends StatelessWidget {
   final bool isDanmakuInputExpanded;
   final VoidCallback onDanmakuToggle;
   final VoidCallback onDanmakuInputTap;
+  final VoidCallback onDanmakuSettingsTap;
   final VoidCallback onVideoSourceTap;
   final String? currentSourceName;
 
@@ -18,6 +19,7 @@ class VideoTab extends StatelessWidget {
     required this.isDanmakuInputExpanded,
     required this.onDanmakuToggle,
     required this.onDanmakuInputTap,
+    required this.onDanmakuSettingsTap,
     required this.onVideoSourceTap,
     required this.currentSourceName,
   });
@@ -31,73 +33,53 @@ class VideoTab extends StatelessWidget {
           bottom: BorderSide(color: context.colors.outlineVariant, width: 0.5),
         ),
       ),
-      child: Stack(
+      child: Row(
         children: [
-          // 底层：Tab标签，占据左侧120宽度
-          Positioned(
-            left: 0,
-            top: 0,
-            bottom: 0,
-            width: 120,
-            child: _buildTabSection(context),
-          ),
-          // 上层：右侧按钮区域，从120开始到右边
-          Positioned(
-            left: 120,
-            right: 0,
-            top: 0,
-            bottom: 0,
-            child: _buildActionSection(context),
-          ),
+          SizedBox(width: 120, child: _buildTabSection(context)),
+          Expanded(child: _buildActionSection(context)),
         ],
       ),
     );
   }
 
-  // Tab标签区域
   Widget _buildTabSection(BuildContext context) {
-    return SizedBox(
-      width: 120,
-      child: TabBar(
-        controller: tabController,
-        labelColor: Theme.of(context).colorScheme.primary,
-        unselectedLabelColor: Theme.of(
-          context,
-        ).colorScheme.onSurface.withValues(alpha: 0.6),
-        indicatorColor: Theme.of(context).colorScheme.primary,
-        indicatorWeight: 3,
-        labelPadding: const EdgeInsets.symmetric(horizontal: 8),
-        padding: EdgeInsets.zero,
-        labelStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
-        tabs: const [
-          Tab(text: '选集'),
-          Tab(text: '评论'),
-        ],
-      ),
+    return TabBar(
+      controller: tabController,
+      labelColor: Theme.of(context).colorScheme.primary,
+      unselectedLabelColor: Theme.of(
+        context,
+      ).colorScheme.onSurface.withValues(alpha: 0.6),
+      indicatorColor: Theme.of(context).colorScheme.primary,
+      indicatorWeight: 3,
+      labelPadding: const EdgeInsets.symmetric(horizontal: 8),
+      padding: EdgeInsets.zero,
+      labelStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+      tabs: const [
+        Tab(text: '选集'),
+        Tab(text: '评论'),
+      ],
     );
   }
 
-  // 右侧按钮区域
   Widget _buildActionSection(BuildContext context) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
-        // 弹幕输入提示（仅在开启弹幕时显示）
         if (isDanmakuEnabled) _buildDanmakuInputHint(context),
-        // 弹幕开关按钮
         _buildDanmakuToggleButton(context),
         const SizedBox(width: 8),
-        // 视频源按钮
+        _buildDanmakuSettingsButton(context),
+        const SizedBox(width: 8),
         _buildVideoSourceButton(context),
         const SizedBox(width: 12),
       ],
     );
   }
 
-  // 弹幕输入提示
   Widget _buildDanmakuInputHint(BuildContext context) {
     return GestureDetector(
       onTap: onDanmakuInputTap,
+      behavior: HitTestBehavior.opaque,
       child: Container(
         height: 36,
         padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -124,10 +106,10 @@ class VideoTab extends StatelessWidget {
     );
   }
 
-  // 弹幕开关按钮
   Widget _buildDanmakuToggleButton(BuildContext context) {
     return GestureDetector(
       onTap: onDanmakuToggle,
+      behavior: HitTestBehavior.opaque,
       child: Container(
         height: 36,
         width: 36,
@@ -161,10 +143,35 @@ class VideoTab extends StatelessWidget {
     );
   }
 
-  // 视频源按钮
+  Widget _buildDanmakuSettingsButton(BuildContext context) {
+    return GestureDetector(
+      onTap: onDanmakuSettingsTap,
+      behavior: HitTestBehavior.opaque,
+      child: Container(
+        height: 36,
+        width: 36,
+        decoration: BoxDecoration(
+          color: context.colors.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(18),
+        ),
+        alignment: Alignment.center,
+        child: SvgPicture.asset(
+          'assets/icons/danmaku_setting.svg',
+          width: 20,
+          height: 20,
+          colorFilter: ColorFilter.mode(
+            context.colors.textSecondary,
+            BlendMode.srcIn,
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildVideoSourceButton(BuildContext context) {
     return GestureDetector(
       onTap: onVideoSourceTap,
+      behavior: HitTestBehavior.opaque,
       child: Container(
         height: 36,
         padding: const EdgeInsets.symmetric(horizontal: 16),

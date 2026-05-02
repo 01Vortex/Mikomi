@@ -2,10 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:canvas_danmaku/canvas_danmaku.dart';
 import 'package:mikomi/shared/theme_extensions.dart';
 
-/// 弹幕渲染层 —— 供小屏和全屏共用
-/// 包裹在 [IgnorePointer] 内，不拦截触摸事件
-class DanmakuLayer extends StatelessWidget {
+class DanmakuLayer extends StatefulWidget {
   final Function(DanmakuController) onControllerCreated;
+  final Function(DanmakuController)? onControllerDisposed;
   final double fontSize;
   final double opacity;
   final double speed;
@@ -18,6 +17,7 @@ class DanmakuLayer extends StatelessWidget {
   const DanmakuLayer({
     super.key,
     required this.onControllerCreated,
+    this.onControllerDisposed,
     this.fontSize = 16.0,
     this.opacity = 1.0,
     this.speed = 8.0,
@@ -29,26 +29,48 @@ class DanmakuLayer extends StatelessWidget {
   });
 
   @override
+  State<DanmakuLayer> createState() => _DanmakuLayerState();
+}
+
+class _DanmakuLayerState extends State<DanmakuLayer> {
+  DanmakuController? _controller;
+
+  @override
+  void dispose() {
+    final controller = _controller;
+    if (controller != null) {
+      widget.onControllerDisposed?.call(controller);
+    }
+    super.dispose();
+  }
+
+  void _handleControllerCreated(DanmakuController controller) {
+    _controller = controller;
+    widget.onControllerCreated(controller);
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return IgnorePointer(
-      child: DanmakuScreen(
-        createdController: onControllerCreated,
-        option: DanmakuOption(
-          fontSize: fontSize,
-          opacity: opacity,
-          duration: speed,
-          strokeWidth: strokeWidth,
-          area: area,
-          hideTop: hideTop,
-          hideBottom: hideBottom,
-          hideScroll: hideScroll,
+    return RepaintBoundary(
+      child: IgnorePointer(
+        child: DanmakuScreen(
+          createdController: _handleControllerCreated,
+          option: DanmakuOption(
+            fontSize: widget.fontSize,
+            opacity: widget.opacity,
+            duration: widget.speed,
+            strokeWidth: widget.strokeWidth,
+            area: widget.area,
+            hideTop: widget.hideTop,
+            hideBottom: widget.hideBottom,
+            hideScroll: widget.hideScroll,
+          ),
         ),
       ),
     );
   }
 }
 
-/// 弹幕发送输入条 —— 小屏底部 Sheet 样式
 class DanmakuInputBar extends StatelessWidget {
   final TextEditingController controller;
   final VoidCallback onSend;
@@ -97,10 +119,9 @@ class DanmakuInputBar extends StatelessWidget {
                   hintText: '点我发弹幕',
                   hintStyle: TextStyle(
                     fontSize: 15,
-                    color: Theme.of(context)
-                        .colorScheme
-                        .onSurface
-                        .withValues(alpha: 0.6),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.onSurface.withValues(alpha: 0.6),
                   ),
                   border: InputBorder.none,
                   contentPadding: EdgeInsets.zero,
@@ -117,10 +138,9 @@ class DanmakuInputBar extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: Theme.of(context)
-                    .colorScheme
-                    .primary
-                    .withValues(alpha: 0.1),
+                color: Theme.of(
+                  context,
+                ).colorScheme.primary.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: Icon(
@@ -136,7 +156,6 @@ class DanmakuInputBar extends StatelessWidget {
   }
 }
 
-/// 全屏内联弹幕输入框（嵌在底部控制栏横向滚动里）
 class DanmakuInlineInput extends StatelessWidget {
   final TextEditingController controller;
   final VoidCallback onSend;
@@ -149,8 +168,9 @@ class DanmakuInlineInput extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final inputWidth =
-        (MediaQuery.sizeOf(context).width * 0.18).clamp(80.0, 150.0);
+    final inputWidth = (MediaQuery.sizeOf(
+      context,
+    ).width * 0.18).clamp(80.0, 150.0);
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [

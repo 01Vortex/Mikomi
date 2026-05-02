@@ -7,6 +7,7 @@ import 'package:mikomi/features/anime/selector/video_source_selector.dart';
 import 'package:mikomi/features/video/facade/video_page_facade.dart';
 import 'package:mikomi/features/video/models/episode_model.dart';
 import 'package:mikomi/features/video/state/video_page_state.dart';
+import 'package:mikomi/features/video/ui/widgets/comment_tab_content.dart';
 import 'package:mikomi/features/video/ui/widgets/danmaku_overlay.dart';
 import 'package:mikomi/features/video/ui/widgets/episcode_tab_content.dart';
 import 'package:mikomi/features/video/ui/widgets/fullscreen/fullscreen_danmaku_settings.dart';
@@ -108,6 +109,21 @@ class _VideoPageState extends State<VideoPage>
     );
   }
 
+  void _showDanmakuSettings() {
+    final state = _facade.state;
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) => FullscreenDanmakuSettings(
+        initialConfig: state.danmakuConfig,
+        onConfigChanged: (config) {
+          unawaited(_facade.updateDanmakuConfig(config));
+        },
+      ),
+    );
+  }
+
   @override
   void reassemble() {
     super.reassemble();
@@ -172,6 +188,7 @@ class _VideoPageState extends State<VideoPage>
                             danmakuController: _danmakuController,
                             onDanmakuToggle: _setDanmakuEnabled,
                             onVideoSourceTap: _showVideoSourceSelector,
+                            onDanmakuSettingsTap: _showDanmakuSettings,
                             onDanmakuConfigChanged: _handleDanmakuConfigChanged,
                             facade: _facade,
                           ),
@@ -242,6 +259,7 @@ class _VideoPlayerSection extends StatelessWidget {
       onTogglePlayPause: facade.toggleSmallScreenPlayPause,
       onSeek: facade.seekSmallScreenTo,
       onDanmakuLayerCreated: facade.attachSmallScreenDanmakuController,
+      onDanmakuLayerDisposed: facade.detachDanmakuController,
       onFullscreenFitModeChanged: (mode) {
         unawaited(facade.updateFullscreenFitMode(mode));
       },
@@ -259,6 +277,7 @@ class _VideoTabsSection extends StatelessWidget {
   final TextEditingController danmakuController;
   final Future<void> Function(bool enabled) onDanmakuToggle;
   final VoidCallback onVideoSourceTap;
+  final VoidCallback onDanmakuSettingsTap;
   final Future<void> Function(VideoPageDanmakuConfig config)
   onDanmakuConfigChanged;
   final VideoPageFacade facade;
@@ -269,6 +288,7 @@ class _VideoTabsSection extends StatelessWidget {
     required this.danmakuController,
     required this.onDanmakuToggle,
     required this.onVideoSourceTap,
+    required this.onDanmakuSettingsTap,
     required this.onDanmakuConfigChanged,
     required this.facade,
   });
@@ -289,6 +309,7 @@ class _VideoTabsSection extends StatelessWidget {
               onDanmakuToggle(!danmaku.isDanmakuEnabled);
             },
             onDanmakuInputTap: facade.expandDanmakuInput,
+            onDanmakuSettingsTap: onDanmakuSettingsTap,
             onVideoSourceTap: onVideoSourceTap,
             currentSourceName: pageState.source.currentSourceName,
           ),
@@ -309,10 +330,7 @@ class _VideoTabsSection extends StatelessWidget {
                   onToggleExpand: facade.toggleEpisodeListExpanded,
                   onToggleSort: facade.toggleEpisodeSort,
                 ),
-                FullscreenDanmakuSettings(
-                  initialConfig: pageState.danmakuConfig,
-                  onConfigChanged: onDanmakuConfigChanged,
-                ),
+                const CommentTabContent.VideoComment(),
               ],
             ),
           ),

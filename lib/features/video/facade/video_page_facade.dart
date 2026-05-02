@@ -91,6 +91,10 @@ class VideoPageFacade {
     _flowController.attachSmallScreenDanmakuController(controller);
   }
 
+  void detachDanmakuController(dynamic controller) {
+    _flowController.detachDanmakuController(controller);
+  }
+
   void toggleSmallScreenPlayPause() {
     _flowController.togglePlayPause();
   }

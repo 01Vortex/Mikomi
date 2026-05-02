@@ -31,6 +31,7 @@ class FullscreenPage extends StatefulWidget {
   final ValueChanged<bool>? onDanmakuToggle;
   final ValueChanged<bool> onDanmakuInputVisibleChanged;
   final ValueChanged<dynamic> onFullscreenDanmakuLayerCreated;
+  final ValueChanged<dynamic> onFullscreenDanmakuLayerDisposed;
 
   const FullscreenPage({
     super.key,
@@ -53,6 +54,7 @@ class FullscreenPage extends StatefulWidget {
     this.onDanmakuToggle,
     required this.onDanmakuInputVisibleChanged,
     required this.onFullscreenDanmakuLayerCreated,
+    required this.onFullscreenDanmakuLayerDisposed,
   });
 
   @override
@@ -111,6 +113,8 @@ class _FullscreenPageState extends State<FullscreenPage> {
                     child: DanmakuLayer(
                       onControllerCreated:
                           widget.onFullscreenDanmakuLayerCreated,
+                      onControllerDisposed:
+                          widget.onFullscreenDanmakuLayerDisposed,
                       fontSize: widget.danmakuConfig.fontSize,
                       opacity: widget.danmakuConfig.opacity,
                       speed: widget.danmakuConfig.duration,

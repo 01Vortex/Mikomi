@@ -1,19 +1,36 @@
 import 'package:canvas_danmaku/canvas_danmaku.dart';
+import 'package:mikomi/features/settings/danmaku/danmaku_setting_service.dart';
 import 'package:mikomi/features/video/models/danmaku_model.dart';
 
 class DanmakuFacade {
-  final List<dynamic> _controllers = [];
+  final List<DanmakuController> _controllers = [];
 
   bool get isEmpty => _controllers.isEmpty;
 
   void register(dynamic controller) {
-    if (!_controllers.contains(controller)) {
+    if (controller is DanmakuController && !_controllers.contains(controller)) {
       _controllers.add(controller);
     }
   }
 
   void unregister(dynamic controller) {
     _controllers.remove(controller);
+  }
+
+  void applyConfig(DanmakuConfig config) {
+    final option = DanmakuOption(
+      fontSize: config.fontSize,
+      opacity: config.opacity,
+      duration: config.duration,
+      strokeWidth: config.strokeWidth,
+      area: config.area,
+      hideTop: !config.showTop,
+      hideBottom: !config.showBottom,
+      hideScroll: !config.showScroll,
+    );
+    for (final controller in List<DanmakuController>.of(_controllers)) {
+      controller.updateOption(option);
+    }
   }
 
   void send(List<Danmaku> danmakus) {
@@ -28,11 +45,20 @@ class DanmakuFacade {
             ? DanmakuItemType.bottom
             : DanmakuItemType.scroll,
       );
-      for (final controller in _controllers) {
-        (controller as DanmakuController).addDanmaku(item);
+      for (final controller in List<DanmakuController>.of(_controllers)) {
+        controller.addDanmaku(item);
       }
     }
   }
 
-  void clear() => _controllers.clear();
+  void clearScreen() {
+    for (final controller in List<DanmakuController>.of(_controllers)) {
+      controller.clear();
+    }
+  }
+
+  void clear() {
+    clearScreen();
+    _controllers.clear();
+  }
 }

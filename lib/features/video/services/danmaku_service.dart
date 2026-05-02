@@ -47,19 +47,11 @@ class DanmakuService {
   }) async {
     clear();
     try {
-      final resolvedEpisodeId = await _danmakuRepository.resolveEpisodeIdByBangumiId(
-        bangumiId,
-        episode,
+      final resolvedEpisodeId = await _danmakuRepository.resolveEpisodeId(
+        bgmBangumiId: bangumiId,
+        animeTitle: fallbackTitle,
+        episode: episode,
       );
-
-      if (resolvedEpisodeId == null && fallbackTitle != null) {
-        final fallbackBangumiId = await _danmakuRepository.resolveBangumiIdByTitle(
-          fallbackTitle,
-        );
-        if (fallbackBangumiId != null) {
-          return loadDanmakuByBangumiId(fallbackBangumiId, episode);
-        }
-      }
 
       if (resolvedEpisodeId == null) {
         _lastError = '未找到当前剧集的弹幕';

@@ -5,6 +5,10 @@ class CaptchaType {
 }
 
 /// 反反爬虫配置
+///
+/// 注意：验证码/确认按钮会由解析器自动识别并点击。
+/// [captchaButton] 只是插件作者可选提供的 XPath 兜底 hint，
+/// 不应该作为需要用户手动点击或手动配置的必填项。
 class AntiCrawlerConfig {
   final bool enabled;
   final int captchaType;
@@ -96,8 +100,8 @@ class VideoPlugin {
     required this.chapterResult,
     required this.referer,
     AntiCrawlerConfig? antiCrawlerConfig,
-  })  : id = id ?? _generateId(),
-        antiCrawlerConfig = antiCrawlerConfig ?? AntiCrawlerConfig.empty();
+  }) : id = id ?? _generateId(),
+       antiCrawlerConfig = antiCrawlerConfig ?? AntiCrawlerConfig.empty();
 
   static String _generateId() {
     return '${DateTime.now().millisecondsSinceEpoch}_${DateTime.now().microsecond}';
