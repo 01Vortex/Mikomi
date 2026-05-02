@@ -29,7 +29,7 @@ class _OverviewTabContentState extends State<OverviewTabContent> {
 
     // 判断是否正在加载
     final isLoading =
-        widget.anime.summary.isEmpty &&
+        widget.anime.chineseSummary.isEmpty &&
         widget.anime.ratingCount == 0;
 
     return SingleChildScrollView(
@@ -152,9 +152,9 @@ class _OverviewTabContentState extends State<OverviewTabContent> {
     return LayoutBuilder(
       builder: (context, constraints) {
         final textSpan = TextSpan(
-          text: widget.anime.summary.isEmpty
+          text: widget.anime.chineseSummary.isEmpty
               ? '暂无简介'
-              : widget.anime.summary,
+              : widget.anime.chineseSummary,
           style: const TextStyle(
             fontSize: 14,
             height: 1.6,
@@ -180,9 +180,9 @@ class _OverviewTabContentState extends State<OverviewTabContent> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              widget.anime.summary.isEmpty
+              widget.anime.chineseSummary.isEmpty
                   ? '暂无简介'
-                  : widget.anime.summary,
+                  : widget.anime.chineseSummary,
               style: const TextStyle(
                 fontSize: 14,
                 height: 1.6,

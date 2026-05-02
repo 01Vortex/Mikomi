@@ -227,15 +227,13 @@ class HomeRepository {
     return HomeAnimeModel(
       id: id,
       name:
+          titleMap['native']?.toString() ??
           titleMap['romaji']?.toString() ??
           titleMap['english']?.toString() ??
-          titleMap['native']?.toString() ??
           '',
-      nameCn:
-          titleMap['native']?.toString() ??
-          titleMap['english']?.toString() ??
-          titleMap['romaji']?.toString() ??
-          '',
+      nameCn: _isChineseTitle(titleMap['native']?.toString() ?? '')
+          ? titleMap['native']?.toString() ?? ''
+          : '',
       summary: genres.join(' / '),
       airDate: _buildDate(media['startDate']),
       images: {
@@ -363,6 +361,10 @@ class HomeRepository {
     final mm = safeMonth.toString().padLeft(2, '0');
     final dd = safeDay.toString().padLeft(2, '0');
     return '$year-$mm-$dd';
+  }
+
+  bool _isChineseTitle(String text) {
+    return RegExp(r'[\u4e00-\u9fff]').hasMatch(text);
   }
 
   int _stableId(String text) {

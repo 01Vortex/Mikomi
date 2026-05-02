@@ -247,15 +247,13 @@ class ScheduleService {
     return HomeAnimeModel(
       id: id,
       name:
+          titleMap['native']?.toString() ??
           titleMap['romaji']?.toString() ??
           titleMap['english']?.toString() ??
-          titleMap['native']?.toString() ??
           '',
-      nameCn:
-          titleMap['native']?.toString() ??
-          titleMap['english']?.toString() ??
-          titleMap['romaji']?.toString() ??
-          '',
+      nameCn: _isChineseTitle(titleMap['native']?.toString() ?? '')
+          ? titleMap['native']?.toString() ?? ''
+          : '',
       summary: genres.join(' / '),
       airDate:
           '${airingDateTime.year.toString().padLeft(4, '0')}-${airingDateTime.month.toString().padLeft(2, '0')}-${airingDateTime.day.toString().padLeft(2, '0')} $hh:$mm',
@@ -385,6 +383,10 @@ class ScheduleService {
     }
 
     return '';
+  }
+
+  bool _isChineseTitle(String text) {
+    return RegExp(r'[\u4e00-\u9fff]').hasMatch(text);
   }
 
   int _stableId(String text) {

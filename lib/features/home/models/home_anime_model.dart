@@ -54,10 +54,13 @@ class HomeAnimeModel {
       }
     }
 
+    final originalName = _stringValue(subject, const ['name']);
+    final chineseName = _extractChineseName(subject, fallbackOriginal: originalName);
+
     return HomeAnimeModel(
       id: subject['id'] ?? 0,
-      name: subject['name'] ?? '',
-      nameCn: subject['name_cn'] ?? subject['name'] ?? '',
+      name: originalName,
+      nameCn: chineseName,
       summary: subject['summary'] ?? '',
       airDate: subject['date'] ?? '',
       images: Map<String, String>.from(
@@ -78,7 +81,7 @@ class HomeAnimeModel {
     );
   }
 
-  String get displayName => nameCn.isNotEmpty ? nameCn : name;
+  String get displayName => _isChineseText(nameCn) ? nameCn : name;
 
   String get coverUrl =>
       images['large'] ??
@@ -87,4 +90,80 @@ class HomeAnimeModel {
       images['small'] ??
       images['grid'] ??
       '';
+}
+
+bool _isChineseText(String text) {
+  return RegExp(r'[\u4e00-\u9fff]').hasMatch(text);
+}
+
+String _stringValue(Map<dynamic, dynamic> source, List<String> keys) {
+  for (final key in keys) {
+    final value = source[key];
+    if (value is String && value.trim().isNotEmpty) {
+      return value.trim();
+    }
+  }
+  return '';
+}
+
+String _extractChineseName(
+  Map<dynamic, dynamic> subject, {
+  required String fallbackOriginal,
+}) {
+  final direct = _stringValue(subject, const [
+    'name_cn',
+    'nameCn',
+    'nameCN',
+    'chineseName',
+    'titleCn',
+    'title_cn',
+  ]);
+  if (_isChineseText(direct)) return direct;
+
+  final nameCnObject = subject['name_cn'];
+  if (nameCnObject is Map) {
+    final value = _stringValue(nameCnObject, const [
+      'cn',
+      'zh',
+      'zh_cn',
+      'zh-Hans',
+      'zh_hans',
+      'value',
+    ]);
+    if (_isChineseText(value)) return value;
+  }
+
+  final infoboxValue = _extractChineseNameFromInfobox(subject['infobox']);
+  if (_isChineseText(infoboxValue)) return infoboxValue;
+
+  final aliases = subject['aliases'] ?? subject['alias'];
+  if (aliases is List) {
+    for (final alias in aliases) {
+      final value = alias?.toString().trim() ?? '';
+      if (_isChineseText(value)) return value;
+    }
+  }
+
+  return _isChineseText(fallbackOriginal) ? fallbackOriginal : '';
+}
+
+String _extractChineseNameFromInfobox(dynamic infobox) {
+  if (infobox is! List) return '';
+
+  for (final item in infobox) {
+    if (item is! Map) continue;
+    final key = (item['key'] ?? item['name'] ?? '').toString();
+    if (!key.contains('中文') && !key.contains('简体')) continue;
+
+    final value = item['value'];
+    if (value is String && _isChineseText(value)) return value.trim();
+    if (value is List) {
+      for (final entry in value) {
+        final text = entry?.toString().trim() ?? '';
+        if (_isChineseText(text)) return text;
+      }
+    }
+  }
+
+  return '';
 }

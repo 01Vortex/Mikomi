@@ -402,15 +402,13 @@ class CategoryService {
     return HomeAnimeModel(
       id: id,
       name:
+          titleMap['native']?.toString() ??
           titleMap['romaji']?.toString() ??
           titleMap['english']?.toString() ??
-          titleMap['native']?.toString() ??
           '',
-      nameCn:
-          titleMap['native']?.toString() ??
-          titleMap['english']?.toString() ??
-          titleMap['romaji']?.toString() ??
-          '',
+      nameCn: _isChineseTitle(titleMap['native']?.toString() ?? '')
+          ? titleMap['native']?.toString() ?? ''
+          : '',
       summary: genres.join(' / '),
       airDate: '',
       images: {
@@ -426,6 +424,10 @@ class CategoryService {
       tags: genres.map((g) => HomeAnimeTag(name: g, count: 0)).toList(),
       info: '',
     );
+  }
+
+  bool _isChineseTitle(String text) {
+    return RegExp(r'[\u4e00-\u9fff]').hasMatch(text);
   }
 
   int _stableId(String text) {
