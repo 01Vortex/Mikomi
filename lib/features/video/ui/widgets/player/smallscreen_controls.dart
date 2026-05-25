@@ -9,7 +9,7 @@ import 'package:mikomi/features/video/state/video_page_state.dart';
 import 'package:mikomi/features/video/state/video_player_listener.dart';
 import 'package:mikomi/features/video/ui/pages/fullscreen_page.dart';
 import 'package:mikomi/features/video/ui/widgets/danmaku_overlay.dart';
-import 'package:mikomi/features/video/ui/widgets/video_gesture.dart';
+import 'package:mikomi/features/video/ui/widgets/player/video_gesture.dart';
 
 /// 小屏视频播放器控件。
 ///
@@ -179,8 +179,8 @@ class _SmallscreenVideoState extends State<SmallscreenVideo> {
           children: [
             Positioned.fill(child: Container(color: Colors.black)),
             if (showPlayer)
-              RepaintBoundary(
-                child: Positioned.fill(
+              Positioned.fill(
+                child: RepaintBoundary(
                   child: Video(
                     controller: ss.videoController!,
                     controls: NoVideoControls,
@@ -201,14 +201,14 @@ class _SmallscreenVideoState extends State<SmallscreenVideo> {
             if (showPlayer) _lockButton(),
             // 仅以下控件需要每帧 snapshot 数据（进度/播放状态）
             if (showPlayer)
-              ValueListenableBuilder<VideoPlayerSnapshot>(
-                valueListenable: widget.pageState.playerSnapshotListenable,
-                builder: (context, snapshot, _) {
-                  final position =
-                      _isDragging ? _dragPosition : snapshot.position;
-                  final showCtrls = _showControls && !_lockPanel;
-                  return Positioned.fill(
-                    child: Stack(
+              Positioned.fill(
+                child: ValueListenableBuilder<VideoPlayerSnapshot>(
+                  valueListenable: widget.pageState.playerSnapshotListenable,
+                  builder: (context, snapshot, _) {
+                    final position =
+                        _isDragging ? _dragPosition : snapshot.position;
+                    final showCtrls = _showControls && !_lockPanel;
+                    return Stack(
                       children: [
                         if (snapshot.isBuffering) _buffering(),
                         if (showCtrls)
@@ -218,9 +218,9 @@ class _SmallscreenVideoState extends State<SmallscreenVideo> {
                             snapshot.duration,
                           ),
                       ],
-                    ),
-                  );
-                },
+                    );
+                  },
+                ),
               ),
           ],
         ),

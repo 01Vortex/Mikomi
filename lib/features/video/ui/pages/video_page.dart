@@ -8,12 +8,9 @@ import 'package:mikomi/features/settings/danmaku/danmaku_setting_service.dart';
 import 'package:mikomi/features/video/controller/video_page_controller.dart';
 import 'package:mikomi/features/video/models/episode_model.dart';
 import 'package:mikomi/features/video/state/video_page_state.dart';
-import 'package:mikomi/features/video/ui/widgets/comment_tab_content.dart';
-import 'package:mikomi/features/video/ui/widgets/danmaku_overlay.dart';
-import 'package:mikomi/features/video/ui/widgets/episcode_tab_content.dart';
-import 'package:mikomi/features/video/ui/widgets/fullscreen/fullscreen_danmaku_settings.dart';
-import 'package:mikomi/features/video/ui/widgets/smallscreen/smallscreen_area.dart';
-import 'package:mikomi/features/video/ui/widgets/video_tab.dart';
+import 'package:mikomi/features/video/ui/widgets/player/fullscreen_danmaku.dart';
+import 'package:mikomi/features/video/ui/widgets/video_player_section.dart';
+import 'package:mikomi/features/video/ui/widgets/video_tabs_section.dart';
 
 class VideoPage extends StatefulWidget {
   final String title;
@@ -78,9 +75,7 @@ class _VideoPageState extends State<VideoPage>
     if (!enabled) _danmakuController.clear();
   }
 
-  Future<void> _handleDanmakuConfigChanged(
-    DanmakuConfig config,
-  ) async {
+  Future<void> _handleDanmakuConfigChanged(DanmakuConfig config) async {
     await _controller.updateDanmakuConfig(config);
     if (!mounted) return;
     setState(() {});
@@ -89,12 +84,11 @@ class _VideoPageState extends State<VideoPage>
   void _showVideoSourceSelector() {
     if (!_controller.hasVideoSources) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('暂无可用视频源')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('暂无可用视频源')),
+      );
       return;
     }
-
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -130,8 +124,6 @@ class _VideoPageState extends State<VideoPage>
     super.reassemble();
     _controller.syncAfterReassemble();
   }
-
-  // ── 从 build 提取的闭包 ──
 
   void _onPopInvoked(bool didPop, _) {
     if (didPop) unawaited(_controller.handlePagePop());
@@ -180,14 +172,14 @@ class _VideoPageState extends State<VideoPage>
                   builder: (context, pageState, _) {
                     return Column(
                       children: [
-                        _VideoPlayerSection(
+                        VideoPlayerSection(
                           pageState: pageState,
                           videoHeight: videoHeight,
                           onDanmakuToggle: _setDanmakuEnabled,
                           controller: _controller,
                         ),
                         Expanded(
-                          child: _VideoTabsSection(
+                          child: VideoTabsSection(
                             pageState: pageState,
                             tabController: _tabController,
                             danmakuController: _danmakuController,
@@ -206,110 +198,6 @@ class _VideoPageState extends State<VideoPage>
             ],
           ),
         ),
-      ),
-    );
-  }
-}
-
-class _VideoPlayerSection extends StatelessWidget {
-  final VideoPageState pageState;
-  final double videoHeight;
-  final Future<void> Function(bool enabled) onDanmakuToggle;
-  final VideoPageController controller;
-
-  const _VideoPlayerSection({
-    required this.pageState,
-    required this.videoHeight,
-    required this.onDanmakuToggle,
-    required this.controller,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return VideoPlayerArea(
-      videoHeight: videoHeight,
-      pageState: pageState,
-      controller: controller,
-      onDanmakuToggle: onDanmakuToggle,
-    );
-  }
-}
-
-class _VideoTabsSection extends StatelessWidget {
-  final VideoPageState pageState;
-  final TabController tabController;
-  final TextEditingController danmakuController;
-  final Future<void> Function(bool enabled) onDanmakuToggle;
-  final VoidCallback onVideoSourceTap;
-  final VoidCallback onDanmakuSettingsTap;
-  final Future<void> Function(DanmakuConfig config)
-  onDanmakuConfigChanged;
-  final VideoPageController controller;
-
-  const _VideoTabsSection({
-    required this.pageState,
-    required this.tabController,
-    required this.danmakuController,
-    required this.onDanmakuToggle,
-    required this.onVideoSourceTap,
-    required this.onDanmakuSettingsTap,
-    required this.onDanmakuConfigChanged,
-    required this.controller,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final danmaku = pageState.danmaku;
-    final episode = pageState.episode;
-    return Container(
-      color: Theme.of(context).cardColor,
-      child: Column(
-        children: [
-          VideoTab(
-            tabController: tabController,
-            isDanmakuEnabled: danmaku.isDanmakuEnabled,
-            isDanmakuInputExpanded: danmaku.isInputExpanded,
-            onDanmakuToggle: () => onDanmakuToggle(!danmaku.isDanmakuEnabled),
-            onDanmakuInputTap: controller.expandDanmakuInput,
-            onDanmakuSettingsTap: onDanmakuSettingsTap,
-            onVideoSourceTap: onVideoSourceTap,
-            currentSourceName: pageState.source.currentSourceName,
-          ),
-          Expanded(
-            child: TabBarView(
-              controller: tabController,
-              physics: danmaku.isDanmakuEnabled
-                  ? const NeverScrollableScrollPhysics()
-                  : null,
-              children: [
-                EpisodeTabContent(
-                  isLoading: episode.isLoading,
-                  episodes: episode.episodes,
-                  isDescending: episode.isDescending,
-                  isEpisodesExpanded: episode.isExpanded,
-                  currentEpisode: episode.currentEpisodeNumber,
-                  onEpisodeSelected: controller.playEpisode,
-                  onToggleExpand: controller.toggleEpisodeListExpanded,
-                  onToggleSort: controller.toggleEpisodeSort,
-                ),
-                const CommentTabContent.VideoComment(),
-              ],
-            ),
-          ),
-          if (danmaku.isInputExpanded)
-            DanmakuInputBar(
-              controller: danmakuController,
-              onSend: () {
-                if (danmakuController.text.isNotEmpty) {
-                  danmakuController.clear();
-                }
-              },
-              onClose: () {
-                controller.collapseDanmakuInput();
-                danmakuController.clear();
-              },
-            ),
-        ],
       ),
     );
   }

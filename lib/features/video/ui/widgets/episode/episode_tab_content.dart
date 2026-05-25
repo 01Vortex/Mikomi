@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mikomi/shared/skeleton.dart';
 import 'package:mikomi/features/video/models/episode_model.dart';
-import 'package:mikomi/features/video/ui/widgets/episode_grid.dart';
+import 'package:mikomi/features/video/ui/widgets/episode/episode_grid.dart';
 
 class EpisodeTabContent extends StatelessWidget {
   final bool isLoading;

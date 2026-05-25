@@ -8,10 +8,10 @@ import 'package:mikomi/features/video/services/video_playback_service.dart';
 import 'package:mikomi/features/video/state/fullscreen_video_state.dart';
 import 'package:mikomi/features/video/state/video_player_listener.dart';
 import 'package:mikomi/features/video/ui/widgets/danmaku_overlay.dart';
-import 'package:mikomi/features/video/ui/widgets/fullscreen/fullscreen_danmaku_settings.dart';
-import 'package:mikomi/features/video/ui/widgets/fullscreen/fullscreen_episode.dart';
+import 'package:mikomi/features/video/ui/widgets/player/fullscreen_danmaku.dart';
+import 'package:mikomi/features/video/ui/widgets/player/fullscreen_episode.dart';
 import 'package:mikomi/features/video/ui/widgets/video_fit.dart';
-import 'package:mikomi/features/video/ui/widgets/video_gesture.dart';
+import 'package:mikomi/features/video/ui/widgets/player/video_gesture.dart';
 
 // 顶部/底部控制栏统一左右边距（不含安全区），确保两侧完全对齐
 const double _kSideMargin = 16.0;
@@ -268,14 +268,14 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
             ),
           _buildLockButton(),
           // 仅以下控件需要每帧 snapshot
-          ValueListenableBuilder<VideoPlayerSnapshot>(
-            valueListenable: widget.playerSnapshotListenable,
-            builder: (context, snapshot, _) {
-              final currentPosition =
-                  _isDragging ? _dragPosition : snapshot.position;
-              final showCtrls = _showControls && !_isLocked;
-              return Positioned.fill(
-                child: Stack(
+          Positioned.fill(
+            child: ValueListenableBuilder<VideoPlayerSnapshot>(
+              valueListenable: widget.playerSnapshotListenable,
+              builder: (context, snapshot, _) {
+                final currentPosition =
+                    _isDragging ? _dragPosition : snapshot.position;
+                final showCtrls = _showControls && !_isLocked;
+                return Stack(
                   children: [
                     if (snapshot.isBuffering) _buildBufferingIndicator(),
                     if (showCtrls) ...[
@@ -291,9 +291,9 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
                       ),
                     ],
                   ],
-                ),
-              );
-            },
+                );
+              },
+            ),
           ),
         ],
       ),

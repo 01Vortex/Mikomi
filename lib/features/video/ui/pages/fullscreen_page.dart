@@ -8,7 +8,7 @@ import 'package:mikomi/features/video/services/video_playback_service.dart';
 import 'package:mikomi/features/video/state/fullscreen_video_state.dart';
 import 'package:mikomi/features/video/state/video_player_listener.dart';
 import 'package:mikomi/features/video/ui/widgets/danmaku_overlay.dart';
-import 'package:mikomi/features/video/ui/widgets/fullscreen/fullscreen_video.dart';
+import 'package:mikomi/features/video/ui/widgets/player/fullscreen_controls.dart';
 import 'package:mikomi/features/video/ui/widgets/video_fit.dart';
 
 class FullscreenPage extends StatefulWidget {

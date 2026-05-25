@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mikomi/features/video/controller/video_page_controller.dart';
 import 'package:mikomi/features/video/state/video_page_state.dart';
-import 'package:mikomi/features/video/ui/widgets/smallscreen/smallscreen_video.dart';
+import 'package:mikomi/features/video/ui/widgets/player/smallscreen_controls.dart';
 
 /// 视频播放区域（小屏），包装 [SmallscreenVideo] 并处理加载/错误/超时状态。
 ///
