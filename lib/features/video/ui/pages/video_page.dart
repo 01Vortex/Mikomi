@@ -131,6 +131,12 @@ class _VideoPageState extends State<VideoPage>
     _controller.syncAfterReassemble();
   }
 
+  // ── 从 build 提取的闭包 ──
+
+  void _onPopInvoked(bool didPop, _) {
+    if (didPop) unawaited(_controller.handlePagePop());
+  }
+
   @override
   void dispose() {
     unawaited(_controller.dispose());
@@ -158,9 +164,7 @@ class _VideoPageState extends State<VideoPage>
       ),
       child: PopScope(
         canPop: true,
-        onPopInvokedWithResult: (didPop, result) {
-          if (didPop) unawaited(_controller.handlePagePop());
-        },
+        onPopInvokedWithResult: _onPopInvoked,
         child: Scaffold(
           backgroundColor: Theme.of(context).scaffoldBackgroundColor,
           resizeToAvoidBottomInset: true,
@@ -265,9 +269,7 @@ class _VideoTabsSection extends StatelessWidget {
             tabController: tabController,
             isDanmakuEnabled: danmaku.isDanmakuEnabled,
             isDanmakuInputExpanded: danmaku.isInputExpanded,
-            onDanmakuToggle: () {
-              onDanmakuToggle(!danmaku.isDanmakuEnabled);
-            },
+            onDanmakuToggle: () => onDanmakuToggle(!danmaku.isDanmakuEnabled),
             onDanmakuInputTap: controller.expandDanmakuInput,
             onDanmakuSettingsTap: onDanmakuSettingsTap,
             onVideoSourceTap: onVideoSourceTap,

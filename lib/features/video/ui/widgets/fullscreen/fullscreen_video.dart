@@ -273,22 +273,25 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
             builder: (context, snapshot, _) {
               final currentPosition =
                   _isDragging ? _dragPosition : snapshot.position;
-              return Stack(
-                children: [
-                  if (snapshot.isBuffering) _buildBufferingIndicator(),
-                  if (_showControls && !_isLocked) ...[
-                    _buildCenterControls(isPlaying: snapshot.isPlaying),
-                    _buildBottomControls(
-                      safePadding: safePadding,
-                      leftPad: leftPad,
-                      rightPad: rightPad,
-                      isPlaying: snapshot.isPlaying,
-                      position: currentPosition,
-                      duration: snapshot.duration,
-                      playbackSpeed: snapshot.playbackSpeed,
-                    ),
+              final showCtrls = _showControls && !_isLocked;
+              return Positioned.fill(
+                child: Stack(
+                  children: [
+                    if (snapshot.isBuffering) _buildBufferingIndicator(),
+                    if (showCtrls) ...[
+                      _buildCenterControls(isPlaying: snapshot.isPlaying),
+                      _buildBottomControls(
+                        safePadding: safePadding,
+                        leftPad: leftPad,
+                        rightPad: rightPad,
+                        isPlaying: snapshot.isPlaying,
+                        position: currentPosition,
+                        duration: snapshot.duration,
+                        playbackSpeed: snapshot.playbackSpeed,
+                      ),
+                    ],
                   ],
-                ],
+                ),
               );
             },
           ),

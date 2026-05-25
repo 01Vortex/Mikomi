@@ -206,16 +206,19 @@ class _SmallscreenVideoState extends State<SmallscreenVideo> {
                 builder: (context, snapshot, _) {
                   final position =
                       _isDragging ? _dragPosition : snapshot.position;
-                  return Stack(
-                    children: [
-                      if (snapshot.isBuffering) _buffering(),
-                      if (_showControls && !_lockPanel)
-                        _bottomControls(
-                          snapshot.isPlaying,
-                          position,
-                          snapshot.duration,
-                        ),
-                    ],
+                  final showCtrls = _showControls && !_lockPanel;
+                  return Positioned.fill(
+                    child: Stack(
+                      children: [
+                        if (snapshot.isBuffering) _buffering(),
+                        if (showCtrls)
+                          _bottomControls(
+                            snapshot.isPlaying,
+                            position,
+                            snapshot.duration,
+                          ),
+                      ],
+                    ),
                   );
                 },
               ),
