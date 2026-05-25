@@ -119,6 +119,7 @@ flutter:
   # 资源文件
   assets:
     - assets/plugins/
+    - assets/plugins/animeko_bt.json
     - assets/icons/
 
   # 字体

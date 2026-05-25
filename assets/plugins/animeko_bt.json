@@ -1,0 +1,48 @@
+{
+    "exportedMediaSourceDataList": {
+        "mediaSources": [
+            {
+                "factoryId": "rss",
+                "version": 1,
+                "arguments": {
+                    "name": "动漫花园",
+                    "description": "动漫花园",
+                    "iconUrl": "https://share.dmhy.org/favicon.ico",
+                    "searchConfig": {
+                        "searchUrl": "https://share.dmhy.org/topics/rss/rss.xml?keyword={keyword}",
+                        "filterByEpisodeSort": true,
+                        "filterBySubjectName": true
+                    }
+                }
+            },
+            {
+                "factoryId": "rss",
+                "version": 1,
+                "arguments": {
+                    "name": "末日动漫资源库",
+                    "description": "末日动漫资源库1",
+                    "iconUrl": "https://share.acgnx.cc/favicon.ico",
+                    "searchConfig": {
+                        "searchUrl": "https://share.acgnx.cc/rss.xml?keyword={keyword}",
+                        "filterByEpisodeSort": true,
+                        "filterBySubjectName": true
+                    }
+                }
+            },
+            {
+                "factoryId": "rss",
+                "version": 1,
+                "arguments": {
+                    "name": "末日动漫资源库",
+                    "description": "末日动漫资源库2",
+                    "iconUrl": "https://share.acgnx.se/favicon.ico",
+                    "searchConfig": {
+                        "searchUrl": "https://share.acgnx.se/rss.xml?keyword={keyword}",
+                        "filterByEpisodeSort": true,
+                        "filterBySubjectName": true
+                    }
+                }
+            }
+        ]
+    }
+}

@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:mikomi/core/models/anime.dart';
 import 'package:mikomi/features/anime/service/anime_service.dart';
@@ -83,13 +85,41 @@ class _AnimePageState extends State<AnimePage>
 
   Future<void> _loadVideoSources() async {
     await _pluginManager.init();
+    final webSources = _pluginManager.plugins
+        .map((plugin) => VideoSource(name: plugin.name, type: SourceType.web))
+        .toList();
+    final btSources = await _loadBtSources();
     if (mounted) {
       setState(() {
-        _videoSources = _pluginManager.plugins
-            .map((plugin) => VideoSource(name: plugin.name))
-            .toList();
+        _videoSources = [...webSources, ...btSources];
       });
     }
+  }
+
+  Future<List<VideoSource>> _loadBtSources() async {
+    final btSources = <VideoSource>[];
+    try {
+      final jsonStr = await DefaultAssetBundle.of(context)
+          .loadString('assets/plugins/animeko_bt.json');
+      final root = jsonDecode(jsonStr) as Map<String, dynamic>;
+      final sources = (root['exportedMediaSourceDataList']
+              as Map<String, dynamic>?)?['mediaSources'] as List<dynamic>? ??
+          const [];
+      for (final s in sources) {
+        if (s is! Map<String, dynamic>) continue;
+        if (s['factoryId'] != 'rss') continue;
+        final args = s['arguments'] as Map<String, dynamic>?;
+        if (args == null || (args['name'] as String?)?.isEmpty == true) continue;
+        btSources.add(VideoSource(
+          name: args['name'] as String,
+          type: SourceType.bt,
+          config: args,
+        ));
+      }
+    } catch (_) {
+      // BT 加载失败不影响 Web 源
+    }
+    return btSources;
   }
 
   Future<void> _loadDetailInfo() async {

@@ -2,28 +2,38 @@ import 'package:flutter/foundation.dart';
 import 'package:mikomi/features/anime/selector/video_source_selector.dart';
 import 'package:mikomi/features/video/exception/video_exception.dart';
 import 'package:mikomi/features/video/models/episode_model.dart';
+import 'package:mikomi/features/video/origin/bt/rss_bt_resolver.dart';
 import 'package:mikomi/features/video/services/resolver/web_source_resolver.dart';
 import 'package:mikomi/features/video/services/resolver/video_source_resolver.dart';
 
-/// 视频流解析路由器——根据 [VideoSource.type] 委托给对应的 [VideoSourceResolver]。
-///
-/// 当前仅注册了 [WebSourceResolver]（Web 爬虫）。
-/// BT 源接入时在此注册 [BtSourceResolver]。
+/// 视频流解析路由器——根据 [SourceType] 委托给对应的 [VideoSourceResolver]。
 class VideoParsingService {
   final WebSourceResolver _webResolver;
+  RssBtResolver? _btResolver;
 
   VideoParsingService({
     WebSourceResolver? webResolver,
-  }) : _webResolver = webResolver ?? WebSourceResolver();
+    RssBtResolver? btResolver,
+  }) : _webResolver = webResolver ?? WebSourceResolver(),
+       _btResolver = btResolver;
 
-  /// 注册 BT 解析器时在此添加
-  // late final BtSourceResolver _btResolver;
+  /// 注册 BT 解析器
+  void registerBtResolver(RssBtResolver resolver) => _btResolver = resolver;
 
-  VideoSourceResolver _resolverFor(VideoSource source) {
-    return switch (source.type) {
-      SourceType.web => _webResolver,
-      SourceType.bt => throw UnimplementedError('BT 源待实现'),
-    };
+  VideoSourceResolver _resolverFor(SourceType type) => switch (type) {
+    SourceType.web => _webResolver,
+    SourceType.bt => _btResolver ?? (throw StateError('BT 解析器未注册')),
+  };
+
+  // ── 新 API（按 source 路由） ──
+
+  /// 解析视频流 URL（新接口——按 [VideoSource] 路由）
+  Future<String> resolveWithSource({
+    required VideoSource source,
+    required Episode episode,
+  }) async {
+    final resolver = _resolverFor(source.type);
+    return resolver.resolveStreamUrl(source: source, episode: episode);
   }
 
   // ── 兼容旧 API（保持 VideoResolveController 不变） ──
@@ -79,5 +89,8 @@ class VideoParsingService {
 
   void cancelParsing() => _webResolver.cancel();
 
-  void dispose() => _webResolver.dispose();
+  void dispose() {
+    _webResolver.dispose();
+    _btResolver?.dispose();
+  }
 }
