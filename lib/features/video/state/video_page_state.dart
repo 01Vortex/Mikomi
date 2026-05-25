@@ -45,39 +45,28 @@ class VideoPageState {
   });
 }
 
+/// 小屏播放器状态（不含播放进度——进度由 [VideoPlayerSnapshot] 提供）。
 class SmallscreenPlaybackState {
   final VideoController? videoController;
   final bool isInitialized;
   final bool isLoading;
-  final bool isBuffering;
-  final bool isPlaying;
-  final Duration position;
-  final Duration duration;
-  final String? errorMessage;
+  final Object? error;
 
   const SmallscreenPlaybackState({
     required this.videoController,
     required this.isInitialized,
     required this.isLoading,
-    required this.isBuffering,
-    required this.isPlaying,
-    required this.position,
-    required this.duration,
-    required this.errorMessage,
+    required this.error,
   });
 
   const SmallscreenPlaybackState.initial()
     : videoController = null,
       isInitialized = false,
       isLoading = true,
-      isBuffering = false,
-      isPlaying = false,
-      position = Duration.zero,
-      duration = Duration.zero,
-      errorMessage = null;
+      error = null;
 
   bool get showPlayer =>
-      errorMessage == null &&
+      error == null &&
       isInitialized &&
       !isLoading &&
       videoController != null;
@@ -86,25 +75,13 @@ class SmallscreenPlaybackState {
     VideoController? videoController,
     bool? isInitialized,
     bool? isLoading,
-    bool? isBuffering,
-    bool? isPlaying,
-    Duration? position,
-    Duration? duration,
-    Object? errorMessage = _sentinel,
+    Object? error,
   }) {
     return SmallscreenPlaybackState(
       videoController: videoController ?? this.videoController,
       isInitialized: isInitialized ?? this.isInitialized,
       isLoading: isLoading ?? this.isLoading,
-      isBuffering: isBuffering ?? this.isBuffering,
-      isPlaying: isPlaying ?? this.isPlaying,
-      position: position ?? this.position,
-      duration: duration ?? this.duration,
-      errorMessage: errorMessage == _sentinel
-          ? this.errorMessage
-          : errorMessage as String?,
+      error: error,
     );
   }
-
-  static const Object _sentinel = Object();
 }

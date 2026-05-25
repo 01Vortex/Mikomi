@@ -6,7 +6,7 @@ import 'package:mikomi/features/video/controller/danmaku_facade.dart';
 import 'package:mikomi/features/video/models/danmaku_model.dart';
 import 'package:mikomi/features/video/services/danmaku_service.dart';
 
-class DanmakuController extends ChangeNotifier {
+class DanmakuController {
   final DanmakuService _danmakuService;
   final DanmakuFacade _danmakuFacade = DanmakuFacade();
 
@@ -54,7 +54,6 @@ class DanmakuController extends ChangeNotifier {
     }
 
     _isLoadingDanmaku = true;
-    notifyListeners();
 
     bool didLoadDanmaku = false;
     try {
@@ -83,7 +82,6 @@ class DanmakuController extends ChangeNotifier {
       return didLoadDanmaku;
     } finally {
       _isLoadingDanmaku = false;
-      notifyListeners();
     }
   }
 
@@ -150,14 +148,11 @@ class DanmakuController extends ChangeNotifier {
     _lastPlaybackPosition = Duration.zero;
     _shouldResendCurrentWindow = false;
     _danmakuService.clear();
-    notifyListeners();
   }
 
-  @override
   void dispose() {
     _danmakuFacade.clear();
-    _danmakuService.dispose();
-    super.dispose();
+    _danmakuService.clear();
   }
 
   void _flushCurrentWindowIfNeeded() {

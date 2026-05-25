@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 import 'package:mikomi/features/settings/danmaku/danmaku_setting_service.dart';
-import 'package:mikomi/features/video/models/episode_model.dart';
+import 'package:mikomi/features/video/controller/video_page_controller.dart';
 import 'package:mikomi/features/video/services/video_playback_service.dart';
 import 'package:mikomi/features/video/state/fullscreen_video_state.dart';
 import 'package:mikomi/features/video/state/video_player_listener.dart';
@@ -12,6 +12,7 @@ import 'package:mikomi/features/video/ui/widgets/fullscreen/fullscreen_video.dar
 import 'package:mikomi/features/video/ui/widgets/video_fit.dart';
 
 class FullscreenPage extends StatefulWidget {
+  final VideoPageController controller;
   final VideoPlaybackService playbackService;
   final String title;
   final ValueNotifier<FullscreenVideoState> stateNotifier;
@@ -19,22 +20,12 @@ class FullscreenPage extends StatefulWidget {
   final DanmakuConfig danmakuConfig;
   final bool isDanmakuInputVisible;
   final VideoFitMode fitMode;
-  final VoidCallback? onNextEpisode;
-  final VoidCallback? onPreviousEpisode;
-  final ValueChanged<Episode>? onEpisodeSelected;
-  final VoidCallback? onToggleSort;
-  final ValueChanged<VideoFitMode> onFitModeChanged;
-  final VoidCallback onPlayPause;
-  final ValueChanged<Duration> onSeek;
-  final ValueChanged<double> onPlaybackSpeedChanged;
-  final ValueChanged<DanmakuConfig> onDanmakuConfigChanged;
   final ValueChanged<bool>? onDanmakuToggle;
   final ValueChanged<bool> onDanmakuInputVisibleChanged;
-  final ValueChanged<dynamic> onFullscreenDanmakuLayerCreated;
-  final ValueChanged<dynamic> onFullscreenDanmakuLayerDisposed;
 
   const FullscreenPage({
     super.key,
+    required this.controller,
     required this.playbackService,
     required this.title,
     required this.stateNotifier,
@@ -42,19 +33,8 @@ class FullscreenPage extends StatefulWidget {
     required this.danmakuConfig,
     required this.isDanmakuInputVisible,
     required this.fitMode,
-    this.onNextEpisode,
-    this.onPreviousEpisode,
-    this.onEpisodeSelected,
-    this.onToggleSort,
-    required this.onFitModeChanged,
-    required this.onPlayPause,
-    required this.onSeek,
-    required this.onPlaybackSpeedChanged,
-    required this.onDanmakuConfigChanged,
     this.onDanmakuToggle,
     required this.onDanmakuInputVisibleChanged,
-    required this.onFullscreenDanmakuLayerCreated,
-    required this.onFullscreenDanmakuLayerDisposed,
   });
 
   @override
@@ -84,14 +64,15 @@ class _FullscreenPageState extends State<FullscreenPage> {
 
   @override
   Widget build(BuildContext context) {
-    final controller = widget.playbackService.videoController;
-    if (controller == null) {
+    final videoCtrl = widget.playbackService.videoController;
+    if (videoCtrl == null) {
       return const Scaffold(
         backgroundColor: Colors.black,
         body: Center(child: CircularProgressIndicator(color: Colors.white)),
       );
     }
 
+    final ctrl = widget.controller;
     return ValueListenableBuilder<FullscreenVideoState>(
       valueListenable: widget.stateNotifier,
       builder: (context, state, _) {
@@ -103,7 +84,7 @@ class _FullscreenPageState extends State<FullscreenPage> {
               children: [
                 Positioned.fill(
                   child: Video(
-                    controller: controller,
+                    controller: videoCtrl,
                     controls: NoVideoControls,
                     fit: widget.fitMode.boxFit,
                   ),
@@ -112,9 +93,8 @@ class _FullscreenPageState extends State<FullscreenPage> {
                   Positioned.fill(
                     child: DanmakuLayer(
                       onControllerCreated:
-                          widget.onFullscreenDanmakuLayerCreated,
-                      onControllerDisposed:
-                          widget.onFullscreenDanmakuLayerDisposed,
+                          ctrl.attachFullscreenDanmakuController,
+                      onControllerDisposed: ctrl.detachDanmakuController,
                       fontSize: widget.danmakuConfig.fontSize,
                       opacity: widget.danmakuConfig.opacity,
                       speed: widget.danmakuConfig.duration,
@@ -126,32 +106,17 @@ class _FullscreenPageState extends State<FullscreenPage> {
                     ),
                   ),
                 FullscreenVideoControls(
+                  controller: ctrl,
                   playbackService: widget.playbackService,
                   playerSnapshotListenable: widget.playerSnapshotListenable,
                   danmakuConfig: widget.danmakuConfig,
                   isDanmakuInputVisible: widget.isDanmakuInputVisible,
                   onDanmakuInputVisibleChanged:
                       widget.onDanmakuInputVisibleChanged,
-                  onPlaybackSpeedChanged: widget.onPlaybackSpeedChanged,
-                  onSeek: widget.onSeek,
-                  onPlayPause: widget.onPlayPause,
-                  onDanmakuConfigChanged: widget.onDanmakuConfigChanged,
                   title: widget.title,
-                  currentEpisode: state.currentEpisode,
-                  currentSmallTitle: state.currentSmallTitle,
-                  isDanmakuEnabled: state.isDanmakuEnabled,
                   fitMode: widget.fitMode,
-                  onFitModeChanged: widget.onFitModeChanged,
+                  state: state,
                   onExitFullscreen: () => Navigator.of(context).pop(),
-                  onNextEpisode: widget.onNextEpisode,
-                  onPreviousEpisode: widget.onPreviousEpisode,
-                  hasNextEpisode: state.hasNextEpisode,
-                  hasPreviousEpisode: state.hasPreviousEpisode,
-                  episodes: state.episodes,
-                  onEpisodeSelected: widget.onEpisodeSelected,
-                  isLoadingEpisodes: state.isLoadingEpisodes,
-                  isDescending: state.isDescending,
-                  onToggleSort: widget.onToggleSort,
                   onDanmakuToggle: widget.onDanmakuToggle,
                 ),
               ],

@@ -136,6 +136,7 @@ class _SmallscreenVideoState extends State<SmallscreenVideo> {
         .push(
           PageRouteBuilder(
             pageBuilder: (_, animation, secondaryAnimation) => FullscreenPage(
+              controller: ctrl,
               playbackService: state.playbackService,
               title: state.title,
               stateNotifier: _fullscreenNotifier,
@@ -143,26 +144,8 @@ class _SmallscreenVideoState extends State<SmallscreenVideo> {
               danmakuConfig: state.danmakuConfig,
               isDanmakuInputVisible: state.player.isDanmakuEnabled,
               fitMode: state.fullscreenFitMode,
-              onFitModeChanged: (mode) =>
-                  unawaited(ctrl.updateFullscreenFitMode(mode)),
-              onPlayPause: ctrl.togglePlayPause,
-              onSeek: ctrl.seekTo,
-              onPlaybackSpeedChanged: ctrl.setPlaybackSpeed,
-              onDanmakuConfigChanged: (config) =>
-                  unawaited(ctrl.updateDanmakuConfig(config)),
               onDanmakuToggle: widget.onDanmakuToggle,
               onDanmakuInputVisibleChanged: (_) {},
-              onFullscreenDanmakuLayerCreated:
-                  ctrl.attachFullscreenDanmakuController,
-              onFullscreenDanmakuLayerDisposed: ctrl.detachDanmakuController,
-              onNextEpisode: state.player.hasNextEpisode
-                  ? ctrl.playNextEpisode
-                  : null,
-              onPreviousEpisode: state.player.hasPreviousEpisode
-                  ? ctrl.playPreviousEpisode
-                  : null,
-              onEpisodeSelected: ctrl.playEpisode,
-              onToggleSort: ctrl.toggleEpisodeSort,
             ),
             transitionDuration: const Duration(milliseconds: 200),
             reverseTransitionDuration: const Duration(milliseconds: 200),
@@ -209,7 +192,7 @@ class _SmallscreenVideoState extends State<SmallscreenVideo> {
                 if (showPlayer && widget.pageState.player.isDanmakuEnabled)
                   _danmakuLayer(),
                 if (ss.isLoading) _loading(),
-                if (ss.errorMessage != null) _error(ss.errorMessage!),
+                if (ss.error != null) _error(ss.error!),
                 if (showPlayer && snapshot.isBuffering) _buffering(),
                 if (showPlayer && _showControls && !_lockPanel)
                   _gradient(top: true),
@@ -256,7 +239,7 @@ class _SmallscreenVideoState extends State<SmallscreenVideo> {
     ),
   );
 
-  Widget _error(String message) => Positioned.fill(
+  Widget _error(Object error) => Positioned.fill(
     child: Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -266,7 +249,7 @@ class _SmallscreenVideoState extends State<SmallscreenVideo> {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 32),
             child: Text(
-              message,
+              error.toString(),
               style: const TextStyle(color: Colors.white70),
               textAlign: TextAlign.center,
             ),

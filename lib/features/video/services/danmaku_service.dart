@@ -89,7 +89,6 @@ class DanmakuService {
     _lastError = null;
   }
 
-  void dispose() {}
 
   List<Danmaku> _parseDanmakus(List<dynamic> rawComments) {
     return rawComments

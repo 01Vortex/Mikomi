@@ -54,26 +54,6 @@ class VideoEpisodeController {
     );
   }
 
-  VideoState selectEpisode(VideoState state, Episode episode) {
-    return state.selectEpisode(episode);
-  }
-
-  Episode? getNextEpisode(VideoState state) {
-    return state.getNextEpisode();
-  }
-
-  Episode? getPreviousEpisode(VideoState state) {
-    return state.getPreviousEpisode();
-  }
-
-  VideoState toggleSort(VideoState state) {
-    return state.toggleEpisodeSort();
-  }
-
-  VideoState toggleExpanded(VideoState state) {
-    return state.toggleEpisodeListExpanded();
-  }
-
   void cancelPendingRequests() {
     _requestToken++;
   }

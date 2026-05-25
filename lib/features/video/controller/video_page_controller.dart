@@ -6,7 +6,7 @@ import 'package:mikomi/features/settings/video_play/service/play_setting_service
 import 'package:mikomi/features/video/controller/video_episode_controller.dart';
 import 'package:mikomi/features/video/controller/video_history_controller.dart';
 import 'package:mikomi/features/video/controller/video_resolve_controller.dart';
-import 'package:mikomi/features/video/controller/video_source_controller.dart';
+
 import 'package:mikomi/features/video/controller/video_system_ui_controller.dart';
 import 'package:mikomi/features/video/controller/danmaku_controller.dart'
     as app_danmaku;
@@ -46,7 +46,6 @@ class VideoPageController {
 
   final VideoSystemUiController _systemUi;
   final VideoEpisodeController _episodeCtrl;
-  late final VideoSourceController _sourceCtrl;
   final VideoResolveController _resolveCtrl;
   late final VideoHistoryController _historyCtrl;
   final VideoPlaybackService _playback;
@@ -118,11 +117,6 @@ class VideoPageController {
          currentSourceName: sourceName,
        ) {
     // constructor body
-    _sourceCtrl = VideoSourceController(
-      episodeController: _episodeCtrl,
-      resolveController: _resolveCtrl,
-      playbackService: _playback,
-    );
     _historyCtrl = VideoHistoryController(
       historyService: historyService ?? VideoHistoryService(),
       playbackService: _playback,
@@ -200,7 +194,7 @@ class VideoPageController {
   Future<void> initializeSmallScreenPlayback(String videoUrl) async {
     if (videoUrl.isEmpty) return;
     _setSmallscreenState(
-      _smallscreenState.copyWith(isLoading: true, errorMessage: null),
+      _smallscreenState.copyWith(isLoading: true, error: null),
     );
     try {
       await _playback.initialize(smallScreen: true);
@@ -214,15 +208,15 @@ class VideoPageController {
           videoController: _playback.videoController,
           isInitialized: _playback.isInitialized,
           isLoading: false,
-          errorMessage: null,
+          error: null,
         ),
       );
       await _loadDanmakuIfNeeded();
-    } catch (error) {
+    } catch (e) {
       _setSmallscreenState(
         _smallscreenState.copyWith(
           isLoading: false,
-          errorMessage: '视频加载失败: $error',
+          error: e,
         ),
       );
     }
@@ -237,7 +231,7 @@ class VideoPageController {
   void togglePlayPause() {
     final player = _playback.player;
     if (player == null) return;
-    if (_smallscreenState.isPlaying) {
+    if (_playerSnapshotNotifier.value.isPlaying) {
       player.pause();
     } else {
       player.play();
@@ -269,12 +263,14 @@ class VideoPageController {
     );
     _clearInitialProgress();
     try {
-      final nextState = await _sourceCtrl.switchSource(
-        state: _videoState,
-        source: source,
-        isDisposed: () => _isDisposed,
+      _resolveCtrl.cancelParsing();
+      await _playback.stop();
+      final episodes = await _episodeCtrl.loadEpisodes(source.name);
+      if (_isDisposed) return;
+      final nextState = _videoState.switchSource(
+        sourceName: source.name,
+        nextEpisodes: episodes,
       );
-      if (nextState == null) return;
       _setVideoState(nextState);
       await retryResolveVideoUrl();
     } finally {
@@ -287,7 +283,7 @@ class VideoPageController {
   // ── 剧集 ──
 
   Future<void> playEpisode(Episode episode) async {
-    final nextState = _episodeCtrl.selectEpisode(_videoState, episode);
+    final nextState = _videoState.selectEpisode(episode);
     if (identical(nextState, _videoState)) return;
     _historyCtrl.save(_videoState);
     await _playback.stop();
@@ -298,12 +294,12 @@ class VideoPageController {
   }
 
   Future<void> playNextEpisode() async {
-    final episode = _episodeCtrl.getNextEpisode(_videoState);
+    final episode = _videoState.getNextEpisode();
     if (episode != null) await playEpisode(episode);
   }
 
   Future<void> playPreviousEpisode() async {
-    final episode = _episodeCtrl.getPreviousEpisode(_videoState);
+    final episode = _videoState.getPreviousEpisode();
     if (episode != null) await playEpisode(episode);
   }
 
@@ -323,10 +319,10 @@ class VideoPageController {
   }
 
   void toggleEpisodeSort() =>
-      _setVideoState(_episodeCtrl.toggleSort(_videoState));
+      _setVideoState(_videoState.toggleEpisodeSort());
 
   void toggleEpisodeListExpanded() =>
-      _setVideoState(_episodeCtrl.toggleExpanded(_videoState));
+      _setVideoState(_videoState.toggleEpisodeListExpanded());
 
   // ── 生命周期 ──
 
@@ -416,22 +412,12 @@ class VideoPageController {
 
   void _onPlayerSnapshot(VideoPlayerSnapshot snapshot) {
     _playerSnapshotNotifier.value = snapshot;
-    final needsSync = _smallscreenState.isBuffering != snapshot.isBuffering ||
-        _smallscreenState.isPlaying != snapshot.isPlaying ||
-        _smallscreenState.duration != snapshot.duration;
-    _smallscreenState = _smallscreenState.copyWith(
-      isBuffering: snapshot.isBuffering,
-      isPlaying: snapshot.isPlaying,
-      position: snapshot.position,
-      duration: snapshot.duration,
-    );
-    if (needsSync) _syncState();
   }
 
   void _onPlayerPosition(Duration position) {
     _danmakuCtrl.syncPlaybackPosition(
       isDanmakuEnabled: _videoState.isDanmakuEnabled,
-      isPlaying: _smallscreenState.isPlaying,
+      isPlaying: _playerSnapshotNotifier.value.isPlaying,
       position: position,
     );
   }

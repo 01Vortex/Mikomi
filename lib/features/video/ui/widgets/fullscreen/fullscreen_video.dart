@@ -3,8 +3,9 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:mikomi/features/settings/danmaku/danmaku_setting_service.dart';
-import 'package:mikomi/features/video/models/episode_model.dart';
+import 'package:mikomi/features/video/controller/video_page_controller.dart';
 import 'package:mikomi/features/video/services/video_playback_service.dart';
+import 'package:mikomi/features/video/state/fullscreen_video_state.dart';
 import 'package:mikomi/features/video/state/video_player_listener.dart';
 import 'package:mikomi/features/video/ui/widgets/danmaku_overlay.dart';
 import 'package:mikomi/features/video/ui/widgets/fullscreen/fullscreen_danmaku_settings.dart';
@@ -16,61 +17,31 @@ import 'package:mikomi/features/video/ui/widgets/video_gesture.dart';
 const double _kSideMargin = 16.0;
 
 class FullscreenVideoControls extends StatefulWidget {
+  final VideoPageController controller;
   final VideoPlaybackService playbackService;
   final ValueListenable<VideoPlayerSnapshot> playerSnapshotListenable;
   final DanmakuConfig danmakuConfig;
   final bool isDanmakuInputVisible;
   final ValueChanged<bool>? onDanmakuInputVisibleChanged;
-  final ValueChanged<double>? onPlaybackSpeedChanged;
-  final ValueChanged<Duration>? onSeek;
-  final VoidCallback? onPlayPause;
-  final ValueChanged<DanmakuConfig>? onDanmakuConfigChanged;
   final String title;
-  final int currentEpisode;
-  final String? currentSmallTitle;
+  final FullscreenVideoState state;
   final VoidCallback onExitFullscreen;
-  final VoidCallback? onNextEpisode;
-  final VoidCallback? onPreviousEpisode;
-  final bool hasNextEpisode;
-  final bool hasPreviousEpisode;
-  final List<Episode> episodes;
-  final Function(Episode)? onEpisodeSelected;
-  final bool isLoadingEpisodes;
-  final bool isDescending;
-  final VoidCallback? onToggleSort;
-  final bool isDanmakuEnabled;
   final void Function(bool)? onDanmakuToggle;
   final VideoFitMode fitMode;
-  final ValueChanged<VideoFitMode>? onFitModeChanged;
 
   const FullscreenVideoControls({
     super.key,
+    required this.controller,
     required this.playbackService,
     required this.playerSnapshotListenable,
     required this.danmakuConfig,
     this.isDanmakuInputVisible = false,
     this.onDanmakuInputVisibleChanged,
-    this.onPlaybackSpeedChanged,
-    this.onSeek,
-    this.onPlayPause,
-    this.onDanmakuConfigChanged,
     required this.title,
-    required this.currentEpisode,
-    this.currentSmallTitle,
+    required this.state,
     required this.onExitFullscreen,
-    this.onNextEpisode,
-    this.onPreviousEpisode,
-    this.hasNextEpisode = false,
-    this.hasPreviousEpisode = false,
-    this.episodes = const [],
-    this.onEpisodeSelected,
-    this.isLoadingEpisodes = false,
-    this.isDescending = false,
-    this.onToggleSort,
-    this.isDanmakuEnabled = false,
     this.onDanmakuToggle,
     this.fitMode = VideoFitMode.contain,
-    this.onFitModeChanged,
   });
 
   @override
@@ -120,16 +91,16 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
   }
 
   void _togglePlayPause() {
-    widget.onPlayPause?.call();
+    widget.controller.togglePlayPause();
     _startHideTimer();
   }
 
   void _playPreviousEpisode() {
-    widget.onPreviousEpisode?.call();
+    widget.controller.playPreviousEpisode();
   }
 
   void _playNextEpisode() {
-    widget.onNextEpisode?.call();
+    widget.controller.playNextEpisode();
   }
 
   void _showSpeedSelector() {
@@ -179,14 +150,14 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
       }).toList(),
     ).then((value) {
       if (value != null) {
-        widget.onPlaybackSpeedChanged?.call(value);
+        widget.controller.setPlaybackSpeed(value);
       }
     });
   }
 
   void _showEpisodeSelector() {
     final outerContext = context;
-    bool isDescending = widget.isDescending;
+    bool isDescending = widget.state.isDescending;
     showGeneralDialog(
       context: outerContext,
       useRootNavigator: true,
@@ -208,17 +179,17 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
             child: StatefulBuilder(
               builder: (context, setDialogState) {
                 return FullscreenEpisodeSelector(
-                  episodes: widget.episodes,
-                  currentEpisode: widget.currentEpisode,
+                  episodes: widget.state.episodes,
+                  currentEpisode: widget.state.currentEpisode,
                   onEpisodeSelected: (episode) {
                     Navigator.of(dialogContext).pop();
-                    widget.onEpisodeSelected?.call(episode);
+                    widget.controller.playEpisode(episode);
                   },
-                  isLoading: widget.isLoadingEpisodes,
+                  isLoading: widget.state.isLoadingEpisodes,
                   isDescending: isDescending,
                   onToggleSort: () {
                     setDialogState(() => isDescending = !isDescending);
-                    widget.onToggleSort?.call();
+                    widget.controller.toggleEpisodeSort();
                   },
                 );
               },
@@ -386,11 +357,11 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  if (widget.currentSmallTitle != null &&
-                      widget.currentSmallTitle!.isNotEmpty) ...[
+                  if (widget.state.currentSmallTitle != null &&
+                      widget.state.currentSmallTitle!.isNotEmpty) ...[
                     const SizedBox(height: 2),
                     Text(
-                      '第${widget.currentEpisode}集 ${widget.currentSmallTitle}',
+                      '第${widget.state.currentEpisode}集 ${widget.state.currentSmallTitle}',
                       style: TextStyle(
                         color: Colors.white.withValues(alpha: 0.8),
                         fontSize: 15,
@@ -505,7 +476,7 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
                       },
                       onChangeEnd: (value) {
                         setState(() => _isDragging = false);
-                        widget.onSeek?.call(_dragPosition);
+                        widget.controller.seekTo(_dragPosition);
                         _startHideTimer();
                       },
                     ),
@@ -566,7 +537,7 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
                     VideoFitButton(
                       fitMode: widget.fitMode,
                       onChanged: (mode) {
-                        widget.onFitModeChanged?.call(mode);
+                        widget.controller.updateFullscreenFitMode(mode);
                         _startHideTimer();
                       },
                     ),
@@ -630,7 +601,7 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
   Widget _buildDanmakuButton() {
     return GestureDetector(
       onTap: () {
-        final nextEnabled = !widget.isDanmakuEnabled;
+        final nextEnabled = !widget.state.isDanmakuEnabled;
         widget.onDanmakuToggle?.call(nextEnabled);
         widget.onDanmakuInputVisibleChanged?.call(nextEnabled);
         if (!nextEnabled) {
@@ -644,7 +615,7 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
           borderRadius: BorderRadius.circular(8),
         ),
         child: SvgPicture.asset(
-          widget.isDanmakuEnabled
+          widget.state.isDanmakuEnabled
               ? 'assets/icons/danmaku_on.svg'
               : 'assets/icons/danmaku_off.svg',
           width: 20,
@@ -677,7 +648,7 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
                 ),
             child: DanmakuSettingsSidePanel(
               initialConfig: widget.danmakuConfig,
-              onConfigChanged: widget.onDanmakuConfigChanged,
+              onConfigChanged: widget.controller.updateDanmakuConfig,
               onClose: () => Navigator.of(dialogContext).pop(),
             ),
           ),
