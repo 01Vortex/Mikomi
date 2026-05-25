@@ -83,10 +83,12 @@ class _FullscreenPageState extends State<FullscreenPage> {
             body: Stack(
               children: [
                 Positioned.fill(
-                  child: Video(
-                    controller: videoCtrl,
-                    controls: NoVideoControls,
-                    fit: widget.fitMode.boxFit,
+                  child: RepaintBoundary(
+                    child: Video(
+                      controller: videoCtrl,
+                      controls: NoVideoControls,
+                      fit: widget.fitMode.boxFit,
+                    ),
                   ),
                 ),
                 if (state.isDanmakuEnabled)

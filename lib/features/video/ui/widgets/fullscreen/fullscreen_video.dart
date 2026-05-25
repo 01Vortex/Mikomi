@@ -211,84 +211,89 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
     const double leftPad = _kSideMargin;
     const double rightPad = _kSideMargin;
 
-    return ValueListenableBuilder<VideoPlayerSnapshot>(
-      valueListenable: widget.playerSnapshotListenable,
-      builder: (context, snapshot, _) {
-        final currentPosition = _isDragging ? _dragPosition : snapshot.position;
-        return VideoGesture(
-          playbackService: widget.playbackService,
-          enabled: !_showControls && !_isLocked,
-          child: Stack(
-            children: [
-              Positioned.fill(
-                child: GestureDetector(
-                  onTap: _toggleControls,
-                  behavior: HitTestBehavior.opaque,
-                  child: const ColoredBox(color: Colors.transparent),
+    return VideoGesture(
+      playbackService: widget.playbackService,
+      enabled: !_showControls && !_isLocked,
+      child: Stack(
+        children: [
+          // 透明点击层
+          Positioned.fill(
+            child: GestureDetector(
+              onTap: _toggleControls,
+              behavior: HitTestBehavior.opaque,
+              child: const ColoredBox(color: Colors.transparent),
+            ),
+          ),
+          // 渐变遮罩（不依赖 snapshot）
+          if (_showControls && !_isLocked)
+            Positioned(
+              top: 0, left: 0, right: 0,
+              child: Container(
+                height: 130,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Colors.black.withValues(alpha: 0.72),
+                      Colors.transparent,
+                    ],
+                  ),
                 ),
               ),
-              if (snapshot.isBuffering) _buildBufferingIndicator(),
-              if (_showControls && !_isLocked)
-                Positioned(
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  child: Container(
-                    height: 130,
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          Colors.black.withValues(alpha: 0.72),
-                          Colors.transparent,
-                        ],
-                      ),
-                    ),
+            ),
+          if (_showControls && !_isLocked)
+            Positioned(
+              bottom: 0, left: 0, right: 0,
+              child: Container(
+                height: 150,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.bottomCenter,
+                    end: Alignment.topCenter,
+                    colors: [
+                      Colors.black.withValues(alpha: 0.72),
+                      Colors.transparent,
+                    ],
                   ),
                 ),
-              if (_showControls && !_isLocked)
-                Positioned(
-                  bottom: 0,
-                  left: 0,
-                  right: 0,
-                  child: Container(
-                    height: 150,
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.bottomCenter,
-                        end: Alignment.topCenter,
-                        colors: [
-                          Colors.black.withValues(alpha: 0.72),
-                          Colors.transparent,
-                        ],
-                      ),
+              ),
+            ),
+          // 顶部栏（不依赖 snapshot）
+          if (_showControls && !_isLocked)
+            _buildTopBar(
+              safePadding: safePadding,
+              leftPad: leftPad,
+              rightPad: rightPad,
+            ),
+          _buildLockButton(),
+          // 仅以下控件需要每帧 snapshot
+          ValueListenableBuilder<VideoPlayerSnapshot>(
+            valueListenable: widget.playerSnapshotListenable,
+            builder: (context, snapshot, _) {
+              final currentPosition =
+                  _isDragging ? _dragPosition : snapshot.position;
+              return Stack(
+                children: [
+                  if (snapshot.isBuffering) _buildBufferingIndicator(),
+                  if (_showControls && !_isLocked) ...[
+                    _buildCenterControls(isPlaying: snapshot.isPlaying),
+                    _buildBottomControls(
+                      safePadding: safePadding,
+                      leftPad: leftPad,
+                      rightPad: rightPad,
+                      isPlaying: snapshot.isPlaying,
+                      position: currentPosition,
+                      duration: snapshot.duration,
+                      playbackSpeed: snapshot.playbackSpeed,
                     ),
-                  ),
-                ),
-              if (_showControls && !_isLocked)
-                _buildTopBar(
-                  safePadding: safePadding,
-                  leftPad: leftPad,
-                  rightPad: rightPad,
-                ),
-              if (_showControls && !_isLocked)
-                _buildCenterControls(isPlaying: snapshot.isPlaying),
-              if (_showControls && !_isLocked)
-                _buildBottomControls(
-                  safePadding: safePadding,
-                  leftPad: leftPad,
-                  rightPad: rightPad,
-                  isPlaying: snapshot.isPlaying,
-                  position: currentPosition,
-                  duration: snapshot.duration,
-                  playbackSpeed: snapshot.playbackSpeed,
-                ),
-              _buildLockButton(),
-            ],
+                  ],
+                ],
+              );
+            },
           ),
-        );
-      },
+        ],
+      ),
     );
   }
 

@@ -166,52 +166,62 @@ class _SmallscreenVideoState extends State<SmallscreenVideo> {
 
   @override
   Widget build(BuildContext context) {
-    return ValueListenableBuilder<VideoPlayerSnapshot>(
-      valueListenable: widget.pageState.playerSnapshotListenable,
-      builder: (context, snapshot, _) {
-        final ss = widget.pageState.smallscreen;
-        final showPlayer = ss.showPlayer;
-        final position = _isDragging ? _dragPosition : snapshot.position;
-        return VideoGesture(
-          playbackService: widget.pageState.playbackService,
-          enabled: showPlayer && !_lockPanel,
-          child: GestureDetector(
-            onTap: showPlayer ? _toggleControls : null,
-            onDoubleTap: showPlayer ? _handleDoubleTap : null,
-            child: Stack(
-              children: [
-                Positioned.fill(child: Container(color: Colors.black)),
-                if (showPlayer)
-                  Positioned.fill(
-                    child: Video(
-                      controller: ss.videoController!,
-                      controls: NoVideoControls,
-                      fit: BoxFit.contain,
-                    ),
+    final ss = widget.pageState.smallscreen;
+    final showPlayer = ss.showPlayer;
+
+    return VideoGesture(
+      playbackService: widget.pageState.playbackService,
+      enabled: showPlayer && !_lockPanel,
+      child: GestureDetector(
+        onTap: showPlayer ? _toggleControls : null,
+        onDoubleTap: showPlayer ? _handleDoubleTap : null,
+        child: Stack(
+          children: [
+            Positioned.fill(child: Container(color: Colors.black)),
+            if (showPlayer)
+              RepaintBoundary(
+                child: Positioned.fill(
+                  child: Video(
+                    controller: ss.videoController!,
+                    controls: NoVideoControls,
+                    fit: BoxFit.contain,
                   ),
-                if (showPlayer && widget.pageState.player.isDanmakuEnabled)
-                  _danmakuLayer(),
-                if (ss.isLoading) _loading(),
-                if (ss.error != null) _error(ss.error!),
-                if (showPlayer && snapshot.isBuffering) _buffering(),
-                if (showPlayer && _showControls && !_lockPanel)
-                  _gradient(top: true),
-                if (showPlayer && _showControls && !_lockPanel)
-                  _gradient(top: false),
-                if (!showPlayer || (_showControls && !_lockPanel))
-                  _topControls(),
-                if (showPlayer && _showControls && !_lockPanel)
-                  _bottomControls(
-                    snapshot.isPlaying,
-                    position,
-                    snapshot.duration,
-                  ),
-                if (showPlayer) _lockButton(),
-              ],
-            ),
-          ),
-        );
-      },
+                ),
+              ),
+            if (showPlayer && widget.pageState.player.isDanmakuEnabled)
+              _danmakuLayer(),
+            if (ss.isLoading) _loading(),
+            if (ss.error != null) _error(ss.error!),
+            if (showPlayer && _showControls && !_lockPanel)
+              _gradient(top: true),
+            if (showPlayer && _showControls && !_lockPanel)
+              _gradient(top: false),
+            if (!showPlayer || (_showControls && !_lockPanel))
+              _topControls(),
+            if (showPlayer) _lockButton(),
+            // 仅以下控件需要每帧 snapshot 数据（进度/播放状态）
+            if (showPlayer)
+              ValueListenableBuilder<VideoPlayerSnapshot>(
+                valueListenable: widget.pageState.playerSnapshotListenable,
+                builder: (context, snapshot, _) {
+                  final position =
+                      _isDragging ? _dragPosition : snapshot.position;
+                  return Stack(
+                    children: [
+                      if (snapshot.isBuffering) _buffering(),
+                      if (_showControls && !_lockPanel)
+                        _bottomControls(
+                          snapshot.isPlaying,
+                          position,
+                          snapshot.duration,
+                        ),
+                    ],
+                  );
+                },
+              ),
+          ],
+        ),
+      ),
     );
   }
 
