@@ -2,6 +2,7 @@ import 'package:canvas_danmaku/canvas_danmaku.dart';
 import 'package:mikomi/features/settings/danmaku/danmaku_setting_service.dart';
 import 'package:mikomi/features/video/models/danmaku_model.dart';
 
+/// 弹幕外观控制器——管理多个 [DanmakuController] 实例，统一发送弹幕、应用配置。
 class DanmakuFacade {
   final List<DanmakuController> _controllers = [];
 
@@ -42,8 +43,8 @@ class DanmakuFacade {
         type: danmaku.type == 5
             ? DanmakuItemType.top
             : danmaku.type == 4
-            ? DanmakuItemType.bottom
-            : DanmakuItemType.scroll,
+                ? DanmakuItemType.bottom
+                : DanmakuItemType.scroll,
       );
       for (final controller in List<DanmakuController>.of(_controllers)) {
         controller.addDanmaku(item);

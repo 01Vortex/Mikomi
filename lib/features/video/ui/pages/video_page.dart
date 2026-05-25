@@ -4,7 +4,8 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mikomi/features/anime/selector/video_source_selector.dart';
-import 'package:mikomi/features/video/facade/video_page_facade.dart';
+import 'package:mikomi/features/settings/danmaku/danmaku_setting_service.dart';
+import 'package:mikomi/features/video/controller/video_page_controller.dart';
 import 'package:mikomi/features/video/models/episode_model.dart';
 import 'package:mikomi/features/video/state/video_page_state.dart';
 import 'package:mikomi/features/video/ui/widgets/comment_tab_content.dart';
@@ -49,19 +50,19 @@ class VideoPage extends StatefulWidget {
 class _VideoPageState extends State<VideoPage>
     with SingleTickerProviderStateMixin {
   late final TabController _tabController;
-  late final VideoPageFacade _facade;
+  late final VideoPageController _controller;
 
   final TextEditingController _danmakuController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    _facade = VideoPageFacade(
+    _controller = VideoPageController(
       title: widget.title,
       videoUrl: widget.videoUrl,
       currentEpisode: widget.currentEpisode,
       episodes: widget.episodes,
-      videoSources: widget.videoSources,
+      videoSources: widget.videoSources ?? const [],
       sourceName: widget.sourceName,
       initialProgress: widget.initialProgress,
       animeTitle: widget.animeTitle,
@@ -69,24 +70,24 @@ class _VideoPageState extends State<VideoPage>
       bangumiId: widget.bangumiId,
     );
     _tabController = TabController(length: 2, vsync: this);
-    unawaited(_facade.initializePage());
+    unawaited(_controller.initialize());
   }
 
   Future<void> _setDanmakuEnabled(bool enabled) async {
-    await _facade.setDanmakuEnabled(enabled);
+    await _controller.setDanmakuEnabled(enabled);
     if (!enabled) _danmakuController.clear();
   }
 
   Future<void> _handleDanmakuConfigChanged(
-    VideoPageDanmakuConfig config,
+    DanmakuConfig config,
   ) async {
-    await _facade.updateDanmakuConfig(config);
+    await _controller.updateDanmakuConfig(config);
     if (!mounted) return;
     setState(() {});
   }
 
   void _showVideoSourceSelector() {
-    if (!_facade.hasVideoSources) {
+    if (!_controller.hasVideoSources) {
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
@@ -99,18 +100,18 @@ class _VideoPageState extends State<VideoPage>
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
       builder: (context) => VideoSourceSelector(
-        sources: _facade.videoSources,
-        animeTitle: _facade.state.animeTitle,
+        sources: _controller.videoSources,
+        animeTitle: _controller.state.animeTitle,
         onSourceSelected: (source) {
           Navigator.pop(context);
-          _facade.switchVideoSource(source);
+          _controller.switchVideoSource(source);
         },
       ),
     );
   }
 
   void _showDanmakuSettings() {
-    final state = _facade.state;
+    final state = _controller.state;
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -118,7 +119,7 @@ class _VideoPageState extends State<VideoPage>
       builder: (context) => FullscreenDanmakuSettings(
         initialConfig: state.danmakuConfig,
         onConfigChanged: (config) {
-          unawaited(_facade.updateDanmakuConfig(config));
+          unawaited(_controller.updateDanmakuConfig(config));
         },
       ),
     );
@@ -127,12 +128,12 @@ class _VideoPageState extends State<VideoPage>
   @override
   void reassemble() {
     super.reassemble();
-    _facade.syncAfterReassemble();
+    _controller.syncAfterReassemble();
   }
 
   @override
   void dispose() {
-    unawaited(_facade.disposePage());
+    unawaited(_controller.dispose());
     _tabController.dispose();
     _danmakuController.dispose();
     super.dispose();
@@ -158,7 +159,7 @@ class _VideoPageState extends State<VideoPage>
       child: PopScope(
         canPop: true,
         onPopInvokedWithResult: (didPop, result) {
-          if (didPop) unawaited(_facade.handlePagePop());
+          if (didPop) unawaited(_controller.handlePagePop());
         },
         child: Scaffold(
           backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -171,7 +172,7 @@ class _VideoPageState extends State<VideoPage>
               ),
               Expanded(
                 child: ValueListenableBuilder<VideoPageState>(
-                  valueListenable: _facade.stateListenable,
+                  valueListenable: _controller.stateListenable,
                   builder: (context, pageState, _) {
                     return Column(
                       children: [
@@ -179,7 +180,7 @@ class _VideoPageState extends State<VideoPage>
                           pageState: pageState,
                           videoHeight: videoHeight,
                           onDanmakuToggle: _setDanmakuEnabled,
-                          facade: _facade,
+                          controller: _controller,
                         ),
                         Expanded(
                           child: _VideoTabsSection(
@@ -190,7 +191,7 @@ class _VideoPageState extends State<VideoPage>
                             onVideoSourceTap: _showVideoSourceSelector,
                             onDanmakuSettingsTap: _showDanmakuSettings,
                             onDanmakuConfigChanged: _handleDanmakuConfigChanged,
-                            facade: _facade,
+                            controller: _controller,
                           ),
                         ),
                       ],
@@ -210,63 +211,22 @@ class _VideoPlayerSection extends StatelessWidget {
   final VideoPageState pageState;
   final double videoHeight;
   final Future<void> Function(bool enabled) onDanmakuToggle;
-  final VideoPageFacade facade;
+  final VideoPageController controller;
 
   const _VideoPlayerSection({
     required this.pageState,
     required this.videoHeight,
     required this.onDanmakuToggle,
-    required this.facade,
+    required this.controller,
   });
 
   @override
   Widget build(BuildContext context) {
-    final player = pageState.player;
     return VideoPlayerArea(
       videoHeight: videoHeight,
-      videoUrl: player.resolvedVideoUrl,
-      title: pageState.title,
-      currentEpisode: player.currentEpisodeNumber,
-      totalEpisodes: player.totalEpisodes,
-      playbackService: pageState.playbackService,
-      smallscreenState: pageState.smallscreen,
-      playerSnapshotListenable: pageState.playerSnapshotListenable,
-      danmakuConfig: pageState.danmakuConfig,
-      fullscreenState: pageState.fullscreenState,
-      fullscreenFitMode: pageState.fullscreenFitMode,
-      currentSmallTitle: player.currentSmallTitle,
-      onNextEpisode: player.hasNextEpisode ? facade.playNextEpisode : null,
-      onPreviousEpisode: player.hasPreviousEpisode
-          ? facade.playPreviousEpisode
-          : null,
-      hasNextEpisode: player.hasNextEpisode,
-      hasPreviousEpisode: player.hasPreviousEpisode,
-      episodes: player.episodes,
-      onEpisodeSelected: facade.playEpisode,
-      isLoadingEpisodes: player.isEpisodeListLoading,
-      isDescending: player.isEpisodeSortDescending,
-      onToggleSort: facade.toggleEpisodeSort,
-      isDanmakuEnabled: player.isDanmakuEnabled,
+      pageState: pageState,
+      controller: controller,
       onDanmakuToggle: onDanmakuToggle,
-      isLoading: player.isResolvingVideo,
-      hasError: player.hasPlaybackError,
-      showTimeoutHint: player.showTimeoutNotice,
-      onRetry: facade.retryResolveVideoUrl,
-      onInitializePlayer: () {
-        facade.initializeSmallScreenPlayback(player.resolvedVideoUrl);
-      },
-      onRetryPlayer: facade.retrySmallScreenPlayback,
-      onTogglePlayPause: facade.toggleSmallScreenPlayPause,
-      onSeek: facade.seekSmallScreenTo,
-      onDanmakuLayerCreated: facade.attachSmallScreenDanmakuController,
-      onDanmakuLayerDisposed: facade.detachDanmakuController,
-      onFullscreenFitModeChanged: (mode) {
-        unawaited(facade.updateFullscreenFitMode(mode));
-      },
-      onPlaybackSpeedChanged: facade.setPlaybackSpeed,
-      onDanmakuConfigChanged: (config) {
-        unawaited(facade.updateDanmakuConfig(config));
-      },
     );
   }
 }
@@ -278,9 +238,9 @@ class _VideoTabsSection extends StatelessWidget {
   final Future<void> Function(bool enabled) onDanmakuToggle;
   final VoidCallback onVideoSourceTap;
   final VoidCallback onDanmakuSettingsTap;
-  final Future<void> Function(VideoPageDanmakuConfig config)
+  final Future<void> Function(DanmakuConfig config)
   onDanmakuConfigChanged;
-  final VideoPageFacade facade;
+  final VideoPageController controller;
 
   const _VideoTabsSection({
     required this.pageState,
@@ -290,7 +250,7 @@ class _VideoTabsSection extends StatelessWidget {
     required this.onVideoSourceTap,
     required this.onDanmakuSettingsTap,
     required this.onDanmakuConfigChanged,
-    required this.facade,
+    required this.controller,
   });
 
   @override
@@ -308,7 +268,7 @@ class _VideoTabsSection extends StatelessWidget {
             onDanmakuToggle: () {
               onDanmakuToggle(!danmaku.isDanmakuEnabled);
             },
-            onDanmakuInputTap: facade.expandDanmakuInput,
+            onDanmakuInputTap: controller.expandDanmakuInput,
             onDanmakuSettingsTap: onDanmakuSettingsTap,
             onVideoSourceTap: onVideoSourceTap,
             currentSourceName: pageState.source.currentSourceName,
@@ -326,9 +286,9 @@ class _VideoTabsSection extends StatelessWidget {
                   isDescending: episode.isDescending,
                   isEpisodesExpanded: episode.isExpanded,
                   currentEpisode: episode.currentEpisodeNumber,
-                  onEpisodeSelected: facade.playEpisode,
-                  onToggleExpand: facade.toggleEpisodeListExpanded,
-                  onToggleSort: facade.toggleEpisodeSort,
+                  onEpisodeSelected: controller.playEpisode,
+                  onToggleExpand: controller.toggleEpisodeListExpanded,
+                  onToggleSort: controller.toggleEpisodeSort,
                 ),
                 const CommentTabContent.VideoComment(),
               ],
@@ -343,7 +303,7 @@ class _VideoTabsSection extends StatelessWidget {
                 }
               },
               onClose: () {
-                facade.collapseDanmakuInput();
+                controller.collapseDanmakuInput();
                 danmakuController.clear();
               },
             ),

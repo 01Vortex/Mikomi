@@ -1,94 +1,28 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:mikomi/features/settings/danmaku/danmaku_setting_service.dart';
-import 'package:mikomi/features/video/models/episode_model.dart';
-import 'package:mikomi/features/video/services/video_playback_service.dart';
-import 'package:mikomi/features/video/state/fullscreen_video_state.dart';
+import 'package:mikomi/features/video/controller/video_page_controller.dart';
 import 'package:mikomi/features/video/state/video_page_state.dart';
-import 'package:mikomi/features/video/state/video_player_listener.dart';
 import 'package:mikomi/features/video/ui/widgets/smallscreen/smallscreen_video.dart';
-import 'package:mikomi/features/video/ui/widgets/video_fit.dart';
 
+/// 视频播放区域（小屏），包装 [SmallscreenVideo] 并处理加载/错误/超时状态。
+///
+/// 重构后：接受 [VideoPageController] + [VideoPageState] 替代原本的 29 个独立参数。
 class VideoPlayerArea extends StatelessWidget {
   final double? videoHeight;
-  final String videoUrl;
-  final String title;
-  final int currentEpisode;
-  final int totalEpisodes;
-  final VideoPlaybackService playbackService;
-  final SmallscreenPlaybackState smallscreenState;
-  final ValueListenable<VideoPlayerSnapshot> playerSnapshotListenable;
-  final DanmakuConfig danmakuConfig;
-  final FullscreenVideoState fullscreenState;
-  final VideoFitMode fullscreenFitMode;
-  final String? currentSmallTitle;
-  final VoidCallback? onNextEpisode;
-  final VoidCallback? onPreviousEpisode;
-  final bool hasNextEpisode;
-  final bool hasPreviousEpisode;
-  final List<Episode> episodes;
-  final Function(Episode) onEpisodeSelected;
-  final bool isLoadingEpisodes;
-  final bool isDescending;
-  final VoidCallback onToggleSort;
-  final bool isDanmakuEnabled;
-  final Function(bool) onDanmakuToggle;
-  final bool isLoading;
-  final bool hasError;
-  final bool showTimeoutHint;
-  final VoidCallback onRetry;
-  final VoidCallback onInitializePlayer;
-  final VoidCallback onRetryPlayer;
-  final VoidCallback onTogglePlayPause;
-  final ValueChanged<Duration> onSeek;
-  final ValueChanged<dynamic> onDanmakuLayerCreated;
-  final ValueChanged<dynamic> onDanmakuLayerDisposed;
-  final ValueChanged<VideoFitMode> onFullscreenFitModeChanged;
-  final ValueChanged<double> onPlaybackSpeedChanged;
-  final ValueChanged<DanmakuConfig> onDanmakuConfigChanged;
+  final VideoPageState pageState;
+  final VideoPageController controller;
+  final void Function(bool enabled)? onDanmakuToggle;
 
   const VideoPlayerArea({
     super.key,
     this.videoHeight,
-    required this.videoUrl,
-    required this.title,
-    required this.currentEpisode,
-    required this.totalEpisodes,
-    required this.playbackService,
-    required this.smallscreenState,
-    required this.playerSnapshotListenable,
-    required this.danmakuConfig,
-    required this.fullscreenState,
-    required this.fullscreenFitMode,
-    this.currentSmallTitle,
-    this.onNextEpisode,
-    this.onPreviousEpisode,
-    required this.hasNextEpisode,
-    required this.hasPreviousEpisode,
-    required this.episodes,
-    required this.onEpisodeSelected,
-    required this.isLoadingEpisodes,
-    required this.isDescending,
-    required this.onToggleSort,
-    required this.isDanmakuEnabled,
-    required this.onDanmakuToggle,
-    required this.isLoading,
-    required this.hasError,
-    required this.showTimeoutHint,
-    required this.onRetry,
-    required this.onInitializePlayer,
-    required this.onRetryPlayer,
-    required this.onTogglePlayPause,
-    required this.onSeek,
-    required this.onDanmakuLayerCreated,
-    required this.onDanmakuLayerDisposed,
-    required this.onFullscreenFitModeChanged,
-    required this.onPlaybackSpeedChanged,
-    required this.onDanmakuConfigChanged,
+    required this.pageState,
+    required this.controller,
+    this.onDanmakuToggle,
   });
 
   @override
   Widget build(BuildContext context) {
+    final player = pageState.player;
     final width = MediaQuery.of(context).size.width;
     final height = videoHeight ?? (width / (16 / 9));
 
@@ -99,54 +33,21 @@ class VideoPlayerArea extends StatelessWidget {
         color: Colors.black,
         child: Stack(
           children: [
-            if (videoUrl.isNotEmpty)
+            if (player.resolvedVideoUrl.isNotEmpty)
               Positioned.fill(
                 child: SmallscreenVideo(
-                  key: ValueKey('$videoUrl-$currentEpisode'),
-                  videoUrl: videoUrl,
-                  title: title,
-                  currentEpisode: currentEpisode,
-                  totalEpisodes: totalEpisodes,
-                  playbackService: playbackService,
-                  playbackState: smallscreenState,
-                  playerSnapshotListenable: playerSnapshotListenable,
-                  danmakuConfig: danmakuConfig,
-                  fullscreenState: fullscreenState,
-                  fullscreenFitMode: fullscreenFitMode,
-                  currentSmallTitle: currentSmallTitle,
-                  onNextEpisode: onNextEpisode,
-                  onPreviousEpisode: onPreviousEpisode,
-                  hasNextEpisode: hasNextEpisode,
-                  hasPreviousEpisode: hasPreviousEpisode,
-                  episodes: episodes,
-                  onEpisodeSelected: onEpisodeSelected,
-                  isLoadingEpisodes: isLoadingEpisodes,
-                  isDescending: isDescending,
-                  onToggleSort: onToggleSort,
-                  isDanmakuEnabled: isDanmakuEnabled,
+                  pageState: pageState,
+                  controller: controller,
                   onDanmakuToggle: onDanmakuToggle,
-                  onInitializePlayer: onInitializePlayer,
-                  onRetryPlayer: onRetryPlayer,
-                  onTogglePlayPause: onTogglePlayPause,
-                  onSeek: onSeek,
-                  onDanmakuLayerCreated: onDanmakuLayerCreated,
-                  onDanmakuLayerDisposed: onDanmakuLayerDisposed,
-                  onFullscreenFitModeChanged: onFullscreenFitModeChanged,
-                  onPlaybackSpeedChanged: onPlaybackSpeedChanged,
-                  onDanmakuConfigChanged: onDanmakuConfigChanged,
                 ),
               ),
-            if (hasError && !isLoading)
+            if (player.hasPlaybackError && !player.isResolvingVideo)
               const Positioned.fill(
                 child: Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(
-                        Icons.error_outline,
-                        color: Colors.white70,
-                        size: 40,
-                      ),
+                      Icon(Icons.error_outline, color: Colors.white70, size: 40),
                       SizedBox(height: 12),
                       Text(
                         '视频解析失败，请切换视频源',
@@ -157,7 +58,7 @@ class VideoPlayerArea extends StatelessWidget {
                   ),
                 ),
               ),
-            if (isLoading)
+            if (player.isResolvingVideo)
               Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -166,7 +67,7 @@ class VideoPlayerArea extends StatelessWidget {
                       color: Colors.white,
                       strokeWidth: 3,
                     ),
-                    if (showTimeoutHint) ...[
+                    if (player.showTimeoutNotice) ...[
                       const SizedBox(height: 12),
                       Text(
                         '视频加载慢，可点右下角换源',
@@ -179,7 +80,8 @@ class VideoPlayerArea extends StatelessWidget {
                   ],
                 ),
               ),
-            if ((isLoading || hasError) && videoUrl.isEmpty)
+            if ((player.isResolvingVideo || player.hasPlaybackError) &&
+                player.resolvedVideoUrl.isEmpty)
               _topFallback(context),
           ],
         ),
@@ -198,7 +100,10 @@ class VideoPlayerArea extends StatelessWidget {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [Colors.black.withValues(alpha: 0.6), Colors.transparent],
+            colors: [
+              Colors.black.withValues(alpha: 0.6),
+              Colors.transparent,
+            ],
           ),
         ),
         child: Padding(
@@ -216,7 +121,7 @@ class VideoPlayerArea extends StatelessWidget {
               const SizedBox(width: 2),
               Expanded(
                 child: Text(
-                  title,
+                  pageState.title,
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 15,

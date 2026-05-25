@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:mikomi/features/video/controller/danmaku_controller.dart'
     as app_danmaku;
-import 'package:mikomi/features/video/facade/danmaku_facade.dart';
+import 'package:mikomi/features/video/controller/danmaku_facade.dart';
 import 'package:mikomi/features/video/models/episode_model.dart';
 import 'package:mikomi/features/video/state/video_player_listener.dart';
 

@@ -1,90 +1,29 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/material.dart';
-import 'package:mikomi/features/settings/danmaku/danmaku_setting_service.dart';
 import 'package:media_kit_video/media_kit_video.dart';
-import 'package:mikomi/features/video/models/episode_model.dart';
-import 'package:mikomi/features/video/services/video_playback_service.dart';
+import 'package:mikomi/features/video/controller/video_page_controller.dart';
 import 'package:mikomi/features/video/state/fullscreen_video_state.dart';
 import 'package:mikomi/features/video/state/video_page_state.dart';
 import 'package:mikomi/features/video/state/video_player_listener.dart';
 import 'package:mikomi/features/video/ui/pages/fullscreen_page.dart';
 import 'package:mikomi/features/video/ui/widgets/danmaku_overlay.dart';
-import 'package:mikomi/features/video/ui/widgets/video_fit.dart';
 import 'package:mikomi/features/video/ui/widgets/video_gesture.dart';
 
+/// 小屏视频播放器控件。
+///
+/// 重构后：接受 [VideoPageController] + [VideoPageState] 替代原来的 30 个独立回调参数。
 class SmallscreenVideo extends StatefulWidget {
-  final String videoUrl;
-  final String title;
-  final int currentEpisode;
-  final int totalEpisodes;
-  final VideoPlaybackService playbackService;
-  final SmallscreenPlaybackState playbackState;
-  final ValueListenable<VideoPlayerSnapshot> playerSnapshotListenable;
-  final DanmakuConfig danmakuConfig;
-  final FullscreenVideoState fullscreenState;
-  final VideoFitMode fullscreenFitMode;
-  final String? currentSmallTitle;
-  final VoidCallback? onBack;
-  final VoidCallback? onOpenMenu;
-  final VoidCallback? onNextEpisode;
-  final VoidCallback? onPreviousEpisode;
-  final bool hasNextEpisode;
-  final bool hasPreviousEpisode;
-  final List<Episode> episodes;
-  final Function(Episode)? onEpisodeSelected;
-  final bool isLoadingEpisodes;
-  final bool isDescending;
-  final VoidCallback? onToggleSort;
-  final bool isDanmakuEnabled;
-  final void Function(bool)? onDanmakuToggle;
-  final VoidCallback onInitializePlayer;
-  final VoidCallback onRetryPlayer;
-  final VoidCallback onTogglePlayPause;
-  final ValueChanged<Duration> onSeek;
-  final ValueChanged<dynamic> onDanmakuLayerCreated;
-  final ValueChanged<dynamic> onDanmakuLayerDisposed;
-  final ValueChanged<VideoFitMode> onFullscreenFitModeChanged;
-  final ValueChanged<double> onPlaybackSpeedChanged;
-  final ValueChanged<DanmakuConfig> onDanmakuConfigChanged;
+  final VideoPageState pageState;
+  final VideoPageController controller;
+  final void Function(bool enabled)? onDanmakuToggle;
 
   const SmallscreenVideo({
     super.key,
-    required this.videoUrl,
-    required this.title,
-    required this.currentEpisode,
-    required this.totalEpisodes,
-    required this.playbackService,
-    required this.playbackState,
-    required this.playerSnapshotListenable,
-    required this.danmakuConfig,
-    required this.fullscreenState,
-    required this.fullscreenFitMode,
-    this.currentSmallTitle,
-    this.onBack,
-    this.onOpenMenu,
-    this.onNextEpisode,
-    this.onPreviousEpisode,
-    this.hasNextEpisode = false,
-    this.hasPreviousEpisode = false,
-    this.episodes = const [],
-    this.onEpisodeSelected,
-    this.isLoadingEpisodes = false,
-    this.isDescending = false,
-    this.onToggleSort,
-    this.isDanmakuEnabled = false,
+    required this.pageState,
+    required this.controller,
     this.onDanmakuToggle,
-    required this.onInitializePlayer,
-    required this.onRetryPlayer,
-    required this.onTogglePlayPause,
-    required this.onSeek,
-    required this.onDanmakuLayerCreated,
-    required this.onDanmakuLayerDisposed,
-    required this.onFullscreenFitModeChanged,
-    required this.onPlaybackSpeedChanged,
-    required this.onDanmakuConfigChanged,
   });
 
   @override
@@ -105,9 +44,12 @@ class _SmallscreenVideoState extends State<SmallscreenVideo> {
   @override
   void initState() {
     super.initState();
-    _fullscreenNotifier = ValueNotifier(widget.fullscreenState);
+    _fullscreenNotifier = ValueNotifier(widget.pageState.fullscreenState);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) widget.onInitializePlayer();
+      if (mounted) {
+        final url = widget.pageState.player.resolvedVideoUrl;
+        widget.controller.initializeSmallScreenPlayback(url);
+      }
     });
     _startControlsTimer();
   }
@@ -115,10 +57,16 @@ class _SmallscreenVideoState extends State<SmallscreenVideo> {
   @override
   void didUpdateWidget(covariant SmallscreenVideo oldWidget) {
     super.didUpdateWidget(oldWidget);
-    _syncFullscreenState(widget.fullscreenState);
-    if (oldWidget.videoUrl != widget.videoUrl && widget.videoUrl.isNotEmpty) {
+    _syncFullscreenState(widget.pageState.fullscreenState);
+    if (oldWidget.pageState.player.resolvedVideoUrl !=
+            widget.pageState.player.resolvedVideoUrl &&
+        widget.pageState.player.resolvedVideoUrl.isNotEmpty) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) widget.onInitializePlayer();
+        if (mounted) {
+          widget.controller.initializeSmallScreenPlayback(
+            widget.pageState.player.resolvedVideoUrl,
+          );
+        }
       });
     }
   }
@@ -130,20 +78,16 @@ class _SmallscreenVideoState extends State<SmallscreenVideo> {
         phase == SchedulerPhase.persistentCallbacks ||
         phase == SchedulerPhase.transientCallbacks ||
         phase == SchedulerPhase.midFrameMicrotasks;
-
     if (!shouldDefer) {
       _fullscreenNotifier.value = state;
       return;
     }
-
     _pendingFullscreenState = state;
     SchedulerBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       final pending = _pendingFullscreenState;
       _pendingFullscreenState = null;
-      if (pending != null) {
-        _fullscreenNotifier.value = pending;
-      }
+      if (pending != null) _fullscreenNotifier.value = pending;
     });
   }
 
@@ -180,40 +124,49 @@ class _SmallscreenVideoState extends State<SmallscreenVideo> {
       );
       return;
     }
-    widget.onTogglePlayPause();
+    widget.controller.togglePlayPause();
     _doubleTapCount = 0;
   }
 
   void _enterFullscreen() {
-    final before = widget.isDanmakuEnabled;
+    final before = widget.pageState.player.isDanmakuEnabled;
+    final ctrl = widget.controller;
+    final state = widget.pageState;
     Navigator.of(context)
         .push(
           PageRouteBuilder(
-            pageBuilder: (_, _, _) => FullscreenPage(
-              playbackService: widget.playbackService,
-              title: widget.title,
+            pageBuilder: (_, animation, secondaryAnimation) => FullscreenPage(
+              playbackService: state.playbackService,
+              title: state.title,
               stateNotifier: _fullscreenNotifier,
-              onNextEpisode: widget.onNextEpisode,
-              onPreviousEpisode: widget.onPreviousEpisode,
-              onEpisodeSelected: widget.onEpisodeSelected,
-              onToggleSort: widget.onToggleSort,
-              playerSnapshotListenable: widget.playerSnapshotListenable,
-              danmakuConfig: widget.danmakuConfig,
-              isDanmakuInputVisible: widget.isDanmakuEnabled,
-              fitMode: widget.fullscreenFitMode,
-              onFitModeChanged: widget.onFullscreenFitModeChanged,
-              onPlayPause: widget.onTogglePlayPause,
-              onSeek: widget.onSeek,
-              onPlaybackSpeedChanged: widget.onPlaybackSpeedChanged,
-              onDanmakuConfigChanged: widget.onDanmakuConfigChanged,
+              playerSnapshotListenable: state.playerSnapshotListenable,
+              danmakuConfig: state.danmakuConfig,
+              isDanmakuInputVisible: state.player.isDanmakuEnabled,
+              fitMode: state.fullscreenFitMode,
+              onFitModeChanged: (mode) =>
+                  unawaited(ctrl.updateFullscreenFitMode(mode)),
+              onPlayPause: ctrl.togglePlayPause,
+              onSeek: ctrl.seekTo,
+              onPlaybackSpeedChanged: ctrl.setPlaybackSpeed,
+              onDanmakuConfigChanged: (config) =>
+                  unawaited(ctrl.updateDanmakuConfig(config)),
               onDanmakuToggle: widget.onDanmakuToggle,
               onDanmakuInputVisibleChanged: (_) {},
-              onFullscreenDanmakuLayerCreated: widget.onDanmakuLayerCreated,
-              onFullscreenDanmakuLayerDisposed: widget.onDanmakuLayerDisposed,
+              onFullscreenDanmakuLayerCreated:
+                  ctrl.attachFullscreenDanmakuController,
+              onFullscreenDanmakuLayerDisposed: ctrl.detachDanmakuController,
+              onNextEpisode: state.player.hasNextEpisode
+                  ? ctrl.playNextEpisode
+                  : null,
+              onPreviousEpisode: state.player.hasPreviousEpisode
+                  ? ctrl.playPreviousEpisode
+                  : null,
+              onEpisodeSelected: ctrl.playEpisode,
+              onToggleSort: ctrl.toggleEpisodeSort,
             ),
             transitionDuration: const Duration(milliseconds: 200),
             reverseTransitionDuration: const Duration(milliseconds: 200),
-            transitionsBuilder: (_, animation, _, child) => FadeTransition(
+            transitionsBuilder: (_, animation, secondaryAnimation, child) => FadeTransition(
               opacity: CurvedAnimation(
                 parent: animation,
                 curve: Curves.easeInOut,
@@ -223,21 +176,21 @@ class _SmallscreenVideoState extends State<SmallscreenVideo> {
           ),
         )
         .then((_) {
-          final after = _fullscreenNotifier.value.isDanmakuEnabled;
-          if (after != before) widget.onDanmakuToggle?.call(after);
-        });
+      final after = _fullscreenNotifier.value.isDanmakuEnabled;
+      if (after != before) widget.onDanmakuToggle?.call(after);
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return ValueListenableBuilder<VideoPlayerSnapshot>(
-      valueListenable: widget.playerSnapshotListenable,
+      valueListenable: widget.pageState.playerSnapshotListenable,
       builder: (context, snapshot, _) {
-        final state = widget.playbackState;
-        final showPlayer = state.showPlayer;
+        final ss = widget.pageState.smallscreen;
+        final showPlayer = ss.showPlayer;
         final position = _isDragging ? _dragPosition : snapshot.position;
         return VideoGesture(
-          playbackService: widget.playbackService,
+          playbackService: widget.pageState.playbackService,
           enabled: showPlayer && !_lockPanel,
           child: GestureDetector(
             onTap: showPlayer ? _toggleControls : null,
@@ -248,14 +201,15 @@ class _SmallscreenVideoState extends State<SmallscreenVideo> {
                 if (showPlayer)
                   Positioned.fill(
                     child: Video(
-                      controller: state.videoController!,
+                      controller: ss.videoController!,
                       controls: NoVideoControls,
                       fit: BoxFit.contain,
                     ),
                   ),
-                if (showPlayer && widget.isDanmakuEnabled) _danmakuLayer(),
-                if (state.isLoading) _loading(),
-                if (state.errorMessage != null) _error(state.errorMessage!),
+                if (showPlayer && widget.pageState.player.isDanmakuEnabled)
+                  _danmakuLayer(),
+                if (ss.isLoading) _loading(),
+                if (ss.errorMessage != null) _error(ss.errorMessage!),
                 if (showPlayer && snapshot.isBuffering) _buffering(),
                 if (showPlayer && _showControls && !_lockPanel)
                   _gradient(top: true),
@@ -278,20 +232,23 @@ class _SmallscreenVideoState extends State<SmallscreenVideo> {
     );
   }
 
-  Widget _danmakuLayer() => Positioned.fill(
-    child: DanmakuLayer(
-      onControllerCreated: widget.onDanmakuLayerCreated,
-      onControllerDisposed: widget.onDanmakuLayerDisposed,
-      fontSize: widget.danmakuConfig.fontSize,
-      opacity: widget.danmakuConfig.opacity,
-      speed: widget.danmakuConfig.duration,
-      area: widget.danmakuConfig.area,
-      strokeWidth: widget.danmakuConfig.strokeWidth,
-      hideTop: !widget.danmakuConfig.showTop,
-      hideBottom: !widget.danmakuConfig.showBottom,
-      hideScroll: !widget.danmakuConfig.showScroll,
-    ),
-  );
+  Widget _danmakuLayer() {
+    final c = widget.pageState.danmakuConfig;
+    return Positioned.fill(
+      child: DanmakuLayer(
+        onControllerCreated: widget.controller.attachSmallScreenDanmakuController,
+        onControllerDisposed: widget.controller.detachDanmakuController,
+        fontSize: c.fontSize,
+        opacity: c.opacity,
+        speed: c.duration,
+        area: c.area,
+        strokeWidth: c.strokeWidth,
+        hideTop: !c.showTop,
+        hideBottom: !c.showBottom,
+        hideScroll: !c.showScroll,
+      ),
+    );
+  }
 
   Widget _loading() => const Positioned.fill(
     child: Center(
@@ -315,7 +272,10 @@ class _SmallscreenVideoState extends State<SmallscreenVideo> {
             ),
           ),
           const SizedBox(height: 16),
-          TextButton(onPressed: widget.onRetryPlayer, child: const Text('重试')),
+          TextButton(
+            onPressed: () => widget.controller.retrySmallScreenPlayback(),
+            child: const Text('重试'),
+          ),
         ],
       ),
     ),
@@ -324,21 +284,15 @@ class _SmallscreenVideoState extends State<SmallscreenVideo> {
   Widget _buffering() => Positioned.fill(
     child: Container(
       color: Colors.black.withValues(alpha: 0.3),
-      child: Center(
+      child: const Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const CircularProgressIndicator(
-              color: Colors.white,
-              strokeWidth: 3,
-            ),
-            const SizedBox(height: 12),
+            CircularProgressIndicator(color: Colors.white, strokeWidth: 3),
+            SizedBox(height: 12),
             Text(
               '缓冲中...',
-              style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.9),
-                fontSize: 13,
-              ),
+              style: TextStyle(color: Colors.white70, fontSize: 13),
             ),
           ],
         ),
@@ -363,65 +317,60 @@ class _SmallscreenVideoState extends State<SmallscreenVideo> {
     ),
   );
 
-  Widget _topControls() => Positioned(
-    top: 0,
-    left: 0,
-    right: 0,
-    child: Padding(
-      padding: const EdgeInsets.only(left: 8, right: 4, top: 10),
-      child: Row(
-        children: [
-          GestureDetector(
-            onTap: widget.onBack ?? () => Navigator.of(context).pop(),
-            behavior: HitTestBehavior.opaque,
-            child: const Padding(
-              padding: EdgeInsets.all(4),
-              child: Icon(Icons.arrow_back, color: Colors.white, size: 24),
+  Widget _topControls() {
+    final p = widget.pageState.player;
+    return Positioned(
+      top: 0,
+      left: 0,
+      right: 0,
+      child: Padding(
+        padding: const EdgeInsets.only(left: 8, right: 4, top: 10),
+        child: Row(
+          children: [
+            GestureDetector(
+              onTap: () => Navigator.of(context).pop(),
+              behavior: HitTestBehavior.opaque,
+              child: const Padding(
+                padding: EdgeInsets.all(4),
+                child: Icon(Icons.arrow_back, color: Colors.white, size: 24),
+              ),
             ),
-          ),
-          const SizedBox(width: 2),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  widget.title,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
+            const SizedBox(width: 2),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    widget.pageState.title,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                Text(
-                  widget.currentSmallTitle != null &&
-                          widget.currentSmallTitle!.isNotEmpty
-                      ? '第${widget.currentEpisode}集 ${widget.currentSmallTitle}'
-                      : '第${widget.currentEpisode}集',
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.9),
-                    fontSize: 13,
+                  Text(
+                    p.currentSmallTitle != null &&
+                            p.currentSmallTitle!.isNotEmpty
+                        ? '第${p.currentEpisodeNumber}集 ${p.currentSmallTitle}'
+                        : '第${p.currentEpisodeNumber}集',
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.9),
+                      fontSize: 13,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-          if (widget.onOpenMenu != null)
-            IconButton(
-              icon: const Icon(Icons.menu_open, color: Colors.white),
-              onPressed: widget.onOpenMenu,
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(),
-              iconSize: 24,
-            ),
-        ],
+          ],
+        ),
       ),
-    ),
-  );
+    );
+  }
 
   Widget _bottomControls(
     bool isPlaying,
@@ -440,7 +389,7 @@ class _SmallscreenVideoState extends State<SmallscreenVideo> {
               color: Colors.white,
               size: 28,
             ),
-            onPressed: widget.onTogglePlayPause,
+            onPressed: widget.controller.togglePlayPause,
           ),
           Text(
             formatVideoDuration(position),
@@ -458,7 +407,7 @@ class _SmallscreenVideoState extends State<SmallscreenVideo> {
                 );
               }),
               onChangeEnd: (value) {
-                widget.onSeek(
+                widget.controller.seekTo(
                   Duration(
                     milliseconds: (value * duration.inMilliseconds).toInt(),
                   ),

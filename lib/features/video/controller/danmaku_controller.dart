@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:mikomi/features/settings/danmaku/danmaku_setting_service.dart';
-import 'package:mikomi/features/video/facade/danmaku_facade.dart';
+import 'package:mikomi/features/video/controller/danmaku_facade.dart';
 import 'package:mikomi/features/video/models/danmaku_model.dart';
 import 'package:mikomi/features/video/services/danmaku_service.dart';
 
