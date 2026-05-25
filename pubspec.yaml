@@ -61,29 +61,17 @@ dependencies:
   cached_network_image: ^3.4.1
   
   # SVG支持
-  flutter_svg: ^2.0.10+1
+  flutter_svg: ^2.3.0
   
   # 国际化
   flutter_localizations:
     sdk: flutter
   intl: 0.20.2
   
-  # 视频播放器（media_kit）
-  media_kit:
-    git:
-      url: https://github.com/Predidit/media-kit.git
-      ref: 4cd7c29566da395229c398d2ec4d0ef96b5e8970
-      path: ./media_kit
-  media_kit_video:
-    git:
-      url: https://github.com/Predidit/media-kit.git
-      ref: 4cd7c29566da395229c398d2ec4d0ef96b5e8970
-      path: ./media_kit_video
-  media_kit_libs_video:
-    git:
-      url: https://github.com/Predidit/media-kit.git
-      ref: 4cd7c29566da395229c398d2ec4d0ef96b5e8970
-      path: ./libs/universal/media_kit_libs_video
+  # 视频播放器（media_kit 官方 pub.dev 版）
+  media_kit: ^1.1.11
+  media_kit_video: ^1.2.5
+  media_kit_libs_video: ^1.0.5
   
   # WebView（用于视频地址解析）
   flutter_inappwebview: ^6.1.5
@@ -98,37 +86,10 @@ dependencies:
   # 亮度/音量控制（手势）
   screen_brightness: ^0.2.2+1
   volume_controller: ^2.0.7
-  flutter_displaymode: ^0.6.0
+  flutter_displaymode: ^0.7.0
   
   # Deep Link处理
   app_links: ^7.0.0
-
-dependency_overrides:
-  media_kit_libs_linux:
-    git:
-      url: https://github.com/Predidit/media-kit.git
-      ref: 4cd7c29566da395229c398d2ec4d0ef96b5e8970
-      path: ./libs/linux/media_kit_libs_linux
-  media_kit_libs_ios_video:
-    git:
-      url: https://github.com/Predidit/media-kit.git
-      ref: 4cd7c29566da395229c398d2ec4d0ef96b5e8970
-      path: ./libs/ios/media_kit_libs_ios_video
-  media_kit_libs_android_video:
-    git:
-      url: https://github.com/Predidit/media-kit.git
-      ref: 4cd7c29566da395229c398d2ec4d0ef96b5e8970
-      path: ./libs/android/media_kit_libs_android_video
-  media_kit_libs_windows_video:
-    git:
-      url: https://github.com/Predidit/media-kit.git
-      ref: 4cd7c29566da395229c398d2ec4d0ef96b5e8970
-      path: ./libs/windows/media_kit_libs_windows_video
-  media_kit_libs_macos_video:
-    git:
-      url: https://github.com/Predidit/media-kit.git
-      ref: 4cd7c29566da395229c398d2ec4d0ef96b5e8970
-      path: ./libs/macos/media_kit_libs_macos_video
 
 dev_dependencies:
   flutter_test:

@@ -42,44 +42,6 @@
       ]
     },
     {
-      "name": "media_kit_libs_macos_video",
-      "version": "1.1.4",
-      "dependencies": [
-        "flutter",
-        "plugin_platform_interface"
-      ]
-    },
-    {
-      "name": "media_kit_libs_windows_video",
-      "version": "1.0.10",
-      "dependencies": [
-        "flutter"
-      ]
-    },
-    {
-      "name": "media_kit_libs_android_video",
-      "version": "1.3.6",
-      "dependencies": [
-        "flutter",
-        "plugin_platform_interface"
-      ]
-    },
-    {
-      "name": "media_kit_libs_ios_video",
-      "version": "1.1.4",
-      "dependencies": [
-        "flutter",
-        "plugin_platform_interface"
-      ]
-    },
-    {
-      "name": "media_kit_libs_linux",
-      "version": "1.1.3",
-      "dependencies": [
-        "flutter"
-      ]
-    },
-    {
       "name": "flutter_launcher_icons",
       "version": "0.13.1",
       "dependencies": [
@@ -129,7 +91,7 @@
     },
     {
       "name": "flutter_displaymode",
-      "version": "0.6.0",
+      "version": "0.7.0",
       "dependencies": [
         "flutter"
       ]
@@ -196,13 +158,12 @@
     },
     {
       "name": "media_kit_libs_video",
-      "version": "1.0.5",
+      "version": "1.0.7",
       "dependencies": [
         "media_kit_libs_android_video",
         "media_kit_libs_ios_video",
         "media_kit_libs_linux",
         "media_kit_libs_macos_video",
-        "media_kit_libs_ohos",
         "media_kit_libs_windows_video"
       ]
     },
@@ -213,27 +174,28 @@
         "flutter",
         "media_kit",
         "plugin_platform_interface",
+        "screen_brightness",
         "synchronized",
         "universal_platform",
-        "wakelock_plus",
-        "wakelock_plus_ohos"
+        "volume_controller",
+        "wakelock_plus"
       ]
     },
     {
       "name": "media_kit",
-      "version": "1.1.11",
+      "version": "1.2.6",
       "dependencies": [
         "collection",
         "http",
         "image",
-        "js",
         "meta",
         "path",
         "safe_local_storage",
         "synchronized",
         "universal_platform",
         "uri_parser",
-        "uuid"
+        "uuid",
+        "web"
       ]
     },
     {
@@ -256,7 +218,7 @@
     },
     {
       "name": "flutter_svg",
-      "version": "2.2.4",
+      "version": "2.3.0",
       "dependencies": [
         "flutter",
         "http",
@@ -393,13 +355,6 @@
         "meta",
         "sky_engine",
         "vector_math"
-      ]
-    },
-    {
-      "name": "plugin_platform_interface",
-      "version": "2.1.8",
-      "dependencies": [
-        "meta"
       ]
     },
     {
@@ -722,23 +677,54 @@
       ]
     },
     {
-      "name": "media_kit_libs_ohos",
-      "version": "1.0.0",
+      "name": "media_kit_libs_linux",
+      "version": "1.2.1",
       "dependencies": [
         "flutter"
+      ]
+    },
+    {
+      "name": "media_kit_libs_windows_video",
+      "version": "1.0.11",
+      "dependencies": [
+        "flutter"
+      ]
+    },
+    {
+      "name": "media_kit_libs_macos_video",
+      "version": "1.1.4",
+      "dependencies": [
+        "flutter",
+        "plugin_platform_interface"
+      ]
+    },
+    {
+      "name": "media_kit_libs_ios_video",
+      "version": "1.1.4",
+      "dependencies": [
+        "flutter",
+        "plugin_platform_interface"
+      ]
+    },
+    {
+      "name": "media_kit_libs_android_video",
+      "version": "1.3.8",
+      "dependencies": [
+        "flutter",
+        "plugin_platform_interface"
+      ]
+    },
+    {
+      "name": "plugin_platform_interface",
+      "version": "2.1.8",
+      "dependencies": [
+        "meta"
       ]
     },
     {
       "name": "universal_platform",
       "version": "1.1.0",
       "dependencies": []
-    },
-    {
-      "name": "wakelock_plus_ohos",
-      "version": "0.0.3",
-      "dependencies": [
-        "flutter"
-      ]
     },
     {
       "name": "wakelock_plus",
@@ -775,17 +761,17 @@
       ]
     },
     {
+      "name": "web",
+      "version": "1.1.1",
+      "dependencies": []
+    },
+    {
       "name": "safe_local_storage",
       "version": "2.0.3",
       "dependencies": [
         "path",
         "synchronized"
       ]
-    },
-    {
-      "name": "js",
-      "version": "0.7.2",
-      "dependencies": []
     },
     {
       "name": "vector_graphics_compiler",
@@ -806,7 +792,7 @@
     },
     {
       "name": "vector_graphics",
-      "version": "1.1.20",
+      "version": "1.2.2",
       "dependencies": [
         "flutter",
         "http",
@@ -860,11 +846,6 @@
       "dependencies": [
         "flutter"
       ]
-    },
-    {
-      "name": "web",
-      "version": "1.1.1",
-      "dependencies": []
     },
     {
       "name": "cross_file",
