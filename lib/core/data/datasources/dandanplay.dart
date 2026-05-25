@@ -3,6 +3,7 @@ import 'dart:math';
 
 import 'package:crypto/crypto.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 
 class DanDanPlaySource {
   static const String _dandanAppId = 'kvpx7qkqjh';
@@ -86,7 +87,11 @@ class DanDanPlaySource {
       '/api/v2/comment/$episodeId',
       queryParameters: {'withRelated': 'true'},
     );
-    return (response.data['comments'] as List?) ?? [];
+    final comments = (response.data['comments'] as List?) ?? [];
+    debugPrint(
+      'DanDanPlay: fetchComments episodeId=$episodeId → ${comments.length}条弹幕',
+    );
+    return comments;
   }
 
   Future<int?> resolveEpisodeIdByBgmBangumiId(
@@ -107,25 +112,52 @@ class DanDanPlaySource {
     required String? animeTitle,
     required int episode,
   }) async {
+    // 路由 A：通过标题搜索弹弹Play番剧ID（优先，bgmtv端点经常403）
+    if (animeTitle != null && animeTitle.trim().isNotEmpty) {
+      try {
+        final danDanBangumiId = await resolveBangumiIdByTitle(animeTitle);
+        debugPrint(
+          'DanDanPlay: 标题 "$animeTitle" → bangumiId=$danDanBangumiId',
+        );
+        if (danDanBangumiId != null) {
+          final episodeId = await resolveEpisodeIdByBangumiId(
+            danDanBangumiId,
+            episode,
+          );
+          if (episodeId != null) {
+            debugPrint('DanDanPlay: 解析成功 episodeId=$episodeId');
+            return episodeId;
+          }
+        }
+      } catch (e) {
+        debugPrint(
+          'DanDanPlay: 标题搜索 "$animeTitle" 失败 → $e',
+        );
+      }
+    }
+
+    // 路由 B：通过 Bangumi ID 直接定位（回退方案）
     if (bgmBangumiId != null) {
       try {
         final episodeId = await resolveEpisodeIdByBgmBangumiId(
           bgmBangumiId,
           episode,
         );
-        if (episodeId != null) return episodeId;
-      } catch (_) {}
-    }
-
-    if (animeTitle != null && animeTitle.trim().isNotEmpty) {
-      try {
-        final danDanBangumiId = await resolveBangumiIdByTitle(animeTitle);
-        if (danDanBangumiId != null) {
-          return resolveEpisodeIdByBangumiId(danDanBangumiId, episode);
+        if (episodeId != null) {
+          debugPrint('DanDanPlay: bgmtv 解析成功 episodeId=$episodeId');
+          return episodeId;
         }
-      } catch (_) {}
+      } catch (e) {
+        debugPrint(
+          'DanDanPlay: bgmtv bgmBangumiId=$bgmBangumiId 失败 → $e',
+        );
+      }
     }
 
+    debugPrint(
+      'DanDanPlay: 无法解析剧集 episode=$episode '
+      '(bgmBangumiId=$bgmBangumiId, animeTitle=$animeTitle)',
+    );
     return null;
   }
 

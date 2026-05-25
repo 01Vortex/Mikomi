@@ -114,6 +114,19 @@ class DanmakuSettingService {
       showScroll: prefs.getBool(_keyShowScroll) ?? true,
     );
   }
+
+  // ── 实例方法（供 DanmakuSettingsCoordinator 统一调用） ──
+
+  Future<DanmakuConfig> loadConfig() => loadAll();
+
+  Future<void> saveFontSize(double v) => setFontSize(v);
+  Future<void> saveOpacity(double v) => setOpacity(v);
+  Future<void> saveArea(double v) => setArea(v);
+  Future<void> saveDuration(double v) => setDuration(v);
+  Future<void> saveStrokeWidth(double v) => setStrokeWidth(v);
+  Future<void> saveShowTop(bool v) => setShowTop(v);
+  Future<void> saveShowBottom(bool v) => setShowBottom(v);
+  Future<void> saveShowScroll(bool v) => setShowScroll(v);
 }
 
 class DanmakuConfig {

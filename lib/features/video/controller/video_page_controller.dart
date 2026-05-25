@@ -339,6 +339,7 @@ class VideoPageController {
     _timeoutTimer?.cancel();
     _historyCtrl.stop();
     _historyCtrl.save(_videoState);
+    _danmakuSettings.setEnabled(_videoState.isDanmakuEnabled);
     await _disposePlayback();
     _playerListenerCtrl.dispose();
     _playerSnapshotNotifier.dispose();
