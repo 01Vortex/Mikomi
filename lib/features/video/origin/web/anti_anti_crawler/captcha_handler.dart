@@ -4,9 +4,9 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
-import 'package:mikomi/features/video/parse/anti_anti_crawler/anti_anti_crawler.dart';
+import 'package:mikomi/features/video/origin/web/anti_anti_crawler/strategy.dart';
 
-class CaptchaHandler implements AntiAntiCrawler {
+class CaptchaHandler implements AntiCrawlerStrategy {
   static const Duration _captchaWaitStep = Duration(seconds: 2);
   static const Duration _captchaWaitTimeout = Duration(seconds: 18);
 
@@ -31,19 +31,19 @@ class CaptchaHandler implements AntiAntiCrawler {
   }
 
   @override
-  Future<void> onBeforeLoad(AntiAntiCrawlerContext context) async {
+  Future<void> onBeforeLoad(AntiCrawlerContext context) async {
     await context.controller?.evaluateJavascript(source: _autoClickScript);
   }
 
   @override
-  Future<void> onAfterLoad(AntiAntiCrawlerContext context) async {
+  Future<void> onAfterLoad(AntiCrawlerContext context) async {
     if (context.controller == null) return;
 
     await _tryClickCaptchaButton(context);
     await _waitForChallengeToPass(context);
   }
 
-  Future<void> _tryClickCaptchaButton(AntiAntiCrawlerContext context) async {
+  Future<void> _tryClickCaptchaButton(AntiCrawlerContext context) async {
     final controller = context.controller;
     if (controller == null) return;
 
@@ -95,7 +95,7 @@ class CaptchaHandler implements AntiAntiCrawler {
     return result == true;
   }
 
-  Future<void> _waitForChallengeToPass(AntiAntiCrawlerContext context) async {
+  Future<void> _waitForChallengeToPass(AntiCrawlerContext context) async {
     final controller = context.controller;
     if (controller == null) return;
 

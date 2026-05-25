@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_displaymode/flutter_displaymode.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:media_kit/media_kit.dart';
-import 'package:mikomi/features/video/parse/parsing.dart';
+import 'package:mikomi/features/video/origin/web/parsing_engine.dart';
 import 'app.dart';
 
 Future<void> _enableHighRefreshRate() async {

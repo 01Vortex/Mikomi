@@ -2,10 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:mikomi/features/video/services/video_episode_service.dart';
 import 'package:mikomi/features/video/services/video_source_service.dart';
 
+enum SourceType { web, bt }
+
 class VideoSource {
   final String name;
+  final SourceType type;
+  final Map<String, dynamic>? config;
 
-  VideoSource({required this.name});
+  const VideoSource({
+    required this.name,
+    this.type = SourceType.web,
+    this.config,
+  });
 }
 
 class VideoSourceSelector extends StatefulWidget {

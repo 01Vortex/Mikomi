@@ -21,6 +21,9 @@ class VideoPlaybackService {
   Player? get player => _player;
   VideoController? get videoController => _videoController;
 
+  /// 解析 mpv `--vo`（视频输出驱动）
+  /// Android 默认用 `gpu`（通过 OpenGL ES 渲染到 TextureView），
+  /// 用户选 surfaceView 时用 `mediacodec_embed`（直接渲染到 Surface）
   String? _resolveVo(VideoRenderer renderer) {
     return switch (renderer) {
       VideoRenderer.auto => Platform.isAndroid ? 'gpu' : null,
@@ -29,21 +32,21 @@ class VideoPlaybackService {
     };
   }
 
+  /// 解析 mpv `--hwdec`
+  /// 硬解关闭时强制 `none`；开启时尊重用户选择的解码器
   HwDecoder _resolveDecoder({
     required bool hardwareAccelerationEnabled,
-    required VideoRenderer renderer,
     required HwDecoder decoder,
   }) {
     if (!hardwareAccelerationEnabled) return HwDecoder.none;
-    if (Platform.isAndroid && renderer == VideoRenderer.surfaceView) {
-      return HwDecoder.mediacodec;
-    }
     return decoder;
   }
 
+  /// 设置 mpv 原生属性（仅桌面平台 NativePlayer）
   Future<void> _applyNativePlayerOptions({
     required bool lowLatencyAudio,
     required VideoRenderer renderer,
+    required bool isGpuVo,
   }) async {
     final player = _player;
     if (player == null || player.platform is! NativePlayer) return;
@@ -53,9 +56,10 @@ class VideoPlaybackService {
       final tempDir = await getTemporaryDirectory();
       await nativePlayer.setProperty('demuxer-cache-dir', tempDir.path);
       await nativePlayer.setProperty('af', 'scaletempo2=max-speed=8');
-      await nativePlayer.setProperty('vd-lavc-dr', 'yes');
 
-      if (renderer != VideoRenderer.surfaceView) {
+      // vd-lavc-dr 仅在 vo=gpu 时有效：让 libavcodec 直接输出到 GPU
+      if (isGpuVo) {
+        await nativePlayer.setProperty('vd-lavc-dr', 'yes');
         await nativePlayer.setProperty('video-sync', 'display-resample');
         await nativePlayer.setProperty('interpolation', 'yes');
         await nativePlayer.setProperty('tscale', 'oversample');
@@ -82,9 +86,9 @@ class VideoPlaybackService {
       final lowLatencyAudio = await _basisService.getLowLatencyAudio();
       final playSpeed = await _basisService.getPlaySpeed();
       final resolvedVo = _resolveVo(renderer);
+      final isGpuVo = resolvedVo == 'gpu';
       final resolvedDecoder = _resolveDecoder(
         hardwareAccelerationEnabled: enabled,
-        renderer: renderer,
         decoder: decoder,
       );
 
@@ -99,6 +103,7 @@ class VideoPlaybackService {
       await _applyNativePlayerOptions(
         lowLatencyAudio: lowLatencyAudio,
         renderer: renderer,
+        isGpuVo: isGpuVo,
       );
 
       _videoController = VideoController(
@@ -107,17 +112,20 @@ class VideoPlaybackService {
           enableHardwareAcceleration: enabled,
           hwdec: resolvedDecoder.hwdecValue,
           vo: resolvedVo,
-          androidAttachSurfaceAfterVideoParameters: false,
+          // GPU 路径需要等视频参数确定后再 attach Surface，避免初始黑帧
+          // mediacodec_embed 路径不需要
+          androidAttachSurfaceAfterVideoParameters: isGpuVo,
         ),
       );
 
       final platformController = await _videoController!.platform.future;
       debugPrint(
-        'VideoPlaybackService: renderer=${renderer.name}, '
-        'vo=${platformController.configuration.vo ?? 'default'}, '
-        'hwdec=${platformController.configuration.hwdec ?? 'default'}, '
-        'lowLatencyAudio=$lowLatencyAudio, '
-        'smoothOutput=${renderer != VideoRenderer.surfaceView}',
+        'VideoPlaybackService: renderer=${renderer.name} '
+        'vo=${platformController.configuration.vo ?? 'default'} '
+        'hwdec=${platformController.configuration.hwdec ?? 'default'} '
+        'hardwareAccel=$enabled '
+        'lowLatencyAudio=$lowLatencyAudio '
+        'isEmulator=${_isEmulator()}',
       );
 
       await _player!.setRate(playSpeed);
@@ -125,6 +133,27 @@ class VideoPlaybackService {
     } catch (e) {
       debugPrint('VideoPlaybackService: 初始化失败 - $e');
       _isInitialized = false;
+    }
+  }
+
+  /// 简单模拟器检测（media_kit 内部也会做同样的检测来禁用硬解）
+  static bool _isEmulator() {
+    if (!Platform.isAndroid) return false;
+    final brand = _safeAndroidProp('ro.product.brand') ?? '';
+    final model = _safeAndroidProp('ro.product.model') ?? '';
+    final hardware = _safeAndroidProp('ro.hardware') ?? '';
+    return hardware.contains('goldfish') ||
+        hardware.contains('ranchu') ||
+        model.contains('sdk_gphone') ||
+        brand.contains('generic');
+  }
+
+  static String? _safeAndroidProp(String prop) {
+    try {
+      final result = Process.runSync('getprop', [prop]);
+      return result.exitCode == 0 ? result.stdout.toString().trim() : null;
+    } catch (_) {
+      return null;
     }
   }
 

@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
-import 'package:mikomi/features/video/parse/parsing.dart';
-import 'package:mikomi/features/video/services/video_parsing_service.dart';
+import 'package:mikomi/features/video/origin/web/parsing_engine.dart';
+import 'package:mikomi/features/video/models/stream_resolve_options.dart';
 
 /// 平台 WebView 解析实现
 class ParsingIos extends Parsing<InAppWebViewController> {
