@@ -19,6 +19,8 @@ class VideoPage extends StatefulWidget {
   final List<Episode> episodes;
   final List<VideoSource>? videoSources;
   final String? sourceName;
+  final SourceType? sourceType;
+  final Map<String, dynamic>? sourceConfig;
   final String? animeTitle;
   final String? animeName;
   final int? bangumiId;
@@ -33,6 +35,8 @@ class VideoPage extends StatefulWidget {
     required this.episodes,
     this.videoSources,
     this.sourceName,
+    this.sourceType,
+    this.sourceConfig,
     this.animeTitle,
     this.animeName,
     this.bangumiId,
@@ -61,6 +65,8 @@ class _VideoPageState extends State<VideoPage>
       episodes: widget.episodes,
       videoSources: widget.videoSources ?? const [],
       sourceName: widget.sourceName,
+      sourceType: widget.sourceType,
+      sourceConfig: widget.sourceConfig,
       initialProgress: widget.initialProgress,
       animeTitle: widget.animeTitle,
       animeName: widget.animeName,

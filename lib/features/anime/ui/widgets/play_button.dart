@@ -110,18 +110,18 @@ class _PlayButtonState extends State<PlayButton> {
         animeTitle: widget.animeTitle,
         onSourceSelected: (source) {
           Navigator.pop(context);
-          _navigateAndLoadInBackground(source.name);
+          if (source.type == SourceType.bt && source.btEpisode != null) {
+            _navigateBtSource(source);
+          } else {
+            _navigateAndLoadInBackground(source.name);
+          }
         },
       ),
     );
   }
 
   void _navigateAndLoadInBackground(String? pluginName) {
-    if (!mounted) {
-      debugPrint('组件未挂载，退出');
-      return;
-    }
-
+    if (!mounted) return;
     debugPrint('立即跳转到视频页面，插件: $pluginName');
 
     Navigator.push(
@@ -134,6 +134,31 @@ class _PlayButtonState extends State<PlayButton> {
           episodes: const [],
           videoSources: widget.videoSources ?? const [],
           sourceName: pluginName,
+          animeTitle: widget.animeTitle,
+          animeName: widget.animeName,
+          bangumiId: widget.bangumiId,
+        ),
+      ),
+    );
+    widget.onPlay?.call();
+  }
+
+  Future<void> _navigateBtSource(VideoSource source) async {
+    if (!mounted) return;
+    debugPrint('BT 源: ${source.name}, 跳转视频页加载剧集...');
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => VideoPage(
+          title: widget.animeTitle ?? '视频播放',
+          videoUrl: '',
+          currentEpisode: 1,
+          episodes: const [],
+          videoSources: widget.videoSources ?? const [],
+          sourceName: source.name,
+          sourceType: SourceType.bt,
+          sourceConfig: source.config,
           animeTitle: widget.animeTitle,
           animeName: widget.animeName,
           bangumiId: widget.bangumiId,

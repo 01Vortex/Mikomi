@@ -380,6 +380,12 @@
       "languageVersion": "3.2"
     },
     {
+      "name": "libtorrent_flutter",
+      "rootUri": "file:///D:/CodeApp/Dependency/Flutter/hosted/pub.flutter-io.cn/libtorrent_flutter-1.8.5",
+      "packageUri": "lib/",
+      "languageVersion": "3.5"
+    },
+    {
       "name": "lints",
       "rootUri": "file:///D:/CodeApp/Dependency/Flutter/hosted/pub.flutter-io.cn/lints-6.1.0",
       "packageUri": "lib/",

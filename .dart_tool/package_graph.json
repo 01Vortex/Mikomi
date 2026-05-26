@@ -24,6 +24,7 @@
         "html",
         "http",
         "intl",
+        "libtorrent_flutter",
         "media_kit",
         "media_kit_libs_video",
         "media_kit_video",
@@ -77,6 +78,14 @@
         "stream_channel",
         "test_api",
         "vector_math"
+      ]
+    },
+    {
+      "name": "libtorrent_flutter",
+      "version": "1.8.5",
+      "dependencies": [
+        "ffi",
+        "flutter"
       ]
     },
     {
@@ -494,6 +503,11 @@
       ]
     },
     {
+      "name": "ffi",
+      "version": "2.2.0",
+      "dependencies": []
+    },
+    {
       "name": "app_links_web",
       "version": "1.0.4",
       "dependencies": [
@@ -861,11 +875,6 @@
       "dependencies": [
         "ffi"
       ]
-    },
-    {
-      "name": "ffi",
-      "version": "2.2.0",
-      "dependencies": []
     },
     {
       "name": "flutter_plugin_android_lifecycle",

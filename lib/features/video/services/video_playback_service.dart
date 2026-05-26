@@ -159,8 +159,10 @@ class VideoPlaybackService {
 
   Future<void> play(String url) async {
     if (_player == null || !_isInitialized || _isDisposing) return;
+    debugPrint('VideoPlaybackService: 开始播放 $url');
     try {
       await _player!.open(Media(url), play: true);
+      debugPrint('VideoPlaybackService: 播放命令已发送');
     } catch (e) {
       debugPrint('VideoPlaybackService: 播放失败 - $e');
       rethrow;

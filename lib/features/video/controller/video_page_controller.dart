@@ -21,6 +21,8 @@ import 'package:mikomi/features/video/state/video_page_state.dart';
 import 'package:mikomi/features/video/state/video_player_listener.dart';
 import 'package:mikomi/features/video/state/video_state.dart';
 import 'package:mikomi/features/settings/danmaku/danmaku_setting_service.dart';
+import 'package:mikomi/features/video/origin/bt/libtorrent_stream_service.dart';
+import 'package:mikomi/features/video/services/video_source_service.dart';
 import 'package:mikomi/features/video/ui/widgets/video_fit.dart';
 
 /// 视频播放页面唯一的状态编排器。
@@ -72,6 +74,9 @@ class VideoPageController {
 
   // ── 构造器 ──
 
+  final SourceType? _sourceType;
+  final Map<String, dynamic>? _sourceConfig;
+
   VideoPageController({
     required String title,
     required String videoUrl,
@@ -82,6 +87,8 @@ class VideoPageController {
     required String? animeTitle,
     required String? animeName,
     required int? bangumiId,
+    SourceType? sourceType,
+    Map<String, dynamic>? sourceConfig,
     VideoEpisodeService? episodeService,
     VideoParsingService? parsingService,
     VideoHistoryService? historyService,
@@ -91,6 +98,8 @@ class VideoPageController {
     VideoSystemUiController? systemUi,
     this.videoSources = const [],
   }) :
+       _sourceType = sourceType,
+       _sourceConfig = sourceConfig,
        _title = title,
        _animeTitle = animeTitle,
        _bangumiId = bangumiId,
@@ -290,6 +299,22 @@ class VideoPageController {
     if (_isDisposed) return;
     _setVideoState(nextState);
     _clearInitialProgress();
+
+    // BT 源：episode.url 是 magnet 链接
+    if (_sourceType == SourceType.bt) {
+      final magnet = episode.url ?? _videoState.currentVideoPageUrl;
+      if (magnet.isNotEmpty) {
+        _setVideoState(_videoState.startVideoResolving());
+        try {
+          final localUrl = await LibtorrentStreamService().createStream(magnet);
+          if (localUrl != null && !_isDisposed) {
+            await initializeSmallScreenPlayback(localUrl);
+          }
+        } catch (_) {}
+      }
+      return;
+    }
+
     await retryResolveVideoUrl();
   }
 
@@ -475,17 +500,28 @@ class VideoPageController {
     final shouldLoadEpisodes =
         _videoState.episodes.isEmpty && _videoState.currentSourceName != null;
 
+    // BT 源：从 RSS 加载剧集列表
+    if (_sourceType == SourceType.bt) {
+      _setVideoState(_videoState.startEpisodeLoading());
+      unawaited(_loadBtEpisodesAndPlay());
+      return;
+    }
+
+    // 先检查 URL 是否为可直接播放的流
+    if (_videoState.currentVideoPageUrl.isNotEmpty &&
+        _resolveCtrl.isDirectStreamUrl(_videoState.currentVideoPageUrl)) {
+      _setVideoState(_videoState.markUseCachedResolvedUrl());
+      unawaited(initializeSmallScreenPlayback(
+        _videoState.playerState.resolvedVideoUrl,
+      ));
+      return;
+    }
+
     if (_videoState.episodes.isEmpty &&
         _videoState.currentSourceName != null &&
         _animeTitle != null) {
       if (_videoState.currentVideoPageUrl.isNotEmpty) {
-        if (_resolveCtrl.isDirectStreamUrl(
-          _videoState.currentVideoPageUrl,
-        )) {
-          _setVideoState(_videoState.markUseCachedResolvedUrl());
-        } else {
-          _setVideoState(_videoState.setInitialResolving());
-        }
+        _setVideoState(_videoState.setInitialResolving());
       } else {
         _setVideoState(_videoState.markWaitForEpisodeResolve());
       }
@@ -497,6 +533,36 @@ class VideoPageController {
       unawaited(_loadEpisodesIfNeeded());
     } else if (_videoState.playerState.isResolvingVideo) {
       unawaited(retryResolveVideoUrl());
+    }
+  }
+
+  Future<void> _loadBtEpisodesAndPlay() async {
+    try {
+      final rssEps = await VideoSourceService().btResolver.fetchEpisodes(
+        VideoSource(
+          name: _videoState.currentSourceName ?? '',
+          type: SourceType.bt,
+          config: _sourceConfig,
+        ),
+      );
+      if (_isDisposed) return;
+
+      final episodes = rssEps
+          .map((e) => Episode(number: e.number, smallTitle: e.title, url: e.magnet))
+          .toList();
+
+      if (episodes.isEmpty) {
+        _setVideoState(_videoState.finishEpisodeLoading());
+        return;
+      }
+
+      _setVideoState(_videoState.withEpisodes(episodes).finishEpisodeLoading());
+      // 播放第一集
+      await playEpisode(episodes.first);
+    } catch (_) {
+      if (!_isDisposed) {
+        _setVideoState(_videoState.finishEpisodeLoading());
+      }
     }
   }
 

@@ -1,18 +1,28 @@
 import 'package:flutter/material.dart';
+import 'package:mikomi/features/video/origin/bt/rss_bt_resolver.dart';
 import 'package:mikomi/features/video/services/video_episode_service.dart';
 import 'package:mikomi/features/video/services/video_source_service.dart';
 
 enum SourceType { web, bt }
 
+class BtEpisodeInfo {
+  final int number;
+  final String title;
+  final String magnet;
+  const BtEpisodeInfo({required this.number, required this.title, required this.magnet});
+}
+
 class VideoSource {
   final String name;
   final SourceType type;
   final Map<String, dynamic>? config;
+  final BtEpisodeInfo? btEpisode;
 
   const VideoSource({
     required this.name,
     this.type = SourceType.web,
     this.config,
+    this.btEpisode,
   });
 }
 
@@ -40,6 +50,7 @@ class _VideoSourceSelectorState extends State<VideoSourceSelector>
   final VideoSourceService _sourceService = VideoSourceService();
   final Map<String, bool?> _sourceAvailability = {};
   final Map<String, int> _sourceEpisodeCount = {};
+  final Map<String, List<RssEpisode>> _btEpisodes = {};
   bool _isChecking = false;
 
   @override
@@ -280,14 +291,18 @@ class _VideoSourceSelectorState extends State<VideoSourceSelector>
   // ── BT 源内容 ──
 
   Widget _buildBtContent(VideoSource source) {
-    final searchUrl = source.config?['searchConfig']?['searchUrl'] as String? ?? '';
-    final displayUrl = searchUrl.replaceAll('{keyword}', widget.animeTitle ?? '...');
+    final episodes = _btEpisodes[source.name];
+    final searchUrl =
+        source.config?['searchConfig']?['searchUrl'] as String? ?? '';
+    final displayUrl =
+        searchUrl.replaceAll('{keyword}', widget.animeTitle ?? '...');
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // BT 信息卡片
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(16),
@@ -300,56 +315,110 @@ class _VideoSourceSelectorState extends State<VideoSourceSelector>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  children: [
-                    const Icon(Icons.swap_vert, size: 16, color: Colors.blue),
-                    const SizedBox(width: 6),
-                    Text('BT 磁力源',
-                        style: TextStyle(
-                            fontSize: 13,
-                            color: Theme.of(context).textTheme.bodySmall?.color)),
-                    const Spacer(),
-                    Container(
-                      padding:
-                          const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
+                Row(children: [
+                  const Icon(Icons.swap_vert, size: 16, color: Colors.blue),
+                  const SizedBox(width: 6),
+                  Text('BT 磁力源',
+                      style: TextStyle(
+                          fontSize: 13,
+                          color: Theme.of(context).textTheme.bodySmall?.color)),
+                  const Spacer(),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
                         color: Colors.blue.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: const Text('BT', style: TextStyle(fontSize: 12, color: Colors.blue)),
-                    ),
-                  ],
-                ),
+                        borderRadius: BorderRadius.circular(4)),
+                    child: const Text('BT',
+                        style: TextStyle(fontSize: 12, color: Colors.blue)),
+                  ),
+                ]),
                 const SizedBox(height: 12),
                 Text(source.name,
                     style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                        color: Theme.of(context).textTheme.bodyLarge?.color)),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Icon(Icons.rss_feed, size: 14,
-                        color: Theme.of(context).textTheme.bodySmall?.color),
-                    const SizedBox(width: 4),
-                    Expanded(
-                      child: Text(displayUrl,
-                          style: TextStyle(
-                              fontSize: 11,
-                              color: Theme.of(context).textTheme.bodySmall?.color),
-                          maxLines: 2, overflow: TextOverflow.ellipsis),
-                    ),
-                  ],
-                ),
+                        fontSize: 18, fontWeight: FontWeight.w600)),
+                const SizedBox(height: 8),
+                Row(children: [
+                  Icon(Icons.rss_feed, size: 14,
+                      color: Theme.of(context).textTheme.bodySmall?.color),
+                  const SizedBox(width: 4),
+                  Expanded(
+                    child: Text(displayUrl,
+                        style: TextStyle(
+                            fontSize: 11,
+                            color: Theme.of(context).textTheme.bodySmall?.color),
+                        maxLines: 2, overflow: TextOverflow.ellipsis),
+                  ),
+                ]),
+                if (episodes != null) ...[
+                  const SizedBox(height: 8),
+                  Text('共 ${episodes.length} 集',
+                      style: TextStyle(
+                          fontSize: 13,
+                          color: Theme.of(context).colorScheme.primary)),
+                ],
               ],
             ),
           ),
-          const SizedBox(height: 20),
-          _buildActionButton(source, false, true,
-              icon: Icons.search, label: '搜索磁力'),
+          const SizedBox(height: 16),
+          // 剧集列表 或 搜索按钮
+          if (episodes == null)
+            _buildActionButton(source, false, true,
+                icon: Icons.search, label: '搜索磁力',
+                onTapOverride: () => _loadBtEpisodes(source))
+          else if (episodes.isEmpty)
+            const Center(
+              child: Padding(
+                padding: EdgeInsets.all(24),
+                child: Text('未找到剧集', style: TextStyle(color: Colors.grey)),
+              ),
+            )
+          else
+            ...episodes.map((ep) => _buildBtEpisodeTile(source, ep)),
         ],
       ),
     );
+  }
+
+  Widget _buildBtEpisodeTile(VideoSource source, RssEpisode ep) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 8),
+      child: ListTile(
+        leading: CircleAvatar(
+          radius: 16,
+          backgroundColor: Colors.blue.withValues(alpha: 0.1),
+          child: Text('${ep.number}',
+              style: const TextStyle(fontSize: 12, color: Colors.blue)),
+        ),
+        title: Text(ep.title,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(fontSize: 13)),
+        onTap: () => widget.onSourceSelected(VideoSource(
+          name: source.name,
+          type: SourceType.bt,
+          config: source.config,
+          btEpisode: BtEpisodeInfo(
+            number: ep.number, title: ep.title, magnet: ep.magnet,
+          ),
+        )),
+      ),
+    );
+  }
+
+  Future<void> _loadBtEpisodes(VideoSource source) async {
+    setState(() {});
+    try {
+      final resolver = _sourceService.btResolver;
+      final episodes = await resolver.fetchEpisodes(source
+        ..config?['keyword'] = widget.animeTitle);
+      if (mounted) {
+        setState(() => _btEpisodes[source.name] = episodes);
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() => _btEpisodes[source.name] = []);
+      }
+    }
   }
 
   // ── 共享组件 ──
@@ -415,13 +484,13 @@ class _VideoSourceSelectorState extends State<VideoSourceSelector>
   }
 
   Widget _buildActionButton(VideoSource source, bool isChecking,
-      bool? hasResource, {required IconData icon, required String label}) {
+      bool? hasResource, {required IconData icon, required String label, VoidCallback? onTapOverride}) {
     return SizedBox(
       width: double.infinity,
       height: 48,
       child: ElevatedButton(
         onPressed: (hasResource ?? false) && !isChecking
-            ? () => widget.onSourceSelected(source)
+            ? (onTapOverride ?? (() => widget.onSourceSelected(source)))
             : null,
         style: ElevatedButton.styleFrom(
           backgroundColor: Theme.of(context).colorScheme.primary,

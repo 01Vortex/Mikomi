@@ -91,6 +91,10 @@ dependencies:
   # Deep Link处理
   app_links: ^7.0.0
 
+  # BT 本地下载流播放（libtorrent FFI）
+  libtorrent_flutter: ^1.8.5
+
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

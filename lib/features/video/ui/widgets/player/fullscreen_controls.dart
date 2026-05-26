@@ -365,11 +365,12 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  if (widget.state.currentSmallTitle != null &&
-                      widget.state.currentSmallTitle!.isNotEmpty) ...[
-                    const SizedBox(height: 2),
-                    Text(
-                      '第${widget.state.currentEpisode}集 ${widget.state.currentSmallTitle}',
+                  const SizedBox(height: 2),
+                  Text(
+                    widget.state.currentSmallTitle != null &&
+                            widget.state.currentSmallTitle!.isNotEmpty
+                        ? '第${widget.state.currentEpisode}集 ${widget.state.currentSmallTitle}'
+                        : '第${widget.state.currentEpisode}集',
                       style: TextStyle(
                         color: Colors.white.withValues(alpha: 0.8),
                         fontSize: 15,
@@ -377,7 +378,6 @@ class _FullscreenVideoControlsState extends State<FullscreenVideoControls> {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
-                  ],
                 ],
               ),
             ),
