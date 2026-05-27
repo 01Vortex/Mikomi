@@ -123,7 +123,8 @@ flutter:
   # 资源文件
   assets:
     - assets/plugins/
-    - assets/plugins/animeko_bt.json
+    - assets/plugins/bt/
+    - assets/plugins/online/
     - assets/icons/
 
   # 字体
