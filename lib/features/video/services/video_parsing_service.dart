@@ -39,7 +39,9 @@ class VideoParsingService {
   // ── 兼容旧 API（保持 VideoResolveController 不变） ──
 
   bool isDirectStreamUrl(String url) {
-    if (url.startsWith('http://127.0.0.1') || url.startsWith('http://localhost')) {
+    if (url.startsWith('file://') ||
+        url.startsWith('http://127.0.0.1') ||
+        url.startsWith('http://localhost')) {
       return true;
     }
     return _webResolver.isDirectStreamUrl(url);
